@@ -3,8 +3,21 @@ import sqlite3
 import json
 import os
 
+# Create a custom filter function
+def from_json_filter(value):
+    """
+    Custom filter to parse a JSON string into a Python object.
+    """
+    try:
+        return json.loads(value)
+    except (json.JSONDecodeError, TypeError):
+        return {} # Return an empty dictionary on error to prevent crashing
+
 app = Flask(__name__)
 app.secret_key = 'your_super_secret_key'
+
+# Register the custom filter
+app.add_template_filter(from_json_filter, 'from_json')
 
 # ฟังก์ชันเชื่อมต่อฐานข้อมูล
 def get_db_connection():
