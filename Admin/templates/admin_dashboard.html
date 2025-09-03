@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}หน้าแอดมิน - รอการอนุมัติ{% endblock %}
+
+{% block content %}
+    <h1>รายการหอพักที่รอการอนุมัติ</h1>
+    {% if pending_dorms %}
+        <ul>
+        {% for dorm in pending_dorms %}
+            <li>
+                <h3>{{ dorm.name }}</h3>
+                <a href="{{ url_for('admin_dorm_details', dorm_id=dorm.id) }}">ดูรายละเอียดและจัดการ</a>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>ไม่มีหอพักที่รอการอนุมัติในขณะนี้</p>
+    {% endif %}
+    <hr>
+    <a href="{{ url_for('logout') }}">ออกจากระบบ</a>
+{% endblock %}
