@@ -6,11 +6,10 @@
     <h1>หน้าหลักของเจ้าของหอ</h1>
     <p>สวัสดี, {{ username }}</p>
 
-    <a href="{{ url_for('add_dorm') }}"><button>+</button> เพิ่มหอใหม่</a>
+    <a href="{{ url_for('owner.add_dorm')}}"><button>+</button> เพิ่มหอใหม่</a>
     
     <hr>
 
-    <h2>หอพักของคุณ</h2>
     {% if dorms %}
         <ul>
         {% for dorm in dorms %}
@@ -33,12 +32,8 @@
                     <button type="submit" style="background-color: #dc3545; padding: 6px 10px;">ลบ</button>
                 </form>
             </li>
-        {% endfor %}
         </ul>
-    {% else %}
         <p>คุณยังไม่มีหอพักในระบบ</p>
-    {% endif %}
 
     <hr>
-    <a href="{{ url_for('logout') }}">ออกจากระบบ</a>
-{% endblock %}
+    <a href="{{ uurl_for('main.logout') }}">ออกจากระบบ</a>

@@ -4,7 +4,7 @@
 
 {% block content %}
     <h1>ล็อกอินเข้าสู่ระบบ</h1>
-    <form method="POST" action="{{ url_for('login') }}">
+    <form method="POST" action="{{ action="{{ url_for('main.login') }} }}">
         <label for="username">ชื่อผู้ใช้:</label><br>
         <input type="text" id="username" name="username" required><br><br>
         
