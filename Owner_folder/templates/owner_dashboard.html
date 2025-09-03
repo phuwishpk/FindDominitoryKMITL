@@ -18,6 +18,7 @@
                 <h3>{{ dorm.name }}</h3>
                 <p><strong>ค่าน้ำ:</strong> {{ dorm.water_fee }} บาท</p>
                 <p><strong>ค่าไฟ:</strong> {{ dorm.electricity_fee }} บาท</p>
+                <p><strong>สถานะ:</strong>
                 {% if dorm.is_approved == 1 %}
                     <span style="color: green;">✓ อนุมัติแล้ว</span>
                 {% elif dorm.is_approved == 2 %}
@@ -25,11 +26,11 @@
                 {% else %}
                     <span style="color: red;">✗ ยังไม่อนุมัติ</span>
                 {% endif %}
-                <br>
+                </p>
                 <a href="{{ url_for('dorm_details', dorm_id=dorm.id) }}">ดูรายละเอียด</a> |
                 <a href="{{ url_for('edit_dorm', dorm_id=dorm.id) }}">แก้ไข</a> |
                 <form method="POST" action="{{ url_for('delete_dorm', dorm_id=dorm.id) }}" style="display:inline;">
-                    <button type="submit">ลบ</button>
+                    <button type="submit" style="background-color: #dc3545; padding: 6px 10px;">ลบ</button>
                 </form>
             </li>
         {% endfor %}
@@ -38,5 +39,6 @@
         <p>คุณยังไม่มีหอพักในระบบ</p>
     {% endif %}
 
+    <hr>
     <a href="{{ url_for('logout') }}">ออกจากระบบ</a>
 {% endblock %}

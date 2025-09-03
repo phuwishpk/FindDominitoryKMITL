@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-{% from 'macro.html' import from_json %}
 
 {% block title %}รายละเอียด {{ dorm.name }}{% endblock %}
 
@@ -13,7 +12,7 @@
 
     <a href="{{ url_for('edit_dorm', dorm_id=dorm.id) }}">แก้ไขหอพัก</a>
     <form method="POST" action="{{ url_for('delete_dorm', dorm_id=dorm.id) }}" style="display:inline;">
-        <button type="submit">ลบหอพัก</button>
+        <button type="submit" style="background-color: #dc3545; padding: 6px 10px;">ลบหอพัก</button>
     </form>
 
     <hr>
@@ -46,9 +45,10 @@
                 <p>ราคา: {{ room.price }} บาท</p>
                 <p>จำนวน: {{ room.room_count }} ห้อง</p>
                 {% if room.images %}
+                    <p>รูปภาพ:</p>
                     {% set image_list = room.images | from_json %}
                     {% for img_url in image_list %}
-                        <img src="{{ img_url }}" alt="รูปห้องพัก" style="max-width:200px;"><br>
+                        <img src="{{ img_url }}" alt="รูปห้องพัก" style="max-width:200px; display: block; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ccc;"><br>
                     {% endfor %}
                 {% endif %}
             </li>
@@ -62,9 +62,8 @@
 
     <h2>อนุมัติข้อมูล</h2>
     <form method="POST" action="{{ url_for('approve_dorm', dorm_id=dorm.id) }}">
-        <button type="submit">ส่งข้อมูลให้แอดมินอนุมัติ</button>
+        <button type="submit" style="background-color: #28a745;">ส่งข้อมูลให้แอดมินอนุมัติ</button>
     </form>
     
     <a href="{{ url_for('home') }}">ย้อนกลับหน้าหลัก</a>
-
 {% endblock %}

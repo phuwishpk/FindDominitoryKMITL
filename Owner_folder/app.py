@@ -1,9 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import sqlite3
 import json
+import os
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # ตั้งค่า secret key สำหรับ session
+app.secret_key = 'your_super_secret_key'
 
 # ฟังก์ชันเชื่อมต่อฐานข้อมูล
 def get_db_connection():
@@ -11,13 +12,13 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-# สร้างตารางในฐานข้อมูล (รันครั้งแรกเท่านั้น)
+# สร้างตารางในฐานข้อมูลและเพิ่มผู้ใช้ตัวอย่าง
 def init_db():
     conn = get_db_connection()
     conn.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL,
+            username TEXT NOT NULL UNIQUE,
             password TEXT NOT NULL,
             user_type TEXT NOT NULL
         )
@@ -49,12 +50,15 @@ def init_db():
             FOREIGN KEY (dorm_id) REFERENCES dorms (id)
         )
     ''')
+    
+    conn.execute("DELETE FROM users WHERE username='admin'")
+    conn.execute("INSERT INTO users (username, password, user_type) VALUES (?, ?, ?)", ('admin', 'admin', 'owner'))
+    conn.commit()
     conn.close()
 
-# เรียกใช้ฟังก์ชันสร้างตาราง
-init_db()
+if not os.path.exists('dorm_management.db'):
+    init_db()
 
-# --- หน้าหลักของเจ้าของหอ ---
 @app.route('/')
 def home():
     if 'username' not in session or session.get('user_type') != 'owner':
@@ -68,7 +72,6 @@ def home():
     
     return render_template('owner_dashboard.html', username=username, dorms=dorms)
 
-# --- หน้าล็อกอิน (ตัวอย่าง) ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -89,7 +92,6 @@ def login():
             
     return render_template('login.html')
 
-# --- หน้าเพิ่มหอพัก ---
 @app.route('/add_dorm', methods=['GET', 'POST'])
 def add_dorm():
     if 'username' not in session or session.get('user_type') != 'owner':
@@ -97,13 +99,17 @@ def add_dorm():
 
     if request.method == 'POST':
         name = request.form['dorm_name']
-        water_fee = request.form['water_fee']
-        electricity_fee = request.form['electricity_fee']
-        deposit = request.form['deposit']
+        try:
+            water_fee = float(request.form['water_fee'])
+            electricity_fee = float(request.form['electricity_fee'])
+            deposit = float(request.form['deposit'])
+            location_lat = float(request.form['location_lat'])
+            location_long = float(request.form['location_long'])
+        except (ValueError, KeyError):
+            return "Invalid data format for numeric fields.", 400
+
         contact_line = request.form['contact_line']
         contact_phone = request.form['contact_phone']
-        location_lat = request.form['location_lat']
-        location_long = request.form['location_long']
         
         conn = get_db_connection()
         conn.execute('INSERT INTO dorms (owner_id, name, water_fee, electricity_fee, deposit, contact_line, contact_phone, location_lat, location_long) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -114,7 +120,6 @@ def add_dorm():
         
     return render_template('add_dorm.html')
     
-# --- หน้ารายละเอียดหอ, แก้ไข, ลบ ---
 @app.route('/dorm/<int:dorm_id>')
 def dorm_details(dorm_id):
     if 'username' not in session or session.get('user_type') != 'owner':
@@ -130,23 +135,19 @@ def dorm_details(dorm_id):
         
     return render_template('dorm_details.html', dorm=dorm, rooms=rooms)
 
-@app.route('/edit_dorm/<int:dorm_id>', methods=['GET', 'POST'])
-def edit_dorm(dorm_id):
-    # โค้ดสำหรับแก้ไขข้อมูลหอพัก
-    return "Edit Dorm Page"
-
-@app.route('/delete_dorm/<int:dorm_id>', methods=['POST'])
-def delete_dorm(dorm_id):
-    # โค้ดสำหรับลบหอพัก
-    return "Delete Dorm Endpoint"
-
-# --- เพิ่มห้องพัก ---
 @app.route('/add_room/<int:dorm_id>', methods=['POST'])
 def add_room(dorm_id):
+    if 'username' not in session or session.get('user_type') != 'owner':
+        return redirect(url_for('login'))
+        
     room_type = request.form['room_type']
-    price = request.form['price']
-    room_count = request.form['room_count']
-    images = request.form.getlist('images')  # สมมติว่ารับรูปภาพเป็น URL หรือ base64
+    try:
+        price = float(request.form['price'])
+        room_count = int(request.form['room_count'])
+    except (ValueError, KeyError):
+        return "Invalid data format for numeric fields.", 400
+
+    images = request.form.getlist('images')
     
     conn = get_db_connection()
     conn.execute('INSERT INTO rooms (dorm_id, room_type, price, room_count, images) VALUES (?, ?, ?, ?, ?)',
@@ -155,11 +156,23 @@ def add_room(dorm_id):
     conn.close()
     
     return redirect(url_for('dorm_details', dorm_id=dorm_id))
+@app.route('/edit_dorm/<int:dorm_id>', methods=['GET', 'POST'])
+def edit_dorm(dorm_id):
+    # โค้ดสำหรับแก้ไขข้อมูลหอพัก
+    # ณ ตอนนี้เป็นเพียงหน้า Placeholder
+    return f"This is the page to edit dorm with ID: {dorm_id}"
 
-# --- ส่งข้อมูลไปให้ Admin (จำลอง API) ---
+@app.route('/delete_dorm/<int:dorm_id>', methods=['POST'])
+def delete_dorm(dorm_id):
+    # โค้ดสำหรับลบหอพัก
+    # ณ ตอนนี้เป็นเพียงหน้า Placeholder
+    return f"This is the endpoint to delete dorm with ID: {dorm_id}"
+
 @app.route('/approve_dorm/<int:dorm_id>', methods=['POST'])
 def approve_dorm(dorm_id):
-    # จำลองการส่งข้อมูล API ไปยังฝั่ง Admin
+    if 'username' not in session or session.get('user_type') != 'owner':
+        return redirect(url_for('login'))
+        
     conn = get_db_connection()
     dorm = conn.execute('SELECT * FROM dorms WHERE id = ?', (dorm_id,)).fetchone()
     rooms = conn.execute('SELECT * FROM rooms WHERE dorm_id = ?', (dorm_id,)).fetchall()
@@ -168,17 +181,13 @@ def approve_dorm(dorm_id):
     if dorm is None:
         return jsonify({"status": "error", "message": "Dorm not found"}), 404
 
-    # สร้าง payload สำหรับส่งไป API ของ Admin
     payload = {
         "dorm_info": dict(dorm),
         "room_info": [dict(room) for room in rooms]
     }
     
-    # ณ จุดนี้ จะต้องมีการส่งข้อมูล payload ไปยัง API ของ Admin จริงๆ
-    # เช่น requests.post('http://admin_api_endpoint/approve', json=payload)
     print("Sending data to Admin API for approval:", payload)
     
-    # อัปเดตสถานะในฐานข้อมูลเป็น "รอการอนุมัติ" (สมมติว่า is_approved = 2)
     conn = get_db_connection()
     conn.execute('UPDATE dorms SET is_approved = 2 WHERE id = ?', (dorm_id,))
     conn.commit()
@@ -186,11 +195,12 @@ def approve_dorm(dorm_id):
 
     return jsonify({"status": "success", "message": "Dorm submitted for approval"})
 
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    session.pop('user_id', None)
+    session.pop('user_type', None)
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    # เพิ่ม user ตัวอย่างสำหรับทดสอบ
-    conn = get_db_connection()
-    conn.execute("INSERT OR IGNORE INTO users (id, username, password, user_type) VALUES (?, ?, ?, ?)", (1, 'admin', 'admin', 'owner'))
-    conn.commit()
-    conn.close()
     app.run(debug=True)
