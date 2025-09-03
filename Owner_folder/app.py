@@ -3,20 +3,17 @@ import sqlite3
 import json
 import os
 
-# Create a custom filter function
+# สร้าง custom filter เพื่อแปลง JSON string เป็น Python object
 def from_json_filter(value):
-    """
-    Custom filter to parse a JSON string into a Python object.
-    """
     try:
         return json.loads(value)
     except (json.JSONDecodeError, TypeError):
-        return {} # Return an empty dictionary on error to prevent crashing
+        return {} 
 
 app = Flask(__name__)
 app.secret_key = 'your_super_secret_key'
 
-# Register the custom filter
+# ลงทะเบียน custom filter
 app.add_template_filter(from_json_filter, 'from_json')
 
 # ฟังก์ชันเชื่อมต่อฐานข้อมูล
@@ -269,6 +266,113 @@ def delete_dorm(dorm_id):
         conn.close()
 
     return redirect(url_for('home'))
+
+@app.route('/room/<int:room_id>')
+def room_details(room_id):
+    if 'username' not in session or session.get('user_type') != 'owner':
+        return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    room = conn.execute('SELECT * FROM rooms WHERE id = ?', (room_id,)).fetchone()
+    
+    if room is None:
+        flash("ไม่พบห้องพัก", 'error')
+        conn.close()
+        return redirect(url_for('home'))
+
+    dorm_id = room['dorm_id']
+    dorm = conn.execute('SELECT * FROM dorms WHERE id = ? AND owner_id = ?', (dorm_id, session.get('user_id'))).fetchone()
+    conn.close()
+    
+    if dorm is None:
+        flash("คุณไม่มีสิทธิ์เข้าถึงห้องพักนี้", 'error')
+        return redirect(url_for('home'))
+        
+    return render_template('room_details.html', room=room)
+
+@app.route('/edit_room/<int:room_id>', methods=['GET', 'POST'])
+def edit_room(room_id):
+    if 'username' not in session or session.get('user_type') != 'owner':
+        return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    room = conn.execute('SELECT * FROM rooms WHERE id = ?', (room_id,)).fetchone()
+    
+    if room is None:
+        flash("ไม่พบห้องพัก", 'error')
+        conn.close()
+        return redirect(url_for('home'))
+
+    dorm_id = room['dorm_id']
+    dorm = conn.execute('SELECT * FROM dorms WHERE id = ? AND owner_id = ?', (dorm_id, session.get('user_id'))).fetchone()
+    
+    if dorm is None:
+        flash("คุณไม่มีสิทธิ์แก้ไขห้องพักนี้", 'error')
+        conn.close()
+        return redirect(url_for('home'))
+
+    if request.method == 'POST':
+        try:
+            room_type = request.form['room_type']
+            price = float(request.form['price'])
+            room_count = int(request.form['room_count'])
+            images = json.dumps(request.form.getlist('images'))
+        except (ValueError, KeyError):
+            flash("ข้อมูลไม่ถูกต้อง", 'error')
+            return redirect(url_for('edit_room', room_id=room_id))
+        
+        try:
+            conn.execute('''
+                UPDATE rooms
+                SET room_type = ?, price = ?, room_count = ?, images = ?
+                WHERE id = ?
+            ''', (room_type, price, room_count, images, room_id))
+            conn.commit()
+            flash('แก้ไขห้องพักเรียบร้อยแล้ว!', 'success')
+        except Exception as e:
+            conn.rollback()
+            flash(f'เกิดข้อผิดพลาดในการแก้ไขห้องพัก: {e}', 'error')
+        finally:
+            conn.close()
+            
+        return redirect(url_for('dorm_details', dorm_id=dorm_id))
+
+    conn.close()
+    return render_template('edit_room.html', room=room)
+
+
+@app.route('/delete_room/<int:room_id>', methods=['POST'])
+def delete_room(room_id):
+    if 'username' not in session or session.get('user_type') != 'owner':
+        return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    room = conn.execute('SELECT * FROM rooms WHERE id = ?', (room_id,)).fetchone()
+    
+    if room is None:
+        flash("ไม่พบห้องพัก", 'error')
+        conn.close()
+        return redirect(url_for('home'))
+
+    dorm_id = room['dorm_id']
+    dorm = conn.execute('SELECT * FROM dorms WHERE id = ? AND owner_id = ?', (dorm_id, session.get('user_id'))).fetchone()
+    
+    if dorm is None:
+        flash("คุณไม่มีสิทธิ์ลบห้องพักนี้", 'error')
+        conn.close()
+        return redirect(url_for('home'))
+        
+    try:
+        conn.execute('DELETE FROM rooms WHERE id = ?', (room_id,))
+        conn.commit()
+        flash('ลบห้องพักเรียบร้อยแล้ว!', 'success')
+    except Exception as e:
+        conn.rollback()
+        flash(f'เกิดข้อผิดพลาดในการลบห้องพัก: {e}', 'error')
+    finally:
+        conn.close()
+        
+    return redirect(url_for('dorm_details', dorm_id=dorm_id))
 
 @app.route('/approve_dorm/<int:dorm_id>', methods=['POST'])
 def approve_dorm(dorm_id):
