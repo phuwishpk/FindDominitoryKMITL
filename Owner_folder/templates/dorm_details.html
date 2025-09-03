@@ -1,9 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>รายละเอียด {{ dorm.name }}</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% from 'macro.html' import from_json %}
+
+{% block title %}รายละเอียด {{ dorm.name }}{% endblock %}
+
+{% block content %}
     <h1>รายละเอียดหอพัก: {{ dorm.name }}</h1>
     <p><strong>ค่าน้ำ:</strong> {{ dorm.water_fee }} บาท</p>
     <p><strong>ค่าไฟ:</strong> {{ dorm.electricity_fee }} บาท</p>
@@ -67,5 +67,4 @@
     
     <a href="{{ url_for('home') }}">ย้อนกลับหน้าหลัก</a>
 
-</body>
-</html>
+{% endblock %}

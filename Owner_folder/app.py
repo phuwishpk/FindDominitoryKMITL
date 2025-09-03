@@ -190,7 +190,7 @@ def approve_dorm(dorm_id):
 if __name__ == '__main__':
     # เพิ่ม user ตัวอย่างสำหรับทดสอบ
     conn = get_db_connection()
-    conn.execute("INSERT OR IGNORE INTO users (id, username, password, user_type) VALUES (?, ?, ?, ?)", (1, 'owner1', 'password123', 'owner'))
+    conn.execute("INSERT OR IGNORE INTO users (id, username, password, user_type) VALUES (?, ?, ?, ?)", (1, 'admin', 'admin', 'owner'))
     conn.commit()
     conn.close()
     app.run(debug=True)

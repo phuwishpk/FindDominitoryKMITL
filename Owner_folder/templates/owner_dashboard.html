@@ -1,9 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>หน้าหลักเจ้าของหอ</title>
-</head>
-<body>
+{% extends 'base.html' %}
+
+{% block title %}หน้าหลักเจ้าของหอ{% endblock %}
+
+{% block content %}
     <h1>หน้าหลักของเจ้าของหอ</h1>
     <p>สวัสดี, {{ username }}</p>
 
@@ -39,7 +38,5 @@
         <p>คุณยังไม่มีหอพักในระบบ</p>
     {% endif %}
 
-    <a href="{{ url_for('login') }}">ออกจากระบบ</a>
-
-</body>
-</html>
+    <a href="{{ url_for('logout') }}">ออกจากระบบ</a>
+{% endblock %}

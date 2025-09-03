@@ -1,9 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>เพิ่มหอพักใหม่</title>
-</head>
-<body>
+{% extends 'base.html' %}
+
+{% block title %}เพิ่มหอพักใหม่{% endblock %}
+
+{% block content %}
     <h1>เพิ่มหอพักใหม่</h1>
     <form method="POST" action="{{ url_for('add_dorm') }}">
         <label for="dorm_name">ชื่อหอพัก:</label><br>
@@ -35,5 +34,4 @@
 
         <button type="submit">บันทึกหอพัก</button>
     </form>
-</body>
-</html>
+{% endblock %}
