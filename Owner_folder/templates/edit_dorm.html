@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>แก้ไขข้อมูลหอพัก</h2>
+    <form method="post" action="{{ url_for('edit_dorm', dorm_id=dorm.id) }}">
+        <div class="mb-3">
+            <label for="dorm_name" class="form-label">ชื่อหอพัก</label>
+            <input type="text" class="form-control" id="dorm_name" name="dorm_name" value="{{ dorm.name }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="water_fee" class="form-label">ค่าน้ำ (บาท/หน่วย)</label>
+            <input type="number" step="0.01" class="form-control" id="water_fee" name="water_fee" value="{{ dorm.water_fee }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="electricity_fee" class="form-label">ค่าไฟ (บาท/หน่วย)</label>
+            <input type="number" step="0.01" class="form-control" id="electricity_fee" name="electricity_fee" value="{{ dorm.electricity_fee }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="deposit" class="form-label">ค่ามัดจำ</label>
+            <input type="number" step="0.01" class="form-control" id="deposit" name="deposit" value="{{ dorm.deposit }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="contact_line" class="form-label">ติดต่อ (Line ID)</label>
+            <input type="text" class="form-control" id="contact_line" name="contact_line" value="{{ dorm.contact_line }}">
+        </div>
+        <div class="mb-3">
+            <label for="contact_phone" class="form-label">ติดต่อ (เบอร์โทรศัพท์)</label>
+            <input type="text" class="form-control" id="contact_phone" name="contact_phone" value="{{ dorm.contact_phone }}">
+        </div>
+        <div class="mb-3">
+            <label for="location_lat" class="form-label">ละติจูด (Latitude)</label>
+            <input type="text" class="form-control" id="location_lat" name="location_lat" value="{{ dorm.location_lat }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="location_long" class="form-label">ลองจิจูด (Longitude)</label>
+            <input type="text" class="form-control" id="location_long" name="location_long" value="{{ dorm.location_long }}" required>
+        </div>
+        <button type="submit" class="btn btn-primary">บันทึกการแก้ไข</button>
+        <a href="{{ url_for('home') }}" class="btn btn-secondary">ยกเลิก</a>
+    </form>
+</div>
+{% endblock %}

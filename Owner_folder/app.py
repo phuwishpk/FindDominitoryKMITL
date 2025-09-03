@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 import sqlite3
 import json
 import os
@@ -88,7 +88,7 @@ def login():
             session['user_type'] = user['user_type']
             return redirect(url_for('home'))
         else:
-            return "Invalid username or password"
+            flash('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 'error')
             
     return render_template('login.html')
 
@@ -106,18 +106,26 @@ def add_dorm():
             location_lat = float(request.form['location_lat'])
             location_long = float(request.form['location_long'])
         except (ValueError, KeyError):
-            return "Invalid data format for numeric fields.", 400
+            flash("ข้อมูลตัวเลขไม่ถูกต้อง", 'error')
+            return redirect(url_for('add_dorm'))
 
         contact_line = request.form['contact_line']
         contact_phone = request.form['contact_phone']
         
         conn = get_db_connection()
-        conn.execute('INSERT INTO dorms (owner_id, name, water_fee, electricity_fee, deposit, contact_line, contact_phone, location_lat, location_long) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                     (session.get('user_id'), name, water_fee, electricity_fee, deposit, contact_line, contact_phone, location_lat, location_long))
-        conn.commit()
-        conn.close()
+        try:
+            conn.execute('INSERT INTO dorms (owner_id, name, water_fee, electricity_fee, deposit, contact_line, contact_phone, location_lat, location_long) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                         (session.get('user_id'), name, water_fee, electricity_fee, deposit, contact_line, contact_phone, location_lat, location_long))
+            conn.commit()
+            flash('เพิ่มหอพักสำเร็จแล้ว!', 'success')
+        except Exception as e:
+            conn.rollback()
+            flash(f'เกิดข้อผิดพลาดในการเพิ่มหอพัก: {e}', 'error')
+        finally:
+            conn.close()
+            
         return redirect(url_for('home'))
-        
+    
     return render_template('add_dorm.html')
     
 @app.route('/dorm/<int:dorm_id>')
@@ -126,12 +134,13 @@ def dorm_details(dorm_id):
         return redirect(url_for('login'))
 
     conn = get_db_connection()
-    dorm = conn.execute('SELECT * FROM dorms WHERE id = ?', (dorm_id,)).fetchone()
+    dorm = conn.execute('SELECT * FROM dorms WHERE id = ? AND owner_id = ?', (dorm_id, session.get('user_id'))).fetchone()
     rooms = conn.execute('SELECT * FROM rooms WHERE dorm_id = ?', (dorm_id,)).fetchall()
     conn.close()
     
     if dorm is None:
-        return "Dorm not found", 404
+        flash("ไม่พบหอพัก หรือคุณไม่มีสิทธิ์เข้าถึงหน้านี้", 'error')
+        return redirect(url_for('home'))
         
     return render_template('dorm_details.html', dorm=dorm, rooms=rooms)
 
@@ -140,33 +149,113 @@ def add_room(dorm_id):
     if 'username' not in session or session.get('user_type') != 'owner':
         return redirect(url_for('login'))
         
+    conn = get_db_connection()
+    dorm = conn.execute('SELECT * FROM dorms WHERE id = ? AND owner_id = ?', (dorm_id, session.get('user_id'))).fetchone()
+    
+    if dorm is None:
+        flash("ไม่พบหอพัก หรือคุณไม่มีสิทธิ์เพิ่มห้องพัก", 'error')
+        conn.close()
+        return redirect(url_for('home'))
+
     room_type = request.form['room_type']
     try:
         price = float(request.form['price'])
         room_count = int(request.form['room_count'])
     except (ValueError, KeyError):
-        return "Invalid data format for numeric fields.", 400
+        flash("ข้อมูลตัวเลขสำหรับห้องพักไม่ถูกต้อง", 'error')
+        conn.close()
+        return redirect(url_for('dorm_details', dorm_id=dorm_id))
 
     images = request.form.getlist('images')
     
-    conn = get_db_connection()
-    conn.execute('INSERT INTO rooms (dorm_id, room_type, price, room_count, images) VALUES (?, ?, ?, ?, ?)',
-                 (dorm_id, room_type, price, room_count, json.dumps(images)))
-    conn.commit()
-    conn.close()
+    try:
+        conn.execute('INSERT INTO rooms (dorm_id, room_type, price, room_count, images) VALUES (?, ?, ?, ?, ?)',
+                     (dorm_id, room_type, price, room_count, json.dumps(images)))
+        conn.commit()
+        flash('เพิ่มห้องพักสำเร็จแล้ว!', 'success')
+    except Exception as e:
+        conn.rollback()
+        flash(f'เกิดข้อผิดพลาดในการเพิ่มห้องพัก: {e}', 'error')
+    finally:
+        conn.close()
     
     return redirect(url_for('dorm_details', dorm_id=dorm_id))
+
 @app.route('/edit_dorm/<int:dorm_id>', methods=['GET', 'POST'])
 def edit_dorm(dorm_id):
-    # โค้ดสำหรับแก้ไขข้อมูลหอพัก
-    # ณ ตอนนี้เป็นเพียงหน้า Placeholder
-    return f"This is the page to edit dorm with ID: {dorm_id}"
+    if 'username' not in session or session.get('user_type') != 'owner':
+        return redirect(url_for('login'))
+
+    user_id = session.get('user_id')
+    conn = get_db_connection()
+    dorm = conn.execute('SELECT * FROM dorms WHERE id = ? AND owner_id = ?', (dorm_id, user_id)).fetchone()
+
+    if dorm is None:
+        flash('ไม่พบหอพัก หรือคุณไม่มีสิทธิ์แก้ไขหอพักนี้', 'error')
+        conn.close()
+        return redirect(url_for('home'))
+
+    if request.method == 'POST':
+        try:
+            name = request.form['dorm_name']
+            water_fee = float(request.form['water_fee'])
+            electricity_fee = float(request.form['electricity_fee'])
+            deposit = float(request.form['deposit'])
+            contact_line = request.form['contact_line']
+            contact_phone = request.form['contact_phone']
+            location_lat = float(request.form['location_lat'])
+            location_long = float(request.form['location_long'])
+        except (ValueError, KeyError) as e:
+            flash(f'ข้อมูลไม่ถูกต้อง: {e}', 'error')
+            conn.close()
+            return redirect(url_for('edit_dorm', dorm_id=dorm_id))
+
+        try:
+            conn.execute('''
+                UPDATE dorms
+                SET name = ?, water_fee = ?, electricity_fee = ?, deposit = ?,
+                contact_line = ?, contact_phone = ?, location_lat = ?, location_long = ?
+                WHERE id = ? AND owner_id = ?
+            ''', (name, water_fee, electricity_fee, deposit, contact_line, contact_phone, location_lat, location_long, dorm_id, user_id))
+            conn.commit()
+            flash('แก้ไขข้อมูลหอพักเรียบร้อยแล้ว!', 'success')
+        except Exception as e:
+            conn.rollback()
+            flash(f'เกิดข้อผิดพลาดในการอัปเดตข้อมูล: {e}', 'error')
+        finally:
+            conn.close()
+        
+        return redirect(url_for('home'))
+        
+    conn.close()
+    return render_template('edit_dorm.html', dorm=dorm)
 
 @app.route('/delete_dorm/<int:dorm_id>', methods=['POST'])
 def delete_dorm(dorm_id):
-    # โค้ดสำหรับลบหอพัก
-    # ณ ตอนนี้เป็นเพียงหน้า Placeholder
-    return f"This is the endpoint to delete dorm with ID: {dorm_id}"
+    if 'username' not in session or session.get('user_type') != 'owner':
+        return redirect(url_for('login'))
+
+    user_id = session.get('user_id')
+    conn = get_db_connection()
+    dorm = conn.execute('SELECT * FROM dorms WHERE id = ? AND owner_id = ?', (dorm_id, user_id)).fetchone()
+    
+    if dorm is None:
+        flash('ไม่พบหอพัก หรือคุณไม่มีสิทธิ์ลบหอพักนี้', 'error')
+        conn.close()
+        return redirect(url_for('home'))
+
+    try:
+        conn.execute('DELETE FROM rooms WHERE dorm_id = ?', (dorm_id,))
+        conn.execute('DELETE FROM dorms WHERE id = ?', (dorm_id,))
+        conn.commit()
+        flash('ลบหอพักเรียบร้อยแล้ว!', 'success')
+    except Exception as e:
+        conn.rollback()
+        flash(f'เกิดข้อผิดพลาดในการลบหอพัก: {e}', 'error')
+    finally:
+        conn.close()
+
+    return redirect(url_for('home'))
 
 @app.route('/approve_dorm/<int:dorm_id>', methods=['POST'])
 def approve_dorm(dorm_id):
@@ -176,9 +265,9 @@ def approve_dorm(dorm_id):
     conn = get_db_connection()
     dorm = conn.execute('SELECT * FROM dorms WHERE id = ?', (dorm_id,)).fetchone()
     rooms = conn.execute('SELECT * FROM rooms WHERE dorm_id = ?', (dorm_id,)).fetchall()
-    conn.close()
     
     if dorm is None:
+        conn.close()
         return jsonify({"status": "error", "message": "Dorm not found"}), 404
 
     payload = {
@@ -188,18 +277,24 @@ def approve_dorm(dorm_id):
     
     print("Sending data to Admin API for approval:", payload)
     
-    conn = get_db_connection()
-    conn.execute('UPDATE dorms SET is_approved = 2 WHERE id = ?', (dorm_id,))
-    conn.commit()
-    conn.close()
+    try:
+        conn.execute('UPDATE dorms SET is_approved = 2 WHERE id = ?', (dorm_id,))
+        conn.commit()
+        flash('ส่งข้อมูลหอพักเพื่อขออนุมัติเรียบร้อยแล้ว!', 'success')
+    except Exception as e:
+        conn.rollback()
+        flash(f'เกิดข้อผิดพลาดในการส่งข้อมูลเพื่ออนุมัติ: {e}', 'error')
+    finally:
+        conn.close()
 
-    return jsonify({"status": "success", "message": "Dorm submitted for approval"})
+    return redirect(url_for('home'))
 
 @app.route('/logout')
 def logout():
     session.pop('username', None)
     session.pop('user_id', None)
     session.pop('user_type', None)
+    flash('คุณออกจากระบบเรียบร้อยแล้ว', 'success')
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
