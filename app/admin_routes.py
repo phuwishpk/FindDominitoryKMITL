@@ -32,5 +32,3 @@ def add_dorm():
         
     return render_template('owner/add_dorm.html')
 
-# ... (ย้าย Route อื่นๆ ของ Owner เช่น dorm_details, add_room, approve_dorm มาที่นี่)
-# ... และเปลี่ยน url_for ทั้งหมดให้มี prefix 'owner.' เช่น url_for('owner.dorm_details', ...)
