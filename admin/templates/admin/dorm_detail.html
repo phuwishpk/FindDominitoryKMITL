@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <title>Admin: Dorm Details</title>
+  <link rel="stylesheet" href="{{ url_for('admin.static', filename='admin.css') }}">
+</head>
+<body>
+  <h1>หอพัก: {{ dorm.name }} (ID: {{ dorm.id }})</h1>
+  <p><a href="{{ url_for('admin.dashboard') }}">&larr; กลับ</a> | <a href="{{ url_for('admin.logout') }}">Logout</a></p>
+
+  <ul>
+    <li>น้ำ: {{ dorm.water_fee }}</li>
+    <li>ไฟฟ้า: {{ dorm.electricity_fee }}</li>
+    <li>มัดจำ: {{ dorm.deposit }}</li>
+    <li>LINE: {{ dorm.contact_line }}</li>
+    <li>โทร: {{ dorm.contact_phone }}</li>
+    <li>พิกัด: {{ dorm.location_lat }}, {{ dorm.location_long }}</li>
+    <li>สถานะ: {% if dorm.is_approved==2 %}Pending{% elif dorm.is_approved==1 %}Approved{% else %}Rejected{% endif %}</li>
+    {% if dorm.rejection_reason %}<li>เหตุผลปฏิเสธ: {{ dorm.rejection_reason }}</li>{% endif %}
+  </ul>
+
+  <h3>ห้อง</h3>
+  {% if rooms|length == 0 %}
+    <p>ยังไม่มีห้อง</p>
+  {% else %}
+    <table border="1" cellpadding="6">
+      <tr><th>ID</th><th>Type</th><th>Price</th><th>Count</th><th>Images(JSON)</th></tr>
+      {% for r in rooms %}
+      <tr>
+        <td>{{ r.id }}</td>
+        <td>{{ r.room_type }}</td>
+        <td>{{ r.price }}</td>
+        <td>{{ r.room_count }}</td>
+        <td>{{ r.images }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('admin.approve_dorm', dorm_id=dorm.id) }}" style="display:inline-block;margin-right:8px;">
+    <button type="submit">อนุมัติ</button>
+  </form>
+  <form method="post" action="{{ url_for('admin.reject_dorm', dorm_id=dorm.id) }}" style="display:inline-block;">
+    <input name="rejection_reason" placeholder="เหตุผลปฏิเสธ (ถ้ามี)">
+    <button type="submit">ปฏิเสธ</button>
+  </form>
+</body>
+</html>
