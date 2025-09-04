@@ -1,0 +1,136 @@
+{% extends "user/base.html" %}
+{% block title %}{{ dorm.name }} - Detail{% endblock %}
+
+{% block content %}
+<section class="py-4">
+  <div class="container">
+
+    <a class="btn btn-link px-0 mb-2" href="{{ url_for('user.user_home') }}">
+      &larr; Back to list
+    </a>
+
+    <h1 class="h3 mb-3">{{ dorm.name }}</h1>
+    <p class="text-muted mb-4">Bang Poo • Samut Prakan</p>
+
+    <div class="row g-4">
+      <!-- Left: gallery + detail + rooms -->
+      <div class="col-lg-8">
+        <!-- Gallery -->
+        <div class="card shadow-sm">
+          <div class="card-body">
+            {% if gallery %}
+              <div id="gallery" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                  {% for g in gallery %}
+                    <div class="carousel-item {% if loop.first %}active{% endif %}">
+                      <img src="{{ g }}" class="d-block w-100 object-fit-cover" style="height:360px" alt="photo">
+                    </div>
+                  {% endfor %}
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#gallery" data-bs-slide="prev">
+                  <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                  <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#gallery" data-bs-slide="next">
+                  <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                  <span class="visually-hidden">Next</span>
+                </button>
+              </div>
+            {% else %}
+              <div class="text-center text-muted py-5">No photos</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Detail -->
+        <div class="card shadow-sm mt-3">
+          <div class="card-header bg-white"><strong>Detail</strong></div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <ul class="list-unstyled mb-0">
+                  <li>Deposit: {{ '{:,.0f}'.format(dorm.deposit or 0) }} THB</li>
+                  <li>Electric price: {{ dorm.electricity_fee or '-' }} THB/unit</li>
+                  <li>Water price: {{ dorm.water_fee or '-' }} THB/unit</li>
+                </ul>
+              </div>
+              <div class="col-md-6">
+                <ul class="list-unstyled mb-0">
+                  <li>LINE: {{ dorm.contact_line or '-' }}</li>
+                  <li>Phone: {{ dorm.contact_phone or '-' }}</li>
+                  <li>Location: {{ dorm.location_lat }}, {{ dorm.location_long }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rooms -->
+        <div class="card shadow-sm mt-3">
+          <div class="card-header bg-white"><strong>Room Type</strong></div>
+          <div class="card-body p-0">
+            {% if rooms|length == 0 %}
+              <div class="p-3 text-muted">No rooms.</div>
+            {% else %}
+              <div class="table-responsive">
+                <table class="table table-striped mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>#</th>
+                      <th>Type</th>
+                      <th class="text-end">Monthly</th>
+                      <th>Images (JSON)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  {% for r in rooms %}
+                    <tr>
+                      <td>{{ r.id }}</td>
+                      <td>{{ r.room_type }}</td>
+                      <td class="text-end">{{ '{:,.0f}'.format(r.price or 0) }} THB</td>
+                      <td class="text-truncate" style="max-width:260px">{{ r.images }}</td>
+                    </tr>
+                  {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: price box / contact -->
+      <div class="col-lg-4">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">rental rent :</div>
+            <div class="fs-4 fw-bold">
+              {% set prices = rooms|map(attribute='price')|list %}
+              {% set minp = (prices|length and (prices|min)) or None %}
+              {% set maxp = (prices|length and (prices|max)) or None %}
+              {% if minp and maxp %}
+                {{ '{:,.0f}'.format(minp) }} - {{ '{:,.0f}'.format(maxp) }} THB/month
+              {% elif minp %}
+                From {{ '{:,.0f}'.format(minp) }} THB/month
+              {% else %}
+                Contact
+              {% endif %}
+            </div>
+
+            <hr>
+            <div class="d-grid gap-2">
+              {% if dorm.contact_phone %}
+                <a class="btn btn-outline-success" href="tel:{{ dorm.contact_phone }}">📞 {{ dorm.contact_phone }}</a>
+              {% endif %}
+              {% if dorm.contact_line %}
+                <a class="btn btn-success" href="https://line.me/R/ti/p/{{ dorm.contact_line }}" target="_blank">LINE: {{ dorm.contact_line }}</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
