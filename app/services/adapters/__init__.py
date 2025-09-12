@@ -1,1 +1,0 @@
-# Adapter namespace (storage, maps, etc.)
