@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="h4">ตรวจรายการ</h1>
+<form method="post" action="/admin/property/{{ prop.id }}/approve">
+    <button class="btn btn-success">อนุมัติ</button>
+</form>
+<form class="mt-2" method="post" action="/admin/property/{{ prop.id }}/reject">
+    <input class="form-control mb-2" name="reason" placeholder="เหตุผล">
+    <button class="btn btn-danger">ปฏิเสธ</button>
+</form>
+{% endblock %}

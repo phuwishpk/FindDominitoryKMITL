@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="h4">ฟอร์มหอพัก</h1>
+
+<form method="post">{{ form.csrf_token }}
+  <div class="mb-2">{{ form.dorm_name(class_='form-control', placeholder='ชื่อหอ') }}</div>
+  <div class="mb-2">{{ form.room_type(class_='form-control', placeholder='ประเภทห้อง') }}</div>
+  <div class="row g-2">
+    <div class="col-md-4">{{ form.rent_price(class_='form-control', placeholder='ค่าเช่า') }}</div>
+    <div class="col-md-4">{{ form.water_rate(class_='form-control', placeholder='ค่าน้ำ') }}</div>
+    <div class="col-md-4">{{ form.electric_rate(class_='form-control', placeholder='ค่าไฟ') }}</div>
+  </div>
+  <div class="row g-2 mt-2">
+    <div class="col-md-6">{{ form.deposit_amount(class_='form-control', placeholder='เงินประกัน') }}</div>
+    <div class="col-md-3">{{ form.lat(class_='form-control', placeholder='ละติจูด') }}</div>
+    <div class="col-md-3">{{ form.lng(class_='form-control', placeholder='ลองจิจูด') }}</div>
+  </div>
+  <div class="row g-2 mt-2">
+    <div class="col-md-4">{{ form.contact_phone(class_='form-control', placeholder='เบอร์โทร') }}</div>
+    <div class="col-md-4">{{ form.line_id(class_='form-control', placeholder='LINE ID') }}</div>
+    <div class="col-md-4">{{ form.facebook_url(class_='form-control', placeholder='Facebook URL') }}</div>
+  </div>
+  <button class="btn btn-success mt-3" name="save_property">บันทึก</button>
+</form>
+
+<hr class="my-4">
+<h2 class="h5">รูปภาพ</h2>
+
+<form class="mb-3" method="post" action="/owner/property/{{ prop.id }}/image" enctype="multipart/form-data">
+  {{ upload_form.csrf_token }}
+  <div class="input-group">
+    {{ upload_form.image(class_='form-control', accept='image/*') }}
+    <button class="btn btn-outline-primary">อัปโหลดรูป</button>
+  </div>
+</form>
+
+<form id="reorder-form" method="post" action="/owner/property/{{ prop.id }}/images/reorder">
+  {{ reorder_form.csrf_token }}
+  <div id="gallery" class="row row-cols-2 row-cols-md-3 g-3" data-prop="{{ prop.id }}">
+    {% for img in prop.images|sort(attribute='position') %}
+    <div class="col">
+      <div class="card" draggable="true" data-image-id="{{ img.id }}">
+        <img src="/{{ img.file_path }}" class="card-img-top" alt="#{{ img.id }}">
+        <div class="card-body p-2 d-flex justify-content-between align-items-center">
+          <span class="badge text-bg-light">pos {{ img.position }}</span>
+          <form method="post" action="/owner/property/{{ prop.id }}/image/{{ img.id }}/delete">
+            {{ reorder_form.csrf_token }}
+            <button class="btn btn-sm btn-outline-danger">ลบ</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="col"><div class="alert alert-secondary w-100">ยังไม่มีรูป</div></div>
+    {% endfor %}
+  </div>
+  <div id="positions-container"></div>
+  <button class="btn btn-outline-secondary mt-3">บันทึกการจัดเรียง</button>
+</form>
+
+<script>
+const gallery = document.getElementById('gallery');
+let dragEl = null;
+
+gallery.addEventListener('dragstart', (e) => {
+  const card = e.target.closest('[draggable="true"]');
+  if (!card) return;
+  dragEl = card;
+  e.dataTransfer.effectAllowed = 'move';
+});
+gallery.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  const card = e.target.closest('[draggable="true"]');
+  if (!card || card === dragEl) return;
+  const rect = card.getBoundingClientRect();
+  const next = (e.clientY - rect.top) / rect.height > 0.5;
+  gallery.insertBefore(dragEl.parentElement, next ? card.parentElement.nextSibling : card.parentElement);
+});
+gallery.addEventListener('dragend', () => { dragEl = null; });
+
+document.getElementById('reorder-form').addEventListener('submit', (e) => {
+  const container = document.getElementById('positions-container');
+  container.innerHTML = '';
+  let pos = 1;
+  gallery.querySelectorAll('[draggable="true"]').forEach(card => {
+    const id = card.getAttribute('data-image-id');
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'positions-' + (pos-1);  // WTForms FieldList
+    input.value = id + ':' + pos;
+    container.appendChild(input);
+    pos += 1;
+  });
+});
+</script>
+{% endblock %}

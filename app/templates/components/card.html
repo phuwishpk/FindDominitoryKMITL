@@ -1,0 +1,8 @@
+<div class="card h-100">
+    <img src="{{ item.cover or url_for('static', filename='img/placeholder.png') }}" class="card-img-top" alt="...">
+    <div class="card-body">
+        <h5 class="card-title">{{ item.dorm_name }}</h5>
+        <p class="card-text">ราคา: {{ item.price or '—' }} | สถานะ: {{ item.availability }}</p>
+        <a class="btn btn-sm btn-primary" href="/property/{{ item.id }}">ดูรายละเอียด</a>
+    </div>
+</div>

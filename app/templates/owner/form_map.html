@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="h5">ปักหมุดตำแหน่ง</h1>
+<div id="picker" style="height:320px" class="border"></div>
+<script src="{{ google_maps_script_tag() }}"></script>
+<script>
+// TODO: map picker writes lat/lng to hidden inputs
+</script>
+{% endblock %}
