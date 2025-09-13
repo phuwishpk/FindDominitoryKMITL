@@ -1,0 +1,2 @@
+class SqlApprovalRepo:
+    pass
