@@ -26,7 +26,7 @@
 
 ## Folder Structure + ผู้รับผิดชอบ + ฟังก์ชันที่ “ต้องเขียน”
 
-''''
+```bash
 
 FindDormitoryKMITL/
 ├─ run.py — (A2) บูตแอป/entrypoint (ไม่ต้องแก้เยอะ)
@@ -161,7 +161,7 @@ FindDormitoryKMITL/
 ├─ admin/ (A1) — queue.html (+ approve/reject views)
 └─ auth/ (A2) — login.html, owner_register.html
 
-''''
+```
 
 ### สรุป “อย่างน้อย 1 ฟังก์ชัน/คน” (Checklist)
 
