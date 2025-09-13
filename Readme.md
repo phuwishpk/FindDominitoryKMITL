@@ -1,4 +1,4 @@
-# FindDormitoryKMITL — ระบบค้นหา/ประกาศหอพัก (Markdown Spec)
+# FindDormitoryKMITL — ระบบค้นหา/ประกาศหอพัก 
 
 > ระบบตัวอย่างสำหรับค้นหาและประกาศหอพัก โดยแยกบทบาท **User / Owner / Admin** พัฒนาด้วย **Flask + SQLAlchemy + WTForms + Flask-Login + Bootstrap** พร้อมสถาปัตยกรรมแบบแยกชั้น (Layers) ชัดเจน
 
