@@ -1,4 +1,75 @@
-# FindDormitoryKMITL — README
+# FindDormitoryKMITL — ระบบค้นหา/ประกาศหอพัก (Markdown Spec)
+
+> ระบบตัวอย่างสำหรับค้นหาและประกาศหอพัก โดยแยกบทบาท **User / Owner / Admin** พัฒนาด้วย **Flask + SQLAlchemy + WTForms + Flask-Login + Bootstrap** พร้อมสถาปัตยกรรมแบบแยกชั้น (Layers) ชัดเจน
+
+---
+
+## ภาพรวมระบบ
+**FindDormitoryKMITL** เป็นระบบค้นหา/ประกาศหอพัก โดยแยกบทบาทผู้ใช้งานเป็น 3 กลุ่ม:
+- **User**: เข้าดูประกาศที่ผ่านการอนุมัติ (approved) พร้อมฟิลเตอร์ค้นหา
+- **Owner**: สมัคร/ล็อกอิน สร้าง/แก้ไขประกาศ อัปโหลด/ลบ/ลากเรียงรูป (สูงสุด 6)
+- **Admin**: ล็อกอิน จัดการคิวอนุมัติ (สามารถต่อยอด workflow และ audit log)
+
+---
+
+## บทบาทและคุณสมบัติหลัก
+### User
+- หน้าแสดงรายการประกาศที่มีสถานะ **approved**
+- ฟิลเตอร์หลัก: ค้นหาข้อความ, ราคา, ประเภทห้อง, สิ่งอำนวยความสะดวก (amenities), สถานะห้อง (availability), ใกล้พิกัด (near/radius), เรียงลำดับ (sort)
+
+### Owner
+- สมัคร/ล็อกอินด้วย **อีเมล + รหัสผ่าน** (รองรับ remember me)
+- จัดการประกาศ: ชื่อหอ, ประเภทห้อง, ช่องทางติดต่อ, ค่าใช้จ่าย, พิกัด, ลิงก์, สถานะห้อง
+- แกลเลอรีรูป: อัปโหลด/ลบ/ลากเรียง (สูงสุด 6 รูป, ประเภท jpg/jpeg/png/webp, ขนาด ≤ 3MB/รูป)
+
+### Admin (เริ่มต้น/ต่อยอด)
+- ล็อกอินด้วย **username + รหัสผ่าน**
+- จัดการคิวอนุมัติ, เปลี่ยน workflow, บันทึก AuditLog (วางโครงไว้สำหรับต่อยอด)
+
+---
+
+## สแตก/ไลบรารีที่ใช้
+- **Flask 3.x**, **Werkzeug 3.x**
+- **Flask-SQLAlchemy** + **SQLAlchemy 2.x**
+- **Flask-Migrate (Alembic)**
+- **Flask-WTF + WTForms**
+- **Flask-Login**
+- **Flask-Babel** (ตั้งค่า locale/timezone)
+- **Flask-Limiter** (กัน brute force ในอนาคต)
+- **Bootstrap 5 (CDN)**
+
+---
+
+## หน้าเริ่มต้นและ Navbar
+- หน้าเริ่มต้น: **User** (รายการประกาศที่อนุมัติแล้ว)
+- **Navbar**: ปุ่ม **Login** → ไปหน้า Login รวม (เลือก Owner/Admin)
+
+---
+
+## Authentication
+- **Owner**: สมัคร/ล็อกอิน (อีเมล + รหัสผ่าน)
+- **Admin**: ล็อกอิน (username + รหัสผ่าน)
+- รองรับ **“จำการเข้าสู่ระบบ” (remember me)**
+
+---
+
+## Validation
+- ตรวจ **บัตรประชาชนไทย 13 หลัก** (checksum)
+- ตรวจไฟล์ **PDF** สำหรับเอกสารแจ้งมีผู้เข้าพัก (นามสกุล `.pdf`, ขนาด ≤ 10MB)
+- ตรวจไฟล์ **รูปภาพ** (นามสกุลที่อนุญาต: jpg/jpeg/png/webp + ขนาด ≤ 3MB/รูป)
+
+---
+
+## ภาพรวมสถาปัตยกรรม
+แนวคิดแยกชั้น (Layers):
+- **Presentation**: Flask Blueprints + Templates (หน้าเว็บ, ฟอร์ม, routing)
+- **Services**: ธุรกิจ/กฎเกณฑ์ (login, ค้นหา, อัปโหลด ฯลฯ)
+- **Repositories**: Data Access ด้วย SQLAlchemy
+- **Models (ORM)**: โครงสร้างตาราง/ความสัมพันธ์
+- **Utils (Helper/Validation)**: ฟังก์ชันช่วยเหลือ (ตรวจบัตรประชาชน, ตรวจไฟล์)
+- **Extensions/Config**: ตัวเชื่อม framework และ config รวมถึง DI container
+
+---
 
 ระบบค้นหา/ประกาศหอพัก แยกบทบาท **User / Owner / Admin**  
 เทคโนโลยี: **Flask**, **SQLAlchemy**, **Flask-Migrate**, **WTForms**, **Flask-Login**, **Bootstrap**
