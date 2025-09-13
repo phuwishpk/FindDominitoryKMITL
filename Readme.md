@@ -210,8 +210,8 @@ flask --app run.py db upgrade
 flask --app run.py seed_amenities
 flask --app run.py seed_sample
 
-# รันเว็บ
-python run.py
+# รันเว็บ (ทำการrunเเค่นี้ก็พอ)
+python run.py 
 # เปิด http://127.0.0.1:5000/
 บัญชีทดสอบ
 
@@ -246,56 +246,203 @@ IndentationError → ตรวจไฟล์เยื้องบรรทั�
 
 # การเเบ่งงาน
 
-U1 (หนัก)
+มาตรฐาน:
+- **ฟังก์ชัน**: `snake_case`, verb-first, สื่อความชัดเจน
+- **Branch**: `feat|fix|refactor|chore/<area>-<scope>-<owner>` (เช่น `feat/user-search-u1`)
 
-SearchService.search()
+---
 
-SqlPropertyRepo.list_approved()
+## U1 (หนัก) — User Search/List
 
-public.routes.index()
+**ไฟล์ & ฟังก์ชัน**
+- `app/services/search_service.py`
+  - `search_properties(filters: dict, page: int = 1, per_page: int = 12) -> dict`  
+    _อธิบาย_: รวมตรรกะค้นหา: แปลง query string → filters ที่ repo รองรับ, เรียก repo, จัดหน้า (pagination), คืน `{items, total, page, per_page, pages}`
 
-U2
+- `app/repositories/sqlalchemy/property_repo_sql.py`
+  - `list_approved_with_filters(**filters)`  
+    _อธิบาย_: คืน SQLAlchemy Query ของประกาศที่ `workflow_status='approved'` พร้อมฟิลเตอร์ `q`, `price_min/max`, `room_type`, `availability`, `amenities AND`, `ordering` (ถ้ามี) — ไม่ execute เพื่อให้ service คุม paginate เอง
 
-utils.validation.is_valid_citizen_id() (หรือ Map helper แปะ Google Maps ใน detail)
+- `app/blueprints/public/routes.py`
+  - `index()`  
+    _อธิบาย_: รับ query-string จากผู้ใช้ (เช่น `?q=&min=&max=&amenities=...`), ส่งต่อให้ `search_properties`, render `templates/public/index.html`
+  - `property_detail(prop_id: int)`  
+    _อธิบาย_: ดึงประกาศ 1 รายการ (approved เท่านั้น) พร้อมรูป/amenities, render หน้า detail
 
-U3
+**Branch**
+- `feat/user-search-u1`
+- *(ย่อย)* `feat/user-filters-u1`, `feat/user-pagination-u1`
 
-api.routes.api_health()
+---
 
-ปรับ templates/base.html + pagination partial (ถ้าทำเป็นฟังก์ชัน Jinja filter ก็ได้)
+## U2 — User Map/Detail & Validation
 
-O1 (หนัก)
+**ไฟล์ & ฟังก์ชัน**
+- `app/utils/validation.py`
+  - `is_valid_citizen_id(cid: str) -> bool`  
+    _อธิบาย_: ตรวจรูปแบบและคำนวณ checksum 13 หลักสำหรับเลขบัตร ป้องกันสมัครด้วยเลขผิด
+- *(ตัวเลือก Map helper สำหรับหน้า detail)*
+  - `app/blueprints/public/helpers.py`
+    - `build_gmap_embed(lat: float, lng: float, place_id: str | None = None) -> str`  
+      _อธิบาย_: สร้าง URL/HTML embed ของ Google Maps จากพิกัด (หรือ place_id) ให้ template ฝังง่าย
 
-PropertyService.create() / update()
+**Branch**
+- `feat/user-detail-map-u2`
+- *(ย่อย)* `feat/utils-validation-u2`
 
-owner.routes (upload/delete/reorder endpoints)
+---
 
-UploadService.save_image()
+## U3 — User UI/Base/API Health
 
-O2
+**ไฟล์ & ฟังก์ชัน**
+- `app/blueprints/api/routes.py`
+  - `api_health()`  
+    _อธิบาย_: Endpoint สุขภาพระบบ: คืน JSON เช่น `{"status":"ok","version":...}` เพื่อตรวจ uptime/health check
 
-forms.owner.PropertyForm.validate_room_type()
+- `app/templates/base.html`  
+  _อธิบาย_: วาง Navbar, Flash messages, Footer, slot ของ pagination/filters ให้ทุกหน้าใช้ร่วมกัน
 
-policies.property_policy.can_upload_more()
+- *(ตัวเลือก Jinja helpers — ถ้าทำ)*
+  - `app/blueprints/public/jinja_filters.py`
+    - `register_jinja_filters(app)`  
+      _อธิบาย_: ลงทะเบียนฟิลเตอร์ Jinja ทั้งหมดสำหรับส่วน Public
+    - `format_price(value)`  
+      _อธิบาย_: แสดงราคาพร้อมคอมมา/หน่วย
+    - `paginate_links(pagination)`  
+      _อธิบาย_: สร้างลิงก์หน้า ก่อน/ถัดไป จากอ็อบเจ็กต์ pagination
 
-(เสริม) บันทึก amenities many-to-many ใน owner.routes.edit_property
+**Branch**
+- `feat/user-ui-base-u3`
+- *(ย่อย)* `feat/user-pagination-u3`, `feat/api-health-u3`
 
-A1 (หนัก)
+---
 
-ApprovalService.approve()/reject()/get_logs()
+## O1 (หนัก) — Owner CRUD + Gallery
 
-admin.routes.approve()/reject()/logs()
+**ไฟล์ & ฟังก์ชัน**
+- `app/services/property_service.py`
+  - `create_property(owner_id: int, data: dict) -> Property`  
+    _อธิบาย_: ตรวจสิทธิ์/นโยบายเบื้องต้น สร้าง Property ใหม่, บันทึกฐานข้อมูล, คืนอ็อบเจ็กต์
+  - `update_property(owner_id: int, prop_id: int, data: dict) -> Property | None`  
+    _อธิบาย_: ตรวจว่าเป็นเจ้าของตัวจริงและยังแก้ไขได้, อัปเดตฟิลด์ที่อนุญาต, save
 
-models.approval.AuditLog.log()
+- `app/services/upload_service.py`
+  - `save_property_image(owner_id: int, file_storage) -> str`  
+    _อธิบาย_: ตรวจชนิด/ขนาดไฟล์รูป, ตั้งชื่อไฟล์ปลอดภัย, บันทึกลง `uploads/<owner_id>/images/`, คืน relative path
 
-A2
+- `app/blueprints/owner/routes.py`
+  - `dashboard()`  
+    _อธิบาย_: แสดงรายการประกาศของ owner คนปัจจุบัน + สถิติสั้น ๆ
+  - `new_property()`  
+    _อธิบาย_: แสดง/รับฟอร์มสร้าง, ใช้ `PropertyService.create_property`
+  - `edit_property(prop_id: int)`  
+    _อธิบาย_: แก้ไขข้อมูลประกาศ + ส่วนจัดการรูป/amenities
+  - `upload_property_image(prop_id: int)`  
+    _อธิบาย_: อัปโหลดรูป (ตรวจ quota ≤ 6 รูป), เพิ่ม `PropertyImage` ใหม่, รีเทิร์น JSON/redirect
+  - `delete_property_image(prop_id: int, image_id: int)`  
+    _อธิบาย_: ลบรูป (ฐานข้อมูล + ไฟล์จริง), reindex `position`
+  - `reorder_property_images(prop_id: int)`  
+    _อธิบาย_: รับลำดับใหม่ (เช่น list ของ image_id), อัปเดต `position` ตาม drag & drop
 
-AuthService.register_owner()/verify_owner()/verify_admin()/login_owner()/login_admin()/logout()
+**Branch**
+- `feat/owner-crud-gallery-o1`
+- *(ย่อย)* `feat/owner-upload-image-o1`, `feat/owner-reorder-images-o1`
 
-extensions.load_user() + decorators
+---
 
-auth.routes.login()/owner_register()/logout()
+## O2 — Owner Form & Amenities
 
-__init__.py: register_dependencies() + CLI seed
+**ไฟล์ & ฟังก์ชัน**
+- `app/forms/owner.py`
+  - `PropertyForm.validate_room_type(self, field)`  
+    _อธิบาย_: ตรวจว่า room_type อยู่ในชุดที่อนุญาต (เช่น `studio`, `1br`, …) ป้องกันค่าแปลก
 
-คน “หนัก” ทำ ≥3 ฟังก์ชัน; คนทั่วไปทำ ≥1 ฟังก์ชัน (แนะนำ 2)
+- `app/services/policies/property_policy.py`
+  - `can_upload_more(current_count: int) -> bool`  
+    _อธิบาย_: นโยบายจำกัดจำนวนรูป/ประกาศ (เช่น สูงสุด 6), ใช้ใน upload endpoint
+
+- *(เสริม M2M amenities)*
+  - `app/services/property_service.py`
+    - `update_property_amenities(prop: Property, amenity_codes: list[str]) -> None`  
+      _อธิบาย_: map ชุดโค้ด → เอนทิตี Amenity, sync ตารางเชื่อม `property_amenities` (add/remove ให้ตรง)
+
+**Branch**
+- `feat/owner-form-amenities-o2`
+- *(ย่อย)* `feat/owner-policy-upload-limit-o2`
+
+---
+
+## A1 (หนัก) — Admin Approval Workflow
+
+**ไฟล์ & ฟังก์ชัน**
+- `app/services/approval_service.py`
+  - `submit_property(property_id: int, owner_id: int) -> None`  
+    _อธิบาย_: Owner ส่งขออนุมัติ: สร้าง/อัปเดต `approval_requests`, ตั้ง `workflow_status='submitted'`
+  - `approve_property(admin_id: int, prop_id: int, note: str | None = None) -> None`  
+    _อธิบาย_: อนุมัติโดย admin: ตั้ง `workflow_status='approved'`, ปิดคำขอ, บันทึก `AuditLog`
+  - `reject_property(admin_id: int, prop_id: int, note: str | None = None) -> None`  
+    _อธิบาย_: ปฏิเสธ: ตั้ง `workflow_status='rejected'`, เหตุผลใน note, ล็อกกิจกรรม
+  - `get_audit_logs(page: int = 1, per_page: int = 20) -> dict`  
+    _อธิบาย_: ดึงบันทึกกิจกรรมแบบแบ่งหน้า เพื่อแสดงใน UI ผู้ดูแล
+
+- `app/blueprints/admin/routes.py`
+  - `queue()`  
+    _อธิบาย_: แสดงรายการ `submitted` รออนุมัติ
+  - `approve(prop_id: int)` / `reject(prop_id: int)`  
+    _อธิบาย_: เรียก service เปลี่ยนสถานะ พร้อมบันทึก note (ถ้ามี)
+  - `logs(page: int = 1)`  
+    _อธิบาย_: แสดง AuditLog แบบ paginate
+
+- `app/models/approval.py`
+  - `AuditLog.log(actor_type, actor_id, action, property_id=None, meta=None)`  
+    _อธิบาย_: method สร้างบันทึกกิจกรรมส่วนกลาง ใช้ซ้ำได้ทุกที่
+
+**Branch**
+- `feat/admin-approval-workflow-a1`
+- *(ย่อย)* `feat/admin-logs-a1`, `feat/admin-queue-a1`
+
+---
+
+## A2 — Auth/Security/DI/Seeds
+
+**ไฟล์ & ฟังก์ชัน**
+- `app/services/auth_service.py`
+  - `register_owner(data: dict) -> Owner`  
+    _อธิบาย_: สมัคร owner ใหม่: validate, hash password, บันทึก PDF path (ถ้ามี), เซฟ DB
+  - `verify_owner(email: str, password: str) -> bool`  
+    _อธิบาย_: ตรวจรหัสผ่าน owner
+  - `login_owner(owner: Owner) -> None`  
+    _อธิบาย_: ใช้ `login_user(...)` (Flask-Login) สร้าง session
+  - `verify_admin(username: str, password: str) -> Admin | None`  
+    _อธิบาย_: ตรวจรหัสผ่าน admin
+  - `login_admin(admin: Admin) -> None`  
+    _อธิบาย_: login user แบบ admin principal
+  - `logout() -> None`  
+    _อธิบาย_: ออกจากระบบ (clear session)
+
+- `app/extensions.py`
+  - `load_user(user_id: str) -> Principal | None`  
+    _อธิบาย_: โหลด principal จากฐานข้อมูล (owner/admin) เพื่อผูกกับ session
+  - `owner_required(f)` / `admin_required(f)`  
+    _อธิบาย_: decorator ป้องกันการเข้าถึง route ตามบทบาท
+
+- `app/__init__.py`
+  - `register_dependencies(app) -> None`  
+    _อธิบาย_: ผูก DI: services → repositories (SQLAlchemy) ใน `app.config["container"]`
+  - `seed_amenities()` / `seed_sample()` (CLI)  
+    _อธิบาย_: เติม master data (amenities) และข้อมูลตัวอย่าง (admin/owner/property)
+
+**Branch**
+- `feat/admin-auth-security-a2`
+- *(ย่อย)* `feat/di-container-a2`, `feat/cli-seeds-a2`
+
+---
+
+## โครงสร้างชื่อ Commit/PR (แนะนำ)
+
+- **Commit**: `feat(scope): action detail`  
+  _ตัวอย่าง_: `feat(search): add amenities AND-filter + pagination`
+- **PR Title**: ตรงกับ commit แรก + ใส่โค้ดคนทำ  
+  _ตัวอย่าง_: `feat(search): add filters & approved listing (U1)`
+
+---
