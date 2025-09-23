@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between">
+  <h1 class="h4 mb-3">Owner Dashboard</h1>
+  <a href="/" class="btn btn-link">กลับไปหน้า User</a>
+</div>
+<a class="btn btn-primary btn-sm mb-3" href="/owner/property/new">+ สร้างประกาศ</a>
+<div class="list-group">
+  {% for p in props %}
+  <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" href="/owner/property/{{ p.id }}/edit">
+    <span>{{ p.dorm_name }}</span>
+    <span class="badge text-bg-secondary">{{ p.workflow_status }}</span>
+  </a>
+  {% else %}
+  <div class="alert alert-secondary">ยังไม่มีประกาศ</div>
+  {% endfor %}
+</div>
+{% endblock %}

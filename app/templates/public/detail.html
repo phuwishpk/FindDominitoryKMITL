@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+{% if prop %}
+<h1 class="h4">{{ prop.dorm_name }}</h1>
+<p class="text-muted">{{ prop.room_type }} · ค่าเช่า {{ prop.rent_price or '-' }} THB</p>
+{% else %}
+<div class="alert alert-warning">ไม่พบประกาศ</div>
+{% endif %}
+{% endblock %}

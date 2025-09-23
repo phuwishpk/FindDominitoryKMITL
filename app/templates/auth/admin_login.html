@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="h4 mb-3">Admin Login</h1>
+<form method="post">
+  {{ form.csrf_token }}
+  {{ form.username(class_='form-control mb-2', placeholder='ชื่อผู้ใช้') }}
+  {{ form.password(class_='form-control mb-2', placeholder='รหัสผ่าน') }}
+  <button class="btn btn-primary">เข้าสู่ระบบ</button>
+</form>
+{% endblock %}

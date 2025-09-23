@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="h4 mb-3">สมัคร Owner</h1>
+<form method="post" enctype="multipart/form-data">
+  {{ form.csrf_token }}
+  {{ form.full_name_th(class_='form-control mb-2', placeholder='ชื่อ-สกุล (ไทย)') }}
+  {{ form.full_name_en(class_='form-control mb-2', placeholder='Full Name (EN)') }}
+  {{ form.citizen_id(class_='form-control mb-2', placeholder='เลขบัตรประชาชน 13 หลัก') }}
+  {{ form.email(class_='form-control mb-2', placeholder='อีเมล') }}
+  {{ form.phone(class_='form-control mb-2', placeholder='เบอร์โทร') }}
+  {{ form.password(class_='form-control mb-2', placeholder='รหัสผ่าน') }}
+  {{ form.occupancy_pdf(class_='form-control mb-2') }}
+  <button class="btn btn-primary">สมัคร</button>
+</form>
+{% endblock %}
