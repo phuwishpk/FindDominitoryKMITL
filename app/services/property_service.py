@@ -20,7 +20,9 @@ class PropertyPolicy:
             bool: True ถ้ายังสามารถอัปโหลดเพิ่มได้, False ถ้าถึงขีดจำกัดแล้ว
         """
         return current_count < PropertyPolicy.MAX_IMAGES
-    # app/services/property_service.py
+
+
+# app/services/property_service.py
 
 from app.models.property import Property, Amenity
 from app.extensions import db
