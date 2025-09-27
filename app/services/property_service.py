@@ -17,3 +17,18 @@ class PropertyService:
             setattr(prop, k, v)
         self.repo.save(prop)
         return prop
+    
+    # (เสริม) M2M amenities
+    def update_property_amenities(self, prop: Property, amenity_codes: list[str]) -> None:
+        from app.models.property import Amenity
+        
+        # Clear existing amenities
+        prop.amenities = []
+        
+        # Add new amenities
+        if amenity_codes:
+            amenities = Amenity.query.filter(Amenity.code.in_(amenity_codes)).all()
+            for amenity in amenities:
+                prop.amenities.append(amenity)
+        
+        db.session.commit()
