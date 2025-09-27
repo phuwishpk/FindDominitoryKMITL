@@ -19,6 +19,9 @@ from app.extensions import owner_required, db
 @login_required
 @owner_required
 def dashboard():
+    """
+    แสดงรายการประกาศของ owner คนปัจจุบัน + สถิติสั้น ๆ
+    """
     props = Property.query.filter_by(owner_id=current_user.ref_id).all()
     return render_template("owner/dashboard.html", props=props)
 
@@ -26,6 +29,9 @@ def dashboard():
 @login_required
 @owner_required
 def new_property():
+    """
+    แสดง/รับฟอร์มสร้าง, ใช้ PropertyService.create_property
+    """
     form = PropertyForm()
     if form.validate_on_submit():
         prop_svc = current_app.extensions["container"]["property_service"]
@@ -49,6 +55,9 @@ def new_property():
 @login_required
 @owner_required
 def edit_property(prop_id: int):
+    """
+    แก้ไขข้อมูลประกาศ + ส่วนจัดการรูป/amenities
+    """
     prop = Property.query.get_or_404(prop_id)
     if prop.owner_id != current_user.ref_id:
         return redirect(url_for("owner.dashboard"))
@@ -81,6 +90,9 @@ def edit_property(prop_id: int):
 @login_required
 @owner_required
 def upload_image(prop_id: int):
+    """
+    อัปโหลดรูป (ตรวจ quota ≤ 6 รูป), เพิ่ม PropertyImage ใหม่, รีเทิร์น JSON/redirect
+    """
     prop = Property.query.get_or_404(prop_id)
     if prop.owner_id != current_user.ref_id:
         return redirect(url_for("owner.dashboard"))
@@ -105,6 +117,9 @@ def upload_image(prop_id: int):
 @login_required
 @owner_required
 def delete_image(prop_id: int, image_id: int):
+    """
+    ลบรูป (ฐานข้อมูล + ไฟล์จริง), reindex position
+    """
     prop = Property.query.get_or_404(prop_id)
     img = PropertyImage.query.get_or_404(image_id)
     if prop.owner_id != current_user.ref_id or img.property_id != prop.id:
@@ -117,6 +132,9 @@ def delete_image(prop_id: int, image_id: int):
 @login_required
 @owner_required
 def reorder_images(prop_id: int):
+    """
+    รับลำดับใหม่ (เช่น list ของ image_id), อัปเดต position ตาม drag & drop
+    """
     prop = Property.query.get_or_404(prop_id)
     if prop.owner_id != current_user.ref_id:
         return redirect(url_for("owner.dashboard"))
