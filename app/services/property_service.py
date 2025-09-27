@@ -6,10 +6,16 @@ class PropertyService:
         self.repo = repo
 
     def create(self, owner_id: int, data: dict) -> Property:
+        """
+        สร้าง Property ใหม่, บันทึกฐานข้อมูล, และคืนค่าอ็อบเจ็กต์
+        """
         prop = Property(owner_id=owner_id, **data)
         return self.repo.add(prop)
 
     def update(self, owner_id: int, prop_id: int, data: dict):
+        """
+        ตรวจว่าเป็นเจ้าของตัวจริงและยังแก้ไขได้, อัปเดตฟิลด์ที่อนุญาต, และบันทึก
+        """
         prop = self.repo.get(prop_id)
         if not prop or prop.owner_id != owner_id:
             return None
