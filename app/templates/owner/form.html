@@ -56,6 +56,11 @@
   <div id="positions-container"></div>
   <button class="btn btn-outline-secondary mt-3">บันทึกการจัดเรียง</button>
 </form>
+<hr>
+<form method="post" action="{{ url_for('owner.delete_property', prop_id=prop.id) }}" 
+      onsubmit="return confirm('คุณต้องการลบประกาศนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้');">
+  <button type="submit" class="btn btn-danger">ลบประกาศนี้</button>
+</form>
 
 <script>
 const gallery = document.getElementById('gallery');
