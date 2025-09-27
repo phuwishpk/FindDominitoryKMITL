@@ -34,7 +34,7 @@
     <div class="col-md-4">
       <div class="form-check">
         <input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}"
-               {% if amenity in prop.amenities %}checked{% endif %}>
+               {% if prop and amenity in prop.amenities %}checked{% endif %}>
         <label class="form-check-label" for="amenity-{{ amenity.code }}">
           {{ amenity.label_th }}
         </label>
@@ -90,6 +90,7 @@
 
 <script>
 const gallery = document.getElementById('gallery');
+// ตรวจสอบว่า element gallery มีอยู่จริงหรือไม่ก่อนจะเพิ่ม event listener
 if (gallery) {
   let dragEl = null;
   gallery.addEventListener('dragstart', (e) => {
@@ -107,20 +108,24 @@ if (gallery) {
     gallery.insertBefore(dragEl.parentElement, next ? card.parentElement.nextSibling : card.parentElement);
   });
   gallery.addEventListener('dragend', () => { dragEl = null; });
-  document.getElementById('reorder-form').addEventListener('submit', (e) => {
-    const container = document.getElementById('positions-container');
-    container.innerHTML = '';
-    let pos = 1;
-    gallery.querySelectorAll('[draggable="true"]').forEach(card => {
-      const id = card.getAttribute('data-image-id');
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'positions-' + (pos-1);
-      input.value = id + ':' + pos;
-      container.appendChild(input);
-      pos += 1;
-    });
-  });
+  
+  const reorderForm = document.getElementById('reorder-form');
+  if (reorderForm) {
+      reorderForm.addEventListener('submit', (e) => {
+        const container = document.getElementById('positions-container');
+        container.innerHTML = '';
+        let pos = 1;
+        gallery.querySelectorAll('[draggable="true"]').forEach(card => {
+          const id = card.getAttribute('data-image-id');
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'positions-' + (pos-1);
+          input.value = id + ':' + pos;
+          container.appendChild(input);
+          pos += 1;
+        });
+      });
+  }
 }
 </script>
 {% endblock %}
