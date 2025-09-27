@@ -32,9 +32,12 @@ def new_property():
     all_amenities = Amenity.query.all()
     if form.validate_on_submit():
         prop_svc = current_app.extensions["container"]["property_service"]
+        
+        # รวบรวมข้อมูลจากฟอร์ม (วิธีที่กระชับและดีกว่า)
         form_data = form.data.copy()
         form_data.pop('csrf_token', None)
         form_data['amenities'] = request.form.getlist('amenities')
+
         prop = prop_svc.create(current_user.ref_id, form_data)
         flash("บันทึกแล้ว")
         return redirect(url_for("owner.edit_property", prop_id=prop.id))
@@ -61,9 +64,12 @@ def edit_property(prop_id: int):
 
     if form.validate_on_submit() and "save_property" in request.form:
         prop_svc = current_app.extensions["container"]["property_service"]
+        
+        # รวบรวมข้อมูลจากฟอร์ม
         form_data = form.data.copy()
         form_data.pop('csrf_token', None)
         form_data['amenities'] = request.form.getlist('amenities')
+
         prop_svc.update(current_user.ref_id, prop_id, form_data)
         flash("อัปเดตแล้ว")
         return redirect(url_for("owner.edit_property", prop_id=prop.id))
