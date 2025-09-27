@@ -33,7 +33,7 @@ def new_property():
     if form.validate_on_submit():
         prop_svc = current_app.extensions["container"]["property_service"]
         
-        # รวบรวมข้อมูลจากฟอร์ม (วิธีที่กระชับและดีกว่า)
+        # รวบรวมข้อมูลจากฟอร์ม
         form_data = form.data.copy()
         form_data.pop('csrf_token', None)
         form_data['amenities'] = request.form.getlist('amenities')
