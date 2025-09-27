@@ -34,7 +34,7 @@
     <div class="col-md-4">
       <div class="form-check">
         <input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}"
-               {% if prop and amenity in prop.amenities %}checked{% endif %}>
+               {% if amenity in prop.amenities %}checked{% endif %}>
         <label class="form-check-label" for="amenity-{{ amenity.code }}">
           {{ amenity.label_th }}
         </label>
@@ -50,9 +50,30 @@
 <hr class="my-4">
 <h2 class="h5">รูปภาพ</h2>
 <form class="mb-3" method="post" action="/owner/property/{{ prop.id }}/image" enctype="multipart/form-data">
-    </form>
+</form>
 <form id="reorder-form" method="post" action="/owner/property/{{ prop.id }}/images/reorder">
-    </form>
+  {{ reorder_form.csrf_token }}
+  <div id="gallery" class="row row-cols-2 row-cols-md-3 g-3" data-prop="{{ prop.id }}">
+    {% for img in prop.images|sort(attribute='position') %}
+    <div class="col">
+      <div class="card" draggable="true" data-image-id="{{ img.id }}">
+        <img src="/{{ img.file_path }}" class="card-img-top" alt="#{{ img.id }}">
+        <div class="card-body p-2 d-flex justify-content-between align-items-center">
+          <span class="badge text-bg-light">pos {{ img.position }}</span>
+          <form method="post" action="/owner/property/{{ prop.id }}/image/{{ img.id }}/delete" onsubmit="return confirm('ต้องการลบรูปนี้ใช่หรือไม่?');">
+            <button class="btn btn-sm btn-outline-danger">ลบ</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="col"><div class="alert alert-secondary w-100">ยังไม่มีรูป</div></div>
+    {% endfor %}
+  </div>
+  <div id="positions-container"></div>
+  <button class="btn btn-outline-secondary mt-3">บันทึกการจัดเรียง</button>
+</form>
+
 <hr>
 <form method="post" action="{{ url_for('owner.delete_property', prop_id=prop.id) }}"
       onsubmit="return confirm('คุณต้องการลบประกาศนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้');">
@@ -79,24 +100,20 @@ if (gallery) {
     gallery.insertBefore(dragEl.parentElement, next ? card.parentElement.nextSibling : card.parentElement);
   });
   gallery.addEventListener('dragend', () => { dragEl = null; });
-  
-  const reorderForm = document.getElementById('reorder-form');
-  if (reorderForm) {
-      reorderForm.addEventListener('submit', (e) => {
-        const container = document.getElementById('positions-container');
-        container.innerHTML = '';
-        let pos = 1;
-        gallery.querySelectorAll('[draggable="true"]').forEach(card => {
-          const id = card.getAttribute('data-image-id');
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = 'positions-' + (pos-1);
-          input.value = id + ':' + pos;
-          container.appendChild(input);
-          pos += 1;
-        });
-      });
-  }
+  document.getElementById('reorder-form').addEventListener('submit', (e) => {
+    const container = document.getElementById('positions-container');
+    container.innerHTML = '';
+    let pos = 1;
+    gallery.querySelectorAll('[draggable="true"]').forEach(card => {
+      const id = card.getAttribute('data-image-id');
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'positions-' + (pos-1);
+      input.value = id + ':' + pos;
+      container.appendChild(input);
+      pos += 1;
+    });
+  });
 }
 </script>
 {% endblock %}
