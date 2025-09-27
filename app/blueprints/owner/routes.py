@@ -159,3 +159,20 @@ def reorder_images(prop_id: int):
     db.session.commit()
     flash("จัดเรียงรูปแล้ว")
     return redirect(url_for("owner.edit_property", prop_id=prop.id))
+
+@bp.post("/property/<int:prop_id>/submit")
+@login_required
+@owner_required
+def submit_for_approval(prop_id: int):
+    prop = Property.query.get_or_404(prop_id)
+    if prop.owner_id != current_user.ref_id:
+        return redirect(url_for("owner.dashboard"))
+
+    if prop.workflow_status == 'draft':
+        approval_svc = current_app.extensions["container"]["approval_service"]
+        approval_svc.submit(prop, current_user.ref_id)
+        flash("ส่งประกาศเพื่อขออนุมัติแล้ว")
+    else:
+        flash("ไม่สามารถส่งประกาศนี้ได้", "warning")
+        
+    return redirect(url_for("owner.dashboard"))
