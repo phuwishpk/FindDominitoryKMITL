@@ -8,25 +8,102 @@
 </div>
 {% endif %}
 
-<form method="post">{{ form.csrf_token }}
-  <div class="mb-2">{{ form.dorm_name(class_='form-control', placeholder='ชื่อหอ') }}</div>
-  <div class="mb-2">{{ form.room_type(class_='form-control', placeholder='ประเภทห้อง') }}</div>
-  <div class="row g-2">
-    <div class="col-md-4">{{ form.rent_price(class_='form-control', placeholder='ค่าเช่า') }}</div>
-    <div class="col-md-4">{{ form.water_rate(class_='form-control', placeholder='ค่าน้ำ') }}</div>
-    <div class="col-md-4">{{ form.electric_rate(class_='form-control', placeholder='ค่าไฟ') }}</div>
-  </div>
-  <div class="row g-2 mt-2">
-    <div class="col-md-6">{{ form.deposit_amount(class_='form-control', placeholder='เงินประกัน') }}</div>
-    <div class="col-md-3">{{ form.lat(class_='form-control', placeholder='ละติจูด') }}</div>
-    <div class="col-md-3">{{ form.lng(class_='form-control', placeholder='ลองจิจูด') }}</div>
-  </div>
-  <div class="row g-2 mt-2">
-    <div class="col-md-4">{{ form.contact_phone(class_='form-control', placeholder='เบอร์โทร') }}</div>
-    <div class="col-md-4">{{ form.line_id(class_='form-control', placeholder='LINE ID') }}</div>
-    <div class="col-md-4">{{ form.facebook_url(class_='form-control', placeholder='Facebook URL') }}</div>
+<form method="post" novalidate>{{ form.csrf_token }}
+
+  {# --- Dorm Name --- #}
+  <div class="mb-3">
+    <label for="dorm_name" class="form-label">ชื่อหอ</label>
+    {{ form.dorm_name(class_='form-control' + (' is-invalid' if form.dorm_name.errors else ''), placeholder='ชื่อหอ') }}
+    {% if form.dorm_name.errors %}
+      <div class="invalid-feedback">{{ form.dorm_name.errors[0] }}</div>
+    {% endif %}
   </div>
 
+  {# --- Room Type --- #}
+  <div class="mb-3">
+    <label for="room_type" class="form-label">ประเภทห้อง</label>
+    {{ form.room_type(class_='form-control' + (' is-invalid' if form.room_type.errors else ''), placeholder='ประเภทห้อง (studio, 1br, 2br, other)') }}
+    {% if form.room_type.errors %}
+      <div class="invalid-feedback">{{ form.room_type.errors[0] }}</div>
+    {% endif %}
+  </div>
+
+  {# --- Rates --- #}
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <label for="rent_price" class="form-label">ค่าเช่า</label>
+      {{ form.rent_price(class_='form-control' + (' is-invalid' if form.rent_price.errors else ''), placeholder='ค่าเช่า') }}
+      {% if form.rent_price.errors %}
+        <div class="invalid-feedback">{{ form.rent_price.errors[0] }}</div>
+      {% endif %}
+    </div>
+    <div class="col-md-4">
+      <label for="water_rate" class="form-label">ค่าน้ำ</label>
+      {{ form.water_rate(class_='form-control' + (' is-invalid' if form.water_rate.errors else ''), placeholder='ค่าน้ำ') }}
+      {% if form.water_rate.errors %}
+        <div class="invalid-feedback">{{ form.water_rate.errors[0] }}</div>
+      {% endif %}
+    </div>
+    <div class="col-md-4">
+      <label for="electric_rate" class="form-label">ค่าไฟ</label>
+      {{ form.electric_rate(class_='form-control' + (' is-invalid' if form.electric_rate.errors else ''), placeholder='ค่าไฟ') }}
+      {% if form.electric_rate.errors %}
+        <div class="invalid-feedback">{{ form.electric_rate.errors[0] }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# --- Deposit & Coordinates --- #}
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <label for="deposit_amount" class="form-label">เงินประกัน</label>
+      {{ form.deposit_amount(class_='form-control' + (' is-invalid' if form.deposit_amount.errors else ''), placeholder='เงินประกัน') }}
+      {% if form.deposit_amount.errors %}
+        <div class="invalid-feedback">{{ form.deposit_amount.errors[0] }}</div>
+      {% endif %}
+    </div>
+    <div class="col-md-3">
+      <label for="lat" class="form-label">ละติจูด</label>
+      {{ form.lat(class_='form-control' + (' is-invalid' if form.lat.errors else ''), placeholder='ละติจูด') }}
+      {% if form.lat.errors %}
+        <div class="invalid-feedback">{{ form.lat.errors[0] }}</div>
+      {% endif %}
+    </div>
+    <div class="col-md-3">
+      <label for="lng" class="form-label">ลองจิจูด</label>
+      {{ form.lng(class_='form-control' + (' is-invalid' if form.lng.errors else ''), placeholder='ลองจิจูด') }}
+      {% if form.lng.errors %}
+        <div class="invalid-feedback">{{ form.lng.errors[0] }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# --- Contact Info --- #}
+  <div class="row g-3">
+    <div class="col-md-4">
+      <label for="contact_phone" class="form-label">เบอร์โทร</label>
+      {{ form.contact_phone(class_='form-control' + (' is-invalid' if form.contact_phone.errors else ''), placeholder='เบอร์โทร') }}
+      {% if form.contact_phone.errors %}
+        <div class="invalid-feedback">{{ form.contact_phone.errors[0] }}</div>
+      {% endif %}
+    </div>
+    <div class="col-md-4">
+      <label for="line_id" class="form-label">LINE ID</label>
+      {{ form.line_id(class_='form-control' + (' is-invalid' if form.line_id.errors else ''), placeholder='LINE ID') }}
+      {% if form.line_id.errors %}
+        <div class="invalid-feedback">{{ form.line_id.errors[0] }}</div>
+      {% endif %}
+    </div>
+    <div class="col-md-4">
+      <label for="facebook_url" class="form-label">Facebook URL</label>
+      {{ form.facebook_url(class_='form-control' + (' is-invalid' if form.facebook_url.errors else ''), placeholder='Facebook URL') }}
+      {% if form.facebook_url.errors %}
+        <div class="invalid-feedback">{{ form.facebook_url.errors[0] }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# --- Amenities --- #}
   <hr class="my-4">
   <h2 class="h5">สิ่งอำนวยความสะดวก</h2>
   <div class="row">
@@ -46,11 +123,18 @@
   <button class="btn btn-success mt-3" name="save_property">บันทึก</button>
 </form>
 
+{# --- Image Section --- #}
 {% if prop %}
 <hr class="my-4">
 <h2 class="h5">รูปภาพ</h2>
 <form class="mb-3" method="post" action="/owner/property/{{ prop.id }}/image" enctype="multipart/form-data">
+    {{ upload_form.csrf_token }}
+    <div class="input-group">
+      <input class="form-control" type="file" name="image" accept="image/*" required>
+      <button class="btn btn-outline-primary">อัปโหลดรูป</button>
+    </div>
 </form>
+
 <form id="reorder-form" method="post" action="/owner/property/{{ prop.id }}/images/reorder">
   {{ reorder_form.csrf_token }}
   <div id="gallery" class="row row-cols-2 row-cols-md-3 g-3" data-prop="{{ prop.id }}">
