@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1 class="h4">ฟอร์มหอพัก</h1>
+<h1 class="h4">{% if prop %}แก้ไข{% else %}สร้าง{% endif %}ประกาศหอพัก</h1>
 
 {% if prop and prop.workflow_status == 'rejected' and approval_note %}
 <div class="alert alert-danger">
@@ -8,163 +8,178 @@
 </div>
 {% endif %}
 
-<form method="post" novalidate>{{ form.csrf_token }}
+<ul class="nav nav-tabs mt-4" id="myTab" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details-tab-pane" type="button" role="tab" aria-controls="details-tab-pane" aria-selected="true">ข้อมูลหลัก</button>
+  </li>
+  {% if prop %}
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="images-tab" data-bs-toggle="tab" data-bs-target="#images-tab-pane" type="button" role="tab" aria-controls="images-tab-pane" aria-selected="false">จัดการรูปภาพ</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings-tab-pane" type="button" role="tab" aria-controls="settings-tab-pane" aria-selected="false">ตั้งค่า</button>
+  </li>
+  {% endif %}
+</ul>
 
-  {# --- Dorm Name --- #}
-  <div class="mb-3">
-    <label for="dorm_name" class="form-label">ชื่อหอ</label>
-    {{ form.dorm_name(class_='form-control' + (' is-invalid' if form.dorm_name.errors else ''), placeholder='ชื่อหอ') }}
-    {% if form.dorm_name.errors %}
-      <div class="invalid-feedback">{{ form.dorm_name.errors[0] }}</div>
-    {% endif %}
-  </div>
-
-  {# --- Room Type --- #}
-  <div class="mb-3">
-    <label for="room_type" class="form-label">ประเภทห้อง</label>
-    {{ form.room_type(class_='form-control' + (' is-invalid' if form.room_type.errors else ''), placeholder='ประเภทห้อง (studio, 1br, 2br, other)') }}
-    {% if form.room_type.errors %}
-      <div class="invalid-feedback">{{ form.room_type.errors[0] }}</div>
-    {% endif %}
-  </div>
-
-  {# --- Rates --- #}
-  <div class="row g-3 mb-3">
-    <div class="col-md-4">
-      <label for="rent_price" class="form-label">ค่าเช่า</label>
-      {{ form.rent_price(class_='form-control' + (' is-invalid' if form.rent_price.errors else ''), placeholder='ค่าเช่า') }}
-      {% if form.rent_price.errors %}
-        <div class="invalid-feedback">{{ form.rent_price.errors[0] }}</div>
-      {% endif %}
-    </div>
-    <div class="col-md-4">
-      <label for="water_rate" class="form-label">ค่าน้ำ</label>
-      {{ form.water_rate(class_='form-control' + (' is-invalid' if form.water_rate.errors else ''), placeholder='ค่าน้ำ') }}
-      {% if form.water_rate.errors %}
-        <div class="invalid-feedback">{{ form.water_rate.errors[0] }}</div>
-      {% endif %}
-    </div>
-    <div class="col-md-4">
-      <label for="electric_rate" class="form-label">ค่าไฟ</label>
-      {{ form.electric_rate(class_='form-control' + (' is-invalid' if form.electric_rate.errors else ''), placeholder='ค่าไฟ') }}
-      {% if form.electric_rate.errors %}
-        <div class="invalid-feedback">{{ form.electric_rate.errors[0] }}</div>
-      {% endif %}
-    </div>
-  </div>
-
-  {# --- Deposit & Coordinates --- #}
-  <div class="row g-3 mb-3">
-    <div class="col-md-6">
-      <label for="deposit_amount" class="form-label">เงินประกัน</label>
-      {{ form.deposit_amount(class_='form-control' + (' is-invalid' if form.deposit_amount.errors else ''), placeholder='เงินประกัน') }}
-      {% if form.deposit_amount.errors %}
-        <div class="invalid-feedback">{{ form.deposit_amount.errors[0] }}</div>
-      {% endif %}
-    </div>
-    <div class="col-md-3">
-      <label for="lat" class="form-label">ละติจูด</label>
-      {{ form.lat(class_='form-control' + (' is-invalid' if form.lat.errors else ''), placeholder='ละติจูด') }}
-      {% if form.lat.errors %}
-        <div class="invalid-feedback">{{ form.lat.errors[0] }}</div>
-      {% endif %}
-    </div>
-    <div class="col-md-3">
-      <label for="lng" class="form-label">ลองจิจูด</label>
-      {{ form.lng(class_='form-control' + (' is-invalid' if form.lng.errors else ''), placeholder='ลองจิจูด') }}
-      {% if form.lng.errors %}
-        <div class="invalid-feedback">{{ form.lng.errors[0] }}</div>
-      {% endif %}
-    </div>
-  </div>
-
-  {# --- Contact Info --- #}
-  <div class="row g-3">
-    <div class="col-md-4">
-      <label for="contact_phone" class="form-label">เบอร์โทร</label>
-      {{ form.contact_phone(class_='form-control' + (' is-invalid' if form.contact_phone.errors else ''), placeholder='เบอร์โทร') }}
-      {% if form.contact_phone.errors %}
-        <div class="invalid-feedback">{{ form.contact_phone.errors[0] }}</div>
-      {% endif %}
-    </div>
-    <div class="col-md-4">
-      <label for="line_id" class="form-label">LINE ID</label>
-      {{ form.line_id(class_='form-control' + (' is-invalid' if form.line_id.errors else ''), placeholder='LINE ID') }}
-      {% if form.line_id.errors %}
-        <div class="invalid-feedback">{{ form.line_id.errors[0] }}</div>
-      {% endif %}
-    </div>
-    <div class="col-md-4">
-      <label for="facebook_url" class="form-label">Facebook URL</label>
-      {{ form.facebook_url(class_='form-control' + (' is-invalid' if form.facebook_url.errors else ''), placeholder='Facebook URL') }}
-      {% if form.facebook_url.errors %}
-        <div class="invalid-feedback">{{ form.facebook_url.errors[0] }}</div>
-      {% endif %}
-    </div>
-  </div>
-
-  {# --- Amenities --- #}
-  <hr class="my-4">
-  <h2 class="h5">สิ่งอำนวยความสะดวก</h2>
-  <div class="row">
-    {% for amenity in all_amenities %}
-    <div class="col-md-4">
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}"
-               {% if prop and amenity in prop.amenities %}checked{% endif %}>
-        <label class="form-check-label" for="amenity-{{ amenity.code }}">
-          {{ amenity.label_th }}
-        </label>
+<div class="tab-content bg-white p-3 border border-top-0 rounded-bottom mb-4">
+  
+  <div class="tab-pane fade show active" id="details-tab-pane" role="tabpanel" aria-labelledby="details-tab" tabindex="0">
+    <form method="post" novalidate>{{ form.csrf_token }}
+      {# --- Dorm Name --- #}
+      <div class="mb-3">
+        <label for="dorm_name" class="form-label">ชื่อหอ</label>
+        {{ form.dorm_name(class_='form-control' + (' is-invalid' if form.dorm_name.errors else ''), placeholder='ชื่อหอ') }}
+        {% if form.dorm_name.errors %}
+          <div class="invalid-feedback">{{ form.dorm_name.errors[0] }}</div>
+        {% endif %}
       </div>
-    </div>
-    {% endfor %}
-  </div>
 
-  <button class="btn btn-success mt-3" name="save_property">บันทึก</button>
-</form>
+      {# --- Room Type --- #}
+      <div class="mb-3">
+        <label for="room_type" class="form-label">ประเภทห้อง</label>
+        {{ form.room_type(class_='form-control' + (' is-invalid' if form.room_type.errors else ''), placeholder='ประเภทห้อง (studio, 1br, 2br, other)') }}
+        {% if form.room_type.errors %}
+          <div class="invalid-feedback">{{ form.room_type.errors[0] }}</div>
+        {% endif %}
+      </div>
 
-{# --- Image Section --- #}
-{% if prop %}
-<hr class="my-4">
-<h2 class="h5">รูปภาพ</h2>
-<form class="mb-3" method="post" action="/owner/property/{{ prop.id }}/image" enctype="multipart/form-data">
-    {{ upload_form.csrf_token }}
-    <div class="input-group">
-      <input class="form-control" type="file" name="image" accept="image/*" required>
-      <button class="btn btn-outline-primary">อัปโหลดรูป</button>
-    </div>
-</form>
-
-<form id="reorder-form" method="post" action="/owner/property/{{ prop.id }}/images/reorder">
-  {{ reorder_form.csrf_token }}
-  <div id="gallery" class="row row-cols-2 row-cols-md-3 g-3" data-prop="{{ prop.id }}">
-    {% for img in prop.images|sort(attribute='position') %}
-    <div class="col">
-      <div class="card" draggable="true" data-image-id="{{ img.id }}">
-        <img src="/{{ img.file_path }}" class="card-img-top" alt="#{{ img.id }}">
-        <div class="card-body p-2 d-flex justify-content-between align-items-center">
-          <span class="badge text-bg-light">pos {{ img.position }}</span>
-          <form method="post" action="/owner/property/{{ prop.id }}/image/{{ img.id }}/delete" onsubmit="return confirm('ต้องการลบรูปนี้ใช่หรือไม่?');">
-            <button class="btn btn-sm btn-outline-danger">ลบ</button>
-          </form>
+      {# --- Rates --- #}
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <label for="rent_price" class="form-label">ค่าเช่า</label>
+          {{ form.rent_price(class_='form-control' + (' is-invalid' if form.rent_price.errors else ''), placeholder='ค่าเช่า') }}
+          {% if form.rent_price.errors %}<div class="invalid-feedback">{{ form.rent_price.errors[0] }}</div>{% endif %}
+        </div>
+        <div class="col-md-4">
+          <label for="water_rate" class="form-label">ค่าน้ำ</label>
+          {{ form.water_rate(class_='form-control' + (' is-invalid' if form.water_rate.errors else ''), placeholder='ค่าน้ำ') }}
+          {% if form.water_rate.errors %}<div class="invalid-feedback">{{ form.water_rate.errors[0] }}</div>{% endif %}
+        </div>
+        <div class="col-md-4">
+          <label for="electric_rate" class="form-label">ค่าไฟ</label>
+          {{ form.electric_rate(class_='form-control' + (' is-invalid' if form.electric_rate.errors else ''), placeholder='ค่าไฟ') }}
+          {% if form.electric_rate.errors %}<div class="invalid-feedback">{{ form.electric_rate.errors[0] }}</div>{% endif %}
         </div>
       </div>
-    </div>
-    {% else %}
-    <div class="col"><div class="alert alert-secondary w-100">ยังไม่มีรูป</div></div>
-    {% endfor %}
+
+      {# --- Deposit & Coordinates --- #}
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label for="deposit_amount" class="form-label">เงินประกัน</label>
+          {{ form.deposit_amount(class_='form-control' + (' is-invalid' if form.deposit_amount.errors else ''), placeholder='เงินประกัน') }}
+          {% if form.deposit_amount.errors %}<div class="invalid-feedback">{{ form.deposit_amount.errors[0] }}</div>{% endif %}
+        </div>
+        <div class="col-md-3">
+          <label for="lat" class="form-label">ละติจูด</label>
+          {{ form.lat(class_='form-control' + (' is-invalid' if form.lat.errors else ''), placeholder='ละติจูด') }}
+          {% if form.lat.errors %}<div class="invalid-feedback">{{ form.lat.errors[0] }}</div>{% endif %}
+        </div>
+        <div class="col-md-3">
+          <label for="lng" class="form-label">ลองจิจูด</label>
+          {{ form.lng(class_='form-control' + (' is-invalid' if form.lng.errors else ''), placeholder='ลองจิจูด') }}
+          {% if form.lng.errors %}<div class="invalid-feedback">{{ form.lng.errors[0] }}</div>{% endif %}
+        </div>
+      </div>
+
+      {# --- Contact Info --- #}
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label for="contact_phone" class="form-label">เบอร์โทร</label>
+          {{ form.contact_phone(class_='form-control' + (' is-invalid' if form.contact_phone.errors else ''), placeholder='เบอร์โทร') }}
+          {% if form.contact_phone.errors %}<div class="invalid-feedback">{{ form.contact_phone.errors[0] }}</div>{% endif %}
+        </div>
+        <div class="col-md-4">
+          <label for="line_id" class="form-label">LINE ID</label>
+          {{ form.line_id(class_='form-control' + (' is-invalid' if form.line_id.errors else ''), placeholder='LINE ID') }}
+          {% if form.line_id.errors %}<div class="invalid-feedback">{{ form.line_id.errors[0] }}</div>{% endif %}
+        </div>
+        <div class="col-md-4">
+          <label for="facebook_url" class="form-label">Facebook URL</label>
+          {{ form.facebook_url(class_='form-control' + (' is-invalid' if form.facebook_url.errors else ''), placeholder='Facebook URL') }}
+          {% if form.facebook_url.errors %}<div class="invalid-feedback">{{ form.facebook_url.errors[0] }}</div>{% endif %}
+        </div>
+      </div>
+
+      {# --- Amenities --- #}
+      <hr class="my-4">
+      <h2 class="h5">สิ่งอำนวยความสะดวก</h2>
+      <div class="row">
+        {% for amenity in all_amenities %}
+        <div class="col-md-4">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}"
+                   {% if prop and amenity in prop.amenities %}checked{% endif %}>
+            <label class="form-check-label" for="amenity-{{ amenity.code }}">{{ amenity.label_th }}</label>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {# --- Action Buttons --- #}
+      <div class="mt-4">
+        {% if prop %}
+        <button class="btn btn-primary" name="save_and_exit" value="true">บันทึกและกลับสู่ Dashboard</button>
+        <button class="btn btn-success" name="save_property" value="true">บันทึกและแก้ไขต่อ</button>
+        {% else %}
+        <button class="btn btn-primary" name="save_property" value="true">สร้างและไปต่อเพื่อจัดการรูปภาพ</button>
+        {% endif %}
+        <a href="{{ url_for('owner.dashboard') }}" class="btn btn-secondary">ยกเลิก</a>
+      </div>
+    </form>
   </div>
-  <div id="positions-container"></div>
-  <button class="btn btn-outline-secondary mt-3">บันทึกการจัดเรียง</button>
-</form>
 
-<hr>
-<form method="post" action="{{ url_for('owner.delete_property', prop_id=prop.id) }}"
-      onsubmit="return confirm('คุณต้องการลบประกาศนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้');">
-  <button type="submit" class="btn btn-danger">ลบประกาศนี้</button>
-</form>
-{% endif %}
+  {% if prop %}
+  <div class="tab-pane fade" id="images-tab-pane" role="tabpanel" aria-labelledby="images-tab" tabindex="0">
+    <h2 class="h5">อัปโหลดรูปภาพใหม่</h2>
+    <form class="mb-3" method="post" action="{{ url_for('owner.upload_image', prop_id=prop.id) }}" enctype="multipart/form-data">
+        {{ upload_form.csrf_token }}
+        <div class="input-group">
+          <input class="form-control" type="file" name="image" accept="image/*" required>
+          <button class="btn btn-outline-primary">อัปโหลดรูป</button>
+        </div>
+    </form>
+    <hr>
+    <h2 class="h5">จัดเรียงรูปภาพ</h2>
+    <p class="text-muted small">คลิกค้างแล้วลากเพื่อจัดเรียงลำดับรูปภาพ</p>
+    <form id="reorder-form" method="post" action="{{ url_for('owner.reorder_images', prop_id=prop.id) }}">
+      {{ reorder_form.csrf_token }}
+      <div id="gallery" class="row row-cols-2 row-cols-md-3 g-3">
+        {% for img in prop.images|sort(attribute='position') %}
+        <div class="col">
+          <div class="card" draggable="true" data-image-id="{{ img.id }}">
+            <img src="/{{ img.file_path }}" class="card-img-top" alt="#{{ img.id }}">
+            <div class="card-body p-2 d-flex justify-content-between align-items-center">
+              <span class="badge text-bg-light">ลำดับ {{ img.position }}</span>
+              <form method="post" action="{{ url_for('owner.delete_image', prop_id=prop.id, image_id=img.id) }}" onsubmit="return confirm('ต้องการลบรูปนี้ใช่หรือไม่?');">
+                {{ reorder_form.csrf_token }}
+                <button class="btn btn-sm btn-outline-danger">ลบ</button>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div class="col"><div class="alert alert-secondary w-100">ยังไม่มีรูป</div></div>
+        {% endfor %}
+      </div>
+      <div id="positions-container"></div>
+      <button class="btn btn-outline-secondary mt-3">บันทึกการจัดเรียง</button>
+    </form>
+  </div>
+  
+  <div class="tab-pane fade" id="settings-tab-pane" role="tabpanel" aria-labelledby="settings-tab" tabindex="0">
+      <h2 class="h5 text-danger">โซนอันตราย</h2>
+      <hr>
+      <p>หากคุณต้องการลบประกาศนี้อย่างถาวร สามารถทำได้ที่นี่ การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+      <form method="post" action="{{ url_for('owner.delete_property', prop_id=prop.id) }}"
+            onsubmit="return confirm('คุณต้องการลบประกาศนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้');">
+        <button type="submit" class="btn btn-danger">ลบประกาศนี้</button>
+      </form>
+  </div>
+  {% endif %}
+</div>
 
+{% if prop %}
 <script>
 const gallery = document.getElementById('gallery');
 if (gallery) {
@@ -200,4 +215,5 @@ if (gallery) {
   });
 }
 </script>
+{% endif %}
 {% endblock %}
