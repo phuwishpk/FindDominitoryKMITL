@@ -165,12 +165,6 @@
 </form>
 {% endif %}
 
-{% if prop and prop.workflow_status == 'rejected' and approval_note %}
-<div class="alert alert-danger">
-  <strong>ประกาศถูกปฏิเสธ:</strong> {{ approval_note }}
-</div>
-{% endif %}
-
 <script>
 const gallery = document.getElementById('gallery');
 if (gallery) {
