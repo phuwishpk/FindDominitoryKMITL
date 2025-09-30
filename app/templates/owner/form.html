@@ -67,9 +67,9 @@
       </div>
 
       {% if not prop %}
-      <hr class="my-4">
+  <hr class="my-4">
       <h2 class="h5">รูปภาพหลัก</h2>
-      <p class="text-muted small">อัปโหลดรูปภาพหลักสำหรับประกาศของคุณ (สามารถเพิ่มรูปภาพอื่นๆ ได้ในภายหลัง)</p>
+      <p class="text-muted small">อัปโหลดรูปภาพสำหรับประกาศของคุณ (เลือกได้หลายรูป สูงสุด {{ PropertyPolicy.MAX_IMAGES }} รูป)</p>
       <div class="mb-3">{{ upload_form.image(class_='form-control' + (' is-invalid' if upload_form.image.errors else '')) }}</div>
       {% endif %}
 

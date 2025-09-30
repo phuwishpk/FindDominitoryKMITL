@@ -1,4 +1,5 @@
 from flask import Flask
+from flask import Flask, send_from_directory
 from .extensions import db, migrate, login_manager, babel, limiter, csrf
 from .config import Config
 
@@ -79,6 +80,15 @@ def create_app() -> Flask:
                 db.session.add(Amenity(code=code, label_th=th, label_en=en))
         db.session.commit()
         print("Seeded amenities ✅")
+    
+    @app.route('/uploads/<path:filename>')
+    def serve_uploads(filename):
+        return send_from_directory(
+            app.config['UPLOAD_FOLDER'],
+            filename,
+            as_attachment=False
+        )
+
 
     @app.cli.command("seed_sample")
     def seed_sample():
