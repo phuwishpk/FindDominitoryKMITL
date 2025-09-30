@@ -29,19 +29,30 @@ def dashboard():
 @owner_required
 def new_property():
     form = PropertyForm()
+    upload_form = UploadImageForm()
     all_amenities = Amenity.query.all()
-    if form.validate_on_submit():
+
+    if form.validate_on_submit() and upload_form.validate_on_submit():
         prop_svc = current_app.extensions["container"]["property_service"]
         
         form_data = form.data.copy()
         form_data.pop('csrf_token', None)
-        form_data.pop('amenities', None) 
+        form_data['amenities'] = request.form.getlist('amenities')
 
         prop = prop_svc.create(current_user.ref_id, form_data)
-        flash("สร้างประกาศสำเร็จแล้ว จัดการรูปภาพและสิ่งอำนวยความสะดวกต่อได้เลย", "success")
-        return redirect(url_for("owner.edit_property", prop_id=prop.id))
         
-    return render_template("owner/form.html", form=form, all_amenities=all_amenities, prop=None)
+        # Save the uploaded image if it exists
+        if upload_form.image.data:
+            upload_svc = current_app.extensions["container"]["upload_service"]
+            path = upload_svc.save_image(current_user.ref_id, upload_form.image.data)
+            img = PropertyImage(property_id=prop.id, file_path=path, position=1)
+            db.session.add(img)
+            db.session.commit()
+
+        flash("สร้างประกาศสำเร็จแล้ว", "success")
+        return redirect(url_for("owner.dashboard"))
+        
+    return render_template("owner/form.html", form=form, all_amenities=all_amenities, prop=None, upload_form=upload_form)
 
 @bp.route("/property/<int:prop_id>/edit", methods=["GET","POST"])
 @login_required
