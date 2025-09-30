@@ -53,6 +53,15 @@ def create_app() -> Flask:
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(api_bp, url_prefix="/api")
 
+    # ❗️ เพิ่มโค้ดส่วนนี้เข้าไปทั้งหมด ❗️
+    @app.route('/uploads/<path:filename>')
+    def serve_uploads(filename):
+        return send_from_directory(
+            app.config['UPLOAD_FOLDER'],
+            filename,
+            as_attachment=False
+        )
+
     @app.get("/health")
     def health():
         return {"ok": True}
@@ -80,15 +89,6 @@ def create_app() -> Flask:
                 db.session.add(Amenity(code=code, label_th=th, label_en=en))
         db.session.commit()
         print("Seeded amenities ✅")
-    
-    @app.route('/uploads/<path:filename>')
-    def serve_uploads(filename):
-        return send_from_directory(
-            app.config['UPLOAD_FOLDER'],
-            filename,
-            as_attachment=False
-        )
-
 
     @app.cli.command("seed_sample")
     def seed_sample():

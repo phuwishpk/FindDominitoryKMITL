@@ -117,17 +117,18 @@
       <button type="submit" class="btn btn-outline-secondary mt-3">บันทึกการจัดเรียง</button>
     </form>
   </div>
-  
+
   {# --- Settings/Danger Zone Tab --- #}
-  <div class="tab-pane fade" id="settings-tab-pane" role="tabpanel" aria-labelledby="settings-tab" tabindex="0">
-      <h2 class="h5 text-danger">โซนอันตราย</h2>
-      <hr>
-      <p>หากคุณต้องการลบประกาศนี้อย่างถาวร สามารถทำได้ที่นี่ การกระทำนี้ไม่สามารถย้อนกลับได้</p>
-      <form method="post" action="{{ url_for('owner.delete_property', prop_id=prop.id) }}"
-            onsubmit="return confirm('คุณต้องการลบประกาศนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้');">
-        <button type="submit" class="btn btn-danger">ลบประกาศนี้</button>
-      </form>
-  </div>
+    <div class="tab-pane fade" id="settings-tab-pane" role="tabpanel" aria-labelledby="settings-tab" tabindex="0">
+        <h2 class="h5 text-danger">โซนอันตราย</h2>
+        <hr>
+        <p>หากคุณต้องการลบประกาศนี้อย่างถาวร สามารถทำได้ที่นี่ การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+        <form method="post" action="{{ url_for('owner.delete_property', prop_id=prop.id) }}"
+              onsubmit="return confirm('คุณต้องการลบประกาศนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้');">
+          {{ form.csrf_token }}
+          <button type="submit" class="btn btn-danger">ลบประกาศนี้</button>
+        </form>
+    </div>
   {% endif %}
 </div>
 {% endblock %}
