@@ -34,8 +34,11 @@
       
       <p class="text-muted small">{% if not prop %}กรุณากรอกข้อมูลและอัปโหลดรูปภาพหลัก 1 รูปให้ครบถ้วน{% else %}คุณสามารถแก้ไขข้อมูลประกาศได้ที่นี่{% endif %}</p>
       
-      <!-- Form Fields -->
       <div class="mb-3"><label class="form-label">ชื่อหอ</label>{{ form.dorm_name(class_='form-control' + (' is-invalid' if form.dorm_name.errors else ''), placeholder='ชื่อหอ') }}</div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6"><label class="form-label">ถนน</label>{{ form.road(class_='form-control' + (' is-invalid' if form.road.errors else ''), placeholder='เช่น ลาดกระบัง') }}</div>
+        <div class="col-md-6"><label class="form-label">ซอย</label>{{ form.soi(class_='form-control' + (' is-invalid' if form.soi.errors else ''), placeholder='เช่น ลาดกระบัง 1') }}</div>
+      </div>
       <div class="mb-3"><label class="form-label">ประเภทห้อง</label>{{ form.room_type(class_='form-control' + (' is-invalid' if form.room_type.errors else ''), placeholder='เช่น studio, 1br, 2br, other') }}</div>
       <div class="row g-3 mb-3">
         <div class="col-md-4"><label class="form-label">ค่าเช่า (บาท/เดือน)</label>{{ form.rent_price(class_='form-control' + (' is-invalid' if form.rent_price.errors else ''), placeholder='เช่น 6500') }}</div>
@@ -51,21 +54,18 @@
         <div class="col-md-4"><label class="form-label">Facebook URL</label>{{ form.facebook_url(class_='form-control' + (' is-invalid' if form.facebook_url.errors else ''), placeholder='Facebook URL') }}</div>
       </div>
 
-      <!-- Map Section -->
       <hr class="my-4">
       <h2 class="h5">ปักหมุดบนแผนที่</h2>
       <p class="text-muted small">ค้นหาสถานที่หรือคลิกบนแผนที่เพื่อกำหนดตำแหน่งหอพักของคุณ</p>
       <div id="map" style="height: 400px;" class="mb-3 border rounded"></div>
       {{ form.location_pin_json(id='location_pin_json_input') }}
 
-      <!-- Amenities Section -->
       <hr class="my-4">
       <h2 class="h5">สิ่งอำนวยความสะดวก</h2>
       <div class="row">
         {% for amenity in all_amenities %}<div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}" {% if prop and amenity in prop.amenities %}checked{% endif %}><label class="form-check-label" for="amenity-{{ amenity.code }}">{{ amenity.label_th }}</label></div></div>{% endfor %}
       </div>
 
-      <!-- Image Upload Section (only on New Form) -->
       {% if not prop %}
       <hr class="my-4">
       <h2 class="h5">รูปภาพหลัก</h2>
@@ -73,7 +73,6 @@
       <div class="mb-3">{{ upload_form.image(class_='form-control' + (' is-invalid' if upload_form.image.errors else '')) }}</div>
       {% endif %}
 
-      <!-- Action Buttons -->
       <div class="mt-4">
         {% if prop %}<button class="btn btn-primary" name="save_and_exit" value="true">บันทึกและกลับสู่ Dashboard</button> <button class="btn btn-success" name="save_property" value="true">บันทึกและแก้ไขต่อ</button>{% else %}<button class="btn btn-primary" name="save_property" value="true">สร้างประกาศ</button>{% endif %} <a href="{{ url_for('owner.dashboard') }}" class="btn btn-secondary">ยกเลิก</a>
       </div>
@@ -243,4 +242,3 @@
 })();
 </script>
 {% endblock %}
-

@@ -30,13 +30,14 @@ class Property(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey("owners.id", ondelete="CASCADE"), nullable=False)
 
     dorm_name = db.Column(db.String(120), nullable=False)
+    road = db.Column(db.String(255), nullable=True) # <-- แก้ไขตรงนี้
+    soi = db.Column(db.String(255), nullable=True) # <-- เพิ่มบรรทัดนี้
     room_type = db.Column(db.String(30), nullable=False)
     contact_phone = db.Column(db.String(20))
     line_id = db.Column(db.String(80))
     facebook_url = db.Column(db.String(255))
     
-    # ADD THIS NEW COLUMN
-    location_pin = db.Column(db.JSON, nullable=True) # For storing GeoJSON
+    location_pin = db.Column(db.JSON, nullable=True)
 
     rent_price = db.Column(db.Integer)
     water_rate = db.Column(db.Float)
