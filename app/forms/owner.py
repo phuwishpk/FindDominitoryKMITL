@@ -15,9 +15,6 @@ class PropertyForm(FlaskForm):
     water_rate = FloatField("ค่าน้ำ", validators=[DataRequired("กรุณากรอกค่าน้ำ"), NumberRange(min=0)])
     electric_rate = FloatField("ค่าไฟ", validators=[DataRequired("กรุณากรอกค่าไฟ"), NumberRange(min=0)])
     deposit_amount = IntegerField("เงินประกัน", validators=[DataRequired("กรุณากรอกเงินประกัน"), NumberRange(min=0)])
-    lat = FloatField("ละติจูด", validators=[DataRequired("กรุณากรอกพิกัดละติจูด")])
-    lng = FloatField("ลองจิจูด", validators=[DataRequired("กรุณากรอกพิกัดลองจิจูด")])
-
     def validate_room_type(self, field):
         if field.data and field.data.lower() not in ROOM_TYPES:
             raise ValidationError("ประเภทห้องต้องเป็นหนึ่งใน: " + ", ".join(ROOM_TYPES))

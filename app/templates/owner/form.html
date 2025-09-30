@@ -66,16 +66,6 @@
           {{ form.deposit_amount(class_='form-control' + (' is-invalid' if form.deposit_amount.errors else ''), placeholder='เงินประกัน') }}
           {% if form.deposit_amount.errors %}<div class="invalid-feedback">{{ form.deposit_amount.errors[0] }}</div>{% endif %}
         </div>
-        <div class="col-md-3">
-          <label for="lat" class="form-label">ละติจูด</label>
-          {{ form.lat(class_='form-control' + (' is-invalid' if form.lat.errors else ''), placeholder='เช่น 13.7292') }}
-          {% if form.lat.errors %}<div class="invalid-feedback">{{ form.lat.errors[0] }}</div>{% endif %}
-        </div>
-        <div class="col-md-3">
-          <label for="lng" class="form-label">ลองจิจูด</label>
-          {{ form.lng(class_='form-control' + (' is-invalid' if form.lng.errors else ''), placeholder='เช่น 100.7758') }}
-          {% if form.lng.errors %}<div class="invalid-feedback">{{ form.lng.errors[0] }}</div>{% endif %}
-        </div>
       </div>
       <div class="row g-3">
         <div class="col-md-4">
