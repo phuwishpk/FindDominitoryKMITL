@@ -8,23 +8,29 @@
 </div>
 {% endif %}
 
+{# --- ถ้าเป็นการแก้ไข ให้แสดง Tab --- #}
+{% if prop %}
 <ul class="nav nav-tabs mt-4" id="formTab" role="tablist">
   <li class="nav-item" role="presentation">
     <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details-tab-pane" type="button" role="tab" aria-controls="details-tab-pane" aria-selected="true">ข้อมูลหลัก</button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link {% if not prop %}disabled{% endif %}" id="images-tab" data-bs-toggle="tab" data-bs-target="#images-tab-pane" type="button" role="tab" aria-controls="images-tab-pane" aria-selected="false">จัดการรูปภาพ</button>
+    <button class="nav-link" id="images-tab" data-bs-toggle="tab" data-bs-target="#images-tab-pane" type="button" role="tab" aria-controls="images-tab-pane" aria-selected="false">จัดการรูปภาพ</button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link {% if not prop %}disabled{% endif %}" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings-tab-pane" type="button" role="tab" aria-controls="settings-tab-pane" aria-selected="false">ตั้งค่า</button>
+    <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings-tab-pane" type="button" role="tab" aria-controls="settings-tab-pane" aria-selected="false">ตั้งค่า</button>
   </li>
 </ul>
+{% endif %}
 
-<div class="tab-content bg-white p-3 border border-top-0 rounded-bottom mb-4">
+<div class="{% if prop %}tab-content bg-white p-3 border border-top-0 rounded-bottom mb-4{% else %}bg-white p-3 border rounded mb-4{% endif %}">
   
-  <div class="tab-pane fade show active" id="details-tab-pane" role="tabpanel" aria-labelledby="details-tab" tabindex="0">
-    <form method="post" novalidate>{{ form.csrf_token }}
-      <p class="text-muted small">{% if not prop %}กรุณากรอกข้อมูลหลักให้ครบถ้วนแล้วกด "สร้างประกาศ" เพื่อไปสู่ขั้นตอนจัดการรูปภาพ{% else %}คุณสามารถแก้ไขข้อมูลประกาศได้ที่นี่{% endif %}</p>
+  <div class="{% if prop %}tab-pane fade show active{% endif %}" id="details-tab-pane" role="tabpanel" aria-labelledby="details-tab" tabindex="0">
+    <form method="post" novalidate enctype="multipart/form-data">
+      {{ form.csrf_token }}
+      {{ upload_form.csrf_token if upload_form }}
+      
+      <p class="text-muted small">{% if not prop %}กรุณากรอกข้อมูลและอัปโหลดรูปภาพหลัก 1 รูปให้ครบถ้วน{% else %}คุณสามารถแก้ไขข้อมูลประกาศได้ที่นี่{% endif %}</p>
       
       {# --- Form Fields --- #}
       <div class="mb-3">
@@ -104,6 +110,19 @@
         {% endfor %}
       </div>
 
+      {# --- Image Upload (only on New Form) --- #}
+      {% if not prop %}
+      <hr class="my-4">
+      <h2 class="h5">รูปภาพหลัก</h2>
+      <p class="text-muted small">อัปโหลดรูปภาพหลักสำหรับประกาศของคุณ (สามารถเพิ่มรูปภาพอื่นๆ ได้ในภายหลัง)</p>
+      <div class="mb-3">
+        {{ upload_form.image(class_='form-control' + (' is-invalid' if upload_form.image.errors else '')) }}
+        {% if upload_form.image.errors %}
+          <div class="invalid-feedback">{{ upload_form.image.errors[0] }}</div>
+        {% endif %}
+      </div>
+      {% endif %}
+
       {# --- Action Buttons --- #}
       <div class="mt-4">
         {% if prop %}
@@ -156,17 +175,8 @@
   </div>
   
   <div class="tab-pane fade" id="settings-tab-pane" role="tabpanel" aria-labelledby="settings-tab" tabindex="0">
-      <h2 class="h5">การดำเนินการ</h2>
+      <h2 class="h5 text-danger">โซนอันตราย</h2>
       <hr>
-      <div class="mb-4">
-        <h5>ส่งเพื่อขออนุมัติ</h5>
-        <p>เมื่อคุณกรอกข้อมูลและอัปโหลดรูปภาพเรียบร้อยแล้ว กดปุ่มนี้เพื่อส่งประกาศให้ผู้ดูแลระบบตรวจสอบ</p>
-        <form method="post" action="{{ url_for('owner.submit_for_approval', prop_id=prop.id) }}">
-            <button type="submit" class="btn btn-info" {% if prop.workflow_status not in ['draft', 'rejected'] %}disabled{% endif %}>ส่งขออนุมัติ</button>
-        </form>
-      </div>
-      <hr>
-      <h5 class="text-danger">ลบประกาศ</h5>
       <p>หากคุณต้องการลบประกาศนี้อย่างถาวร สามารถทำได้ที่นี่ การกระทำนี้ไม่สามารถย้อนกลับได้</p>
       <form method="post" action="{{ url_for('owner.delete_property', prop_id=prop.id) }}"
             onsubmit="return confirm('คุณต้องการลบประกาศนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้');">
