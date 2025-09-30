@@ -34,6 +34,9 @@ class Property(db.Model):
     contact_phone = db.Column(db.String(20))
     line_id = db.Column(db.String(80))
     facebook_url = db.Column(db.String(255))
+    
+    # ADD THIS NEW COLUMN
+    location_pin = db.Column(db.JSON, nullable=True) # For storing GeoJSON
 
     rent_price = db.Column(db.Integer)
     water_rate = db.Column(db.Float)
