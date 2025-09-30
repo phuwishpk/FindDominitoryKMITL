@@ -142,7 +142,7 @@
     <form class="mb-3" method="post" action="{{ url_for('owner.upload_image', prop_id=prop.id) }}" enctype="multipart/form-data">
         {{ upload_form.csrf_token }}
         <div class="input-group">
-          <input class="form-control" type="file" name="image" accept="image/*" required>
+          <input class="form-control" type="file" name="image" accept="image/*" required multiple>
           <button class="btn btn-outline-primary">อัปโหลดรูป</button>
         </div>
     </form>
