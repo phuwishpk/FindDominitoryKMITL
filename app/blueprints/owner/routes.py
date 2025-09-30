@@ -29,19 +29,34 @@ def dashboard():
 @owner_required
 def new_property():
     form = PropertyForm()
+    upload_form = UploadImageForm()
     all_amenities = Amenity.query.all()
-    if form.validate_on_submit():
+
+    if form.validate_on_submit() and upload_form.validate_on_submit():
         prop_svc = current_app.extensions["container"]["property_service"]
         
         form_data = form.data.copy()
         form_data.pop('csrf_token', None)
-        form_data.pop('amenities', None) 
+        form_data['amenities'] = request.form.getlist('amenities')
 
         prop = prop_svc.create(current_user.ref_id, form_data)
-        flash("สร้างประกาศสำเร็จแล้ว จัดการรูปภาพและสิ่งอำนวยความสะดวกต่อได้เลย", "success")
-        return redirect(url_for("owner.edit_property", prop_id=prop.id))
         
-    return render_template("owner/form.html", form=form, all_amenities=all_amenities, prop=None)
+        # Save uploaded images if they exist
+        if upload_form.image.data and upload_form.image.data[0].filename:
+            upload_svc = current_app.extensions["container"]["upload_service"]
+            
+            for i, file_storage in enumerate(upload_form.image.data):
+                if file_storage and i < PropertyPolicy.MAX_IMAGES:
+                    path = upload_svc.save_image(current_user.ref_id, file_storage)
+                    img = PropertyImage(property_id=prop.id, file_path=path, position=i + 1)
+                    db.session.add(img)
+            
+            db.session.commit()
+
+        flash("สร้างประกาศสำเร็จแล้ว", "success")
+        return redirect(url_for("owner.dashboard"))
+        
+    return render_template("owner/form.html", form=form, all_amenities=all_amenities, prop=None, upload_form=upload_form)
 
 @bp.route("/property/<int:prop_id>/edit", methods=["GET","POST"])
 @login_required
@@ -91,20 +106,26 @@ def upload_image(prop_id: int):
     if prop.owner_id != current_user.ref_id:
         return redirect(url_for("owner.dashboard"))
     form = UploadImageForm()
-    if form.validate_on_submit() and form.image.data:
-        count = PropertyImage.query.filter_by(property_id=prop.id).count()
-        if count >= PropertyPolicy.MAX_IMAGES:
-            flash(f"อัปโหลดได้สูงสุด {PropertyPolicy.MAX_IMAGES} รูป", "warning")
-            return redirect(url_for("owner.edit_property", prop_id=prop.id))
+    if form.validate_on_submit() and form.image.data and form.image.data[0].filename:
         upload_svc = current_app.extensions["container"]["upload_service"]
-        path = upload_svc.save_image(current_user.ref_id, form.image.data)
-        max_pos = (PropertyImage.query.with_entities(func.max(PropertyImage.position))
-                   .filter_by(property_id=prop.id).scalar()) or 0
-        img = PropertyImage(property_id=prop.id, file_path=path, position=max_pos+1)
-        db.session.add(img); db.session.commit()
+        
+        for i, file_storage in enumerate(form.image.data):
+            count = PropertyImage.query.filter_by(property_id=prop.id).count()
+            if count >= PropertyPolicy.MAX_IMAGES:
+                flash(f"อัปโหลดได้สูงสุด {PropertyPolicy.MAX_IMAGES} รูปเท่านั้น", "warning")
+                break 
+            
+            if file_storage:
+                path = upload_svc.save_image(current_user.ref_id, file_storage)
+                max_pos = (PropertyImage.query.with_entities(func.max(PropertyImage.position))
+                           .filter_by(property_id=prop.id).scalar()) or 0
+                img = PropertyImage(property_id=prop.id, file_path=path, position=max_pos + 1)
+                db.session.add(img)
+        
+        db.session.commit()
         flash("อัปโหลดรูปสำเร็จ", "success")
     else:
-        flash("ตรวจสอบไฟล์ที่อัปโหลดอีกครั้ง", "danger")
+        flash("กรุณาเลือกไฟล์รูปภาพ", "danger")
     return redirect(url_for("owner.edit_property", prop_id=prop.id))
 
 @bp.post("/property/<int:prop_id>/image/<int:image_id>/delete")
@@ -115,7 +136,8 @@ def delete_image(prop_id: int, image_id: int):
     img = PropertyImage.query.get_or_404(image_id)
     if prop.owner_id != current_user.ref_id or img.property_id != prop.id:
         return redirect(url_for("owner.dashboard"))
-    db.session.delete(img); db.session.commit()
+    db.session.delete(img)
+    db.session.commit()
     flash("ลบรูปแล้ว", "success")
     return redirect(url_for("owner.edit_property", prop_id=prop.id))
 
