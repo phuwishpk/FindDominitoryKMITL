@@ -35,12 +35,13 @@ def new_property():
         
         form_data = form.data.copy()
         form_data.pop('csrf_token', None)
-        form_data['amenities'] = request.form.getlist('amenities')
+        form_data.pop('amenities', None) 
 
         prop = prop_svc.create(current_user.ref_id, form_data)
-        flash("สร้างประกาศสำเร็จแล้ว สามารถจัดการรูปภาพต่อได้เลย", "success")
+        flash("สร้างประกาศสำเร็จแล้ว จัดการรูปภาพและสิ่งอำนวยความสะดวกต่อได้เลย", "success")
         return redirect(url_for("owner.edit_property", prop_id=prop.id))
-    return render_template("owner/form.html", form=form, all_amenities=all_amenities)
+        
+    return render_template("owner/form.html", form=form, all_amenities=all_amenities, prop=None)
 
 @bp.route("/property/<int:prop_id>/edit", methods=["GET","POST"])
 @login_required
@@ -73,7 +74,7 @@ def edit_property(prop_id: int):
 
         if "save_and_exit" in request.form:
             return redirect(url_for("owner.dashboard"))
-        else: # save_property was clicked
+        else:
             return redirect(url_for("owner.edit_property", prop_id=prop.id))
 
     return render_template("owner/form.html",

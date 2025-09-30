@@ -8,84 +8,72 @@
 </div>
 {% endif %}
 
-<ul class="nav nav-tabs mt-4" id="myTab" role="tablist">
+<ul class="nav nav-tabs mt-4" id="formTab" role="tablist">
   <li class="nav-item" role="presentation">
     <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details-tab-pane" type="button" role="tab" aria-controls="details-tab-pane" aria-selected="true">ข้อมูลหลัก</button>
   </li>
-  {% if prop %}
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="images-tab" data-bs-toggle="tab" data-bs-target="#images-tab-pane" type="button" role="tab" aria-controls="images-tab-pane" aria-selected="false">จัดการรูปภาพ</button>
+    <button class="nav-link {% if not prop %}disabled{% endif %}" id="images-tab" data-bs-toggle="tab" data-bs-target="#images-tab-pane" type="button" role="tab" aria-controls="images-tab-pane" aria-selected="false">จัดการรูปภาพ</button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings-tab-pane" type="button" role="tab" aria-controls="settings-tab-pane" aria-selected="false">ตั้งค่า</button>
+    <button class="nav-link {% if not prop %}disabled{% endif %}" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings-tab-pane" type="button" role="tab" aria-controls="settings-tab-pane" aria-selected="false">ตั้งค่า</button>
   </li>
-  {% endif %}
 </ul>
 
 <div class="tab-content bg-white p-3 border border-top-0 rounded-bottom mb-4">
   
   <div class="tab-pane fade show active" id="details-tab-pane" role="tabpanel" aria-labelledby="details-tab" tabindex="0">
     <form method="post" novalidate>{{ form.csrf_token }}
-      {# --- Dorm Name --- #}
+      <p class="text-muted small">{% if not prop %}กรุณากรอกข้อมูลหลักให้ครบถ้วนแล้วกด "สร้างประกาศ" เพื่อไปสู่ขั้นตอนจัดการรูปภาพ{% else %}คุณสามารถแก้ไขข้อมูลประกาศได้ที่นี่{% endif %}</p>
+      
+      {# --- Form Fields --- #}
       <div class="mb-3">
         <label for="dorm_name" class="form-label">ชื่อหอ</label>
         {{ form.dorm_name(class_='form-control' + (' is-invalid' if form.dorm_name.errors else ''), placeholder='ชื่อหอ') }}
-        {% if form.dorm_name.errors %}
-          <div class="invalid-feedback">{{ form.dorm_name.errors[0] }}</div>
-        {% endif %}
+        {% if form.dorm_name.errors %}<div class="invalid-feedback">{{ form.dorm_name.errors[0] }}</div>{% endif %}
       </div>
-
-      {# --- Room Type --- #}
       <div class="mb-3">
         <label for="room_type" class="form-label">ประเภทห้อง</label>
-        {{ form.room_type(class_='form-control' + (' is-invalid' if form.room_type.errors else ''), placeholder='ประเภทห้อง (studio, 1br, 2br, other)') }}
-        {% if form.room_type.errors %}
-          <div class="invalid-feedback">{{ form.room_type.errors[0] }}</div>
-        {% endif %}
+        {{ form.room_type(class_='form-control' + (' is-invalid' if form.room_type.errors else ''), placeholder='เช่น studio, 1br, 2br, other') }}
+        {% if form.room_type.errors %}<div class="invalid-feedback">{{ form.room_type.errors[0] }}</div>{% endif %}
       </div>
-
-      {# --- Rates --- #}
       <div class="row g-3 mb-3">
         <div class="col-md-4">
-          <label for="rent_price" class="form-label">ค่าเช่า</label>
-          {{ form.rent_price(class_='form-control' + (' is-invalid' if form.rent_price.errors else ''), placeholder='ค่าเช่า') }}
+          <label for="rent_price" class="form-label">ค่าเช่า (บาท/เดือน)</label>
+          {{ form.rent_price(class_='form-control' + (' is-invalid' if form.rent_price.errors else ''), placeholder='เช่น 6500') }}
           {% if form.rent_price.errors %}<div class="invalid-feedback">{{ form.rent_price.errors[0] }}</div>{% endif %}
         </div>
         <div class="col-md-4">
-          <label for="water_rate" class="form-label">ค่าน้ำ</label>
+          <label for="water_rate" class="form-label">ค่าน้ำ (บาท/หน่วย)</label>
           {{ form.water_rate(class_='form-control' + (' is-invalid' if form.water_rate.errors else ''), placeholder='ค่าน้ำ') }}
           {% if form.water_rate.errors %}<div class="invalid-feedback">{{ form.water_rate.errors[0] }}</div>{% endif %}
         </div>
         <div class="col-md-4">
-          <label for="electric_rate" class="form-label">ค่าไฟ</label>
+          <label for="electric_rate" class="form-label">ค่าไฟ (บาท/หน่วย)</label>
           {{ form.electric_rate(class_='form-control' + (' is-invalid' if form.electric_rate.errors else ''), placeholder='ค่าไฟ') }}
           {% if form.electric_rate.errors %}<div class="invalid-feedback">{{ form.electric_rate.errors[0] }}</div>{% endif %}
         </div>
       </div>
-
-      {# --- Deposit & Coordinates --- #}
       <div class="row g-3 mb-3">
         <div class="col-md-6">
-          <label for="deposit_amount" class="form-label">เงินประกัน</label>
+          <label for="deposit_amount" class="form-label">เงินประกัน (บาท)</label>
           {{ form.deposit_amount(class_='form-control' + (' is-invalid' if form.deposit_amount.errors else ''), placeholder='เงินประกัน') }}
           {% if form.deposit_amount.errors %}<div class="invalid-feedback">{{ form.deposit_amount.errors[0] }}</div>{% endif %}
         </div>
         <div class="col-md-3">
           <label for="lat" class="form-label">ละติจูด</label>
-          {{ form.lat(class_='form-control' + (' is-invalid' if form.lat.errors else ''), placeholder='ละติจูด') }}
+          {{ form.lat(class_='form-control' + (' is-invalid' if form.lat.errors else ''), placeholder='เช่น 13.7292') }}
           {% if form.lat.errors %}<div class="invalid-feedback">{{ form.lat.errors[0] }}</div>{% endif %}
         </div>
         <div class="col-md-3">
           <label for="lng" class="form-label">ลองจิจูด</label>
-          {{ form.lng(class_='form-control' + (' is-invalid' if form.lng.errors else ''), placeholder='ลองจิจูด') }}
+          {{ form.lng(class_='form-control' + (' is-invalid' if form.lng.errors else ''), placeholder='เช่น 100.7758') }}
           {% if form.lng.errors %}<div class="invalid-feedback">{{ form.lng.errors[0] }}</div>{% endif %}
         </div>
       </div>
-
-      {# --- Contact Info --- #}
       <div class="row g-3">
         <div class="col-md-4">
-          <label for="contact_phone" class="form-label">เบอร์โทร</label>
+          <label for="contact_phone" class="form-label">เบอร์โทรติดต่อ</label>
           {{ form.contact_phone(class_='form-control' + (' is-invalid' if form.contact_phone.errors else ''), placeholder='เบอร์โทร') }}
           {% if form.contact_phone.errors %}<div class="invalid-feedback">{{ form.contact_phone.errors[0] }}</div>{% endif %}
         </div>
@@ -122,7 +110,7 @@
         <button class="btn btn-primary" name="save_and_exit" value="true">บันทึกและกลับสู่ Dashboard</button>
         <button class="btn btn-success" name="save_property" value="true">บันทึกและแก้ไขต่อ</button>
         {% else %}
-        <button class="btn btn-primary" name="save_property" value="true">สร้างและไปต่อเพื่อจัดการรูปภาพ</button>
+        <button class="btn btn-primary" name="save_property" value="true">สร้างประกาศ</button>
         {% endif %}
         <a href="{{ url_for('owner.dashboard') }}" class="btn btn-secondary">ยกเลิก</a>
       </div>
@@ -168,8 +156,17 @@
   </div>
   
   <div class="tab-pane fade" id="settings-tab-pane" role="tabpanel" aria-labelledby="settings-tab" tabindex="0">
-      <h2 class="h5 text-danger">โซนอันตราย</h2>
+      <h2 class="h5">การดำเนินการ</h2>
       <hr>
+      <div class="mb-4">
+        <h5>ส่งเพื่อขออนุมัติ</h5>
+        <p>เมื่อคุณกรอกข้อมูลและอัปโหลดรูปภาพเรียบร้อยแล้ว กดปุ่มนี้เพื่อส่งประกาศให้ผู้ดูแลระบบตรวจสอบ</p>
+        <form method="post" action="{{ url_for('owner.submit_for_approval', prop_id=prop.id) }}">
+            <button type="submit" class="btn btn-info" {% if prop.workflow_status not in ['draft', 'rejected'] %}disabled{% endif %}>ส่งขออนุมัติ</button>
+        </form>
+      </div>
+      <hr>
+      <h5 class="text-danger">ลบประกาศ</h5>
       <p>หากคุณต้องการลบประกาศนี้อย่างถาวร สามารถทำได้ที่นี่ การกระทำนี้ไม่สามารถย้อนกลับได้</p>
       <form method="post" action="{{ url_for('owner.delete_property', prop_id=prop.id) }}"
             onsubmit="return confirm('คุณต้องการลบประกาศนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้');">
@@ -181,6 +178,7 @@
 
 {% if prop %}
 <script>
+// Script for drag and drop reordering
 const gallery = document.getElementById('gallery');
 if (gallery) {
   let dragEl = null;
