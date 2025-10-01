@@ -1,64 +1,84 @@
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from flask_login import LoginManager, UserMixin, current_user
-from flask_babel import Babel
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from flask_wtf import CSRFProtect
 from functools import wraps
+from flask import current_app
+from flask_login import LoginManager, current_user
+from flask_principal import Principal, Permission, RoleNeed, UserNeed, identity_loaded
 
-db = SQLAlchemy()
-migrate = Migrate()
+# --- สมมติว่ามีการ import models และ repositories ---
+# ปกติจะ import มาจากไฟล์อื่น
+from .repositories import OwnerRepository, AdminRepository
+
+# 1. สร้าง instances ของ extensions
 login_manager = LoginManager()
-babel = Babel()
-limiter = Limiter(key_func=get_remote_address)
-csrf = CSRFProtect()
+principal = Principal()
 
-class Principal(UserMixin):
-    def __init__(self, sid: str, role: str, ref_id: int):
-        self.id = sid
-        self.role = role
-        self.ref_id = ref_id
+# 2. สร้าง "Needs" (ความต้องการ) สำหรับแต่ละบทบาท
+# RoleNeed ต้องการแค่ชื่อบทบาท
+admin_need = RoleNeed('admin')
+owner_need = RoleNeed('owner')
+
+# 3. สร้าง "Permissions" (สิทธิ์) จาก Needs
+# Permission คือการตรวจสอบว่า user ปัจจุบันมี Need ที่กำหนดหรือไม่
+admin_permission = Permission(admin_need)
+owner_permission = Permission(owner_need)
+
 
 @login_manager.user_loader
 def load_user(user_id: str):
-    from app.models.user import Owner, Admin
-    try:
-        role, raw = user_id.split(":", 1)
-        ref_id = int(raw)
-    except Exception:
+    """
+    โหลด principal (Owner/Admin) จากฐานข้อมูลเพื่อผูกกับ session
+    Flask-Login จะเรียกใช้ฟังก์ชันนี้ทุกครั้งที่มี request เข้ามา
+    เพื่อโหลด user object จาก user_id ที่เก็บไว้ใน session
+
+    เราใช้ prefix 'owner_' และ 'admin_' เพื่อแยกแยะระหว่างสองตาราง
+    """
+    container = current_app.config.get("container")
+    if not container:
         return None
-    if role == "owner":
-        ent = Owner.query.get(ref_id)
-        return Principal(user_id, "owner", ent.id) if ent else None
-    if role == "admin":
-        ent = Admin.query.get(ref_id)
-        return Principal(user_id, "admin", ent.id) if ent else None
+
+    owner_repo: OwnerRepository = container.get("owner_repository")
+    admin_repo: AdminRepository = container.get("admin_repository")
+
+    if user_id.startswith('owner_'):
+        owner_id = int(user_id.split('_')[1])
+        return owner_repo.find_by_id(owner_id)
+    elif user_id.startswith('admin_'):
+        admin_id = int(user_id.split('_')[1])
+        return admin_repo.find_by_id(admin_id)
     return None
 
-login_manager.login_view = "auth.login"
+@identity_loaded.connect_via(current_app)
+def on_identity_loaded(sender, identity):
+    """
+    หลังจาก identity ถูกโหลด (ตอน login), เราจะผูก Needs เข้ากับ identity นั้น
+    เพื่อให้ Permission ทำงานได้
+    """
+    # identity.provides.add(UserNeed(identity.id)) # เพิ่ม UserNeed ถ้าต้องการเช็คสิทธิ์เฉพาะบุคคล
 
-@login_manager.unauthorized_handler
-def _unauth():
-    from flask import request, redirect, url_for
-    if request.path.startswith("/admin"):
-        return redirect(url_for("auth.login", role="admin"))
-    return redirect(url_for("auth.login", role="owner"))
+    # ตรวจสอบว่า user ที่ login อยู่เป็นประเภทไหน แล้วเพิ่ม RoleNeed ที่เหมาะสม
+    if hasattr(current_user, 'role'):
+        identity.provides.add(RoleNeed(current_user.role))
+
+
+# --- Decorators สำหรับป้องกัน Route ---
 
 def owner_required(f):
+    """
+    Decorator สำหรับป้องกันการเข้าถึง route ให้เฉพาะ Owner เท่านั้น
+    """
     @wraps(f)
-    def wrapper(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.role != "owner":
-            from flask import redirect, url_for
-            return redirect(url_for("auth.login", role="owner"))
-        return f(*args, **kwargs)
-    return wrapper
+    def decorated_function(*args, **kwargs):
+        # ใช้ context manager ของ permission เพื่อตรวจสอบสิทธิ์
+        with owner_permission.require(http_exception=403):
+            return f(*args, **kwargs)
+    return decorated_function
+
 
 def admin_required(f):
+    """
+    Decorator สำหรับป้องกันการเข้าถึง route ให้เฉพาะ Admin เท่านั้น
+    """
     @wraps(f)
-    def wrapper(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.role != "admin":
-            from flask import redirect, url_for
-            return redirect(url_for("auth.login", role="admin"))
-        return f(*args, **kwargs)
-    return wrapper
+    def decorated_function(*args, **kwargs):
+        with admin_permission.require(http_exception=403):
+            return f(*args, **kwargs)
+    return decorated_function
