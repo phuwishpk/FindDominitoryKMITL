@@ -1,4 +1,5 @@
-# phuwishpk/finddominitorykmitl/FindDominitoryKMITL-owner-pin-map/app/blueprints/owner/routes.py
+# phuwishpk/finddominitorykmitl/FindDominitoryKMITL-develop-owner/app/blueprints/owner/routes.py
+
 from flask import render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from sqlalchemy import func
@@ -33,7 +34,7 @@ def new_property():
     upload_form = UploadImageForm()
     all_amenities = Amenity.query.all()
 
-    if form.validate_on_submit() and upload_form.validate_on_submit():
+    if form.validate_on_submit():
         prop_svc = current_app.extensions["container"]["property_service"]
         
         form_data = form.data.copy()
@@ -42,21 +43,9 @@ def new_property():
 
         prop = prop_svc.create(current_user.ref_id, form_data)
         
-        if upload_form.image.data and upload_form.image.data[0].filename:
-            upload_svc = current_app.extensions["container"]["upload_service"]
-            
-            for i, file_storage in enumerate(upload_form.image.data):
-                if file_storage and i < PropertyPolicy.MAX_IMAGES:
-                    path = upload_svc.save_image(current_user.ref_id, file_storage)
-                    img = PropertyImage(property_id=prop.id, file_path=path, position=i + 1)
-                    db.session.add(img)
-            
-            db.session.commit()
-
-        flash("สร้างประกาศสำเร็จแล้ว", "success")
-        return redirect(url_for("owner.dashboard"))
+        flash("สร้างประกาศสำเร็จแล้ว กรุณาจัดการรูปภาพต่อ", "success")
+        return redirect(url_for("owner.edit_property", prop_id=prop.id))
         
-    # --- แก้ไขบรรทัดนี้ ---
     return render_template("owner/form.html", form=form, all_amenities=all_amenities, prop=None, upload_form=upload_form, PropertyPolicy=PropertyPolicy)
 
 @bp.route("/property/<int:prop_id>/edit", methods=["GET","POST"])
@@ -67,7 +56,18 @@ def edit_property(prop_id: int):
     if prop.owner_id != current_user.ref_id:
         return redirect(url_for("owner.dashboard"))
     
-    form = PropertyForm(obj=prop)
+    # --- vvv ส่วนที่แก้ไข Error vvv ---
+    # สร้าง instance ของ form ขึ้นมาก่อน
+    form = PropertyForm(obj=prop) 
+    predefined_choices = [choice[0] for choice in form.room_type.choices]
+
+    # จัดการข้อมูลเริ่มต้นสำหรับ GET request
+    if request.method == "GET":
+        if prop.room_type not in predefined_choices:
+            form.room_type.data = 'อื่นๆ'
+            form.other_room_type.data = prop.room_type
+    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
+
     upload_form = UploadImageForm()
     reorder_form = ReorderImagesForm()
     all_amenities = Amenity.query.all()
@@ -81,7 +81,8 @@ def edit_property(prop_id: int):
     if form.validate_on_submit() and ("save_property" in request.form or "save_and_exit" in request.form):
         prop_svc = current_app.extensions["container"]["property_service"]
         
-        form_data = form.data.copy()
+        # ใช้ form ที่รับข้อมูลจาก POST request มา validate และประมวลผล
+        form_data = PropertyForm(request.form).data
         form_data.pop('csrf_token', None)
         form_data['amenities'] = request.form.getlist('amenities')
 
@@ -93,15 +94,14 @@ def edit_property(prop_id: int):
         else:
             return redirect(url_for("owner.edit_property", prop_id=prop.id))
 
-    # --- แก้ไขส่วนนี้ ---
     return render_template("owner/form.html",
                            form=form, prop=prop,
                            upload_form=upload_form, reorder_form=reorder_form,
                            all_amenities=all_amenities,
                            approval_note=approval_note,
-                           PropertyPolicy=PropertyPolicy) # <-- เพิ่มบรรทัดนี้
+                           PropertyPolicy=PropertyPolicy)
 
-# ... (โค้ดส่วนที่เหลือของไฟล์) ...
+# ... (โค้ดส่วนที่เหลือของไฟล์เหมือนเดิม) ...
 @bp.post("/property/<int:prop_id>/image")
 @login_required
 @owner_required

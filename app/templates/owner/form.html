@@ -38,7 +38,23 @@
         <div class="col-md-6"><label class="form-label">ถนน</label>{{ form.road(class_='form-control' + (' is-invalid' if form.road.errors else ''), placeholder='เช่น ลาดกระบัง') }}</div>
         <div class="col-md-6"><label class="form-label">ซอย</label>{{ form.soi(class_='form-control' + (' is-invalid' if form.soi.errors else ''), placeholder='เช่น ลาดกระบัง 1') }}</div>
       </div>
-      <div class="mb-3"><label class="form-label">ประเภทห้อง</label>{{ form.room_type(class_='form-control' + (' is-invalid' if form.room_type.errors else ''), placeholder='เช่น studio, 1br, 2br, other') }}</div>
+      
+      <div class="mb-3">
+        <label class="form-label">ประเภทห้อง</label>
+        {{ form.room_type(class_='form-select' + (' is-invalid' if form.room_type.errors else ''), id='room_type_select') }}
+      </div>
+      <div class="mb-3" id="other_room_type_container" style="display: none;">
+        <label class="form-label">ระบุประเภทห้อง</label>
+        {{ form.other_room_type(class_='form-control' + (' is-invalid' if form.other_room_type.errors else ''), placeholder='เช่น ห้องพักรายเดือน, บ้านเช่า') }}
+        {% if form.other_room_type.errors %}
+          <div class="invalid-feedback d-block">
+            {% for error in form.other_room_type.errors %}
+              <span>{{ error }}</span>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
       <div class="row g-3 mb-3">
         <div class="col-md-4"><label class="form-label">ค่าเช่า (บาท/เดือน)</label>{{ form.rent_price(class_='form-control' + (' is-invalid' if form.rent_price.errors else ''), placeholder='เช่น 6500') }}</div>
         <div class="col-md-4"><label class="form-label">ค่าน้ำ (บาท/หน่วย)</label>{{ form.water_rate(class_='form-control' + (' is-invalid' if form.water_rate.errors else ''), placeholder='ค่าน้ำ') }}</div>
@@ -65,6 +81,7 @@
             </div>
           {% endif %}
       </div>
+
       <hr class="my-4">
       <h2 class="h5">ปักหมุดบนแผนที่</h2>
       <p class="text-muted small">ค้นหาสถานที่หรือคลิกบนแผนที่เพื่อกำหนดตำแหน่งหอพักของคุณ</p>
@@ -82,7 +99,7 @@
       </div>
     </form>
   </div>
-
+  
   {# --- Image Management Tab --- #}
   {% if prop %}
   <div class="tab-pane fade" id="images-tab-pane" role="tabpanel" aria-labelledby="images-tab" tabindex="0">
@@ -138,11 +155,12 @@
 </div>
 {% endblock %}
 
+
 {% block page_scripts %}
 <script>
 (function() {
     'use strict';
-
+    
     // === SCRIPT FOR LEAFLET MAP WITH SEARCH ===
     const mapContainer = document.getElementById('map');
     if (mapContainer) {
@@ -215,6 +233,31 @@
         updateCharCount();
         additionalInfoTextarea.addEventListener('input', updateCharCount);
     }
+    
+    // === SCRIPT FOR "OTHER" ROOM TYPE INPUT ===
+    const roomTypeSelect = document.getElementById('room_type_select');
+    const otherRoomTypeContainer = document.getElementById('other_room_type_container');
+    const otherRoomTypeInput = document.querySelector('[name="other_room_type"]');
+
+    function toggleOtherRoomType() {
+        if (roomTypeSelect && otherRoomTypeContainer) {
+            if (roomTypeSelect.value === 'อื่นๆ') {
+                otherRoomTypeContainer.style.display = 'block';
+            } else {
+                otherRoomTypeContainer.style.display = 'none';
+                if (otherRoomTypeInput) {
+                    otherRoomTypeInput.value = '';
+                }
+            }
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        if (roomTypeSelect) {
+            toggleOtherRoomType();
+            roomTypeSelect.addEventListener('change', toggleOtherRoomType);
+        }
+    });
 
     // === SCRIPT FOR GALLERY DRAG & DROP ===
     const gallery = document.getElementById('gallery');
