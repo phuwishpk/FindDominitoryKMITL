@@ -28,7 +28,6 @@
   
   {# --- Main Details Tab --- #}
   <div class="{% if prop %}tab-pane fade show active{% endif %}" id="details-tab-pane" role="tabpanel" aria-labelledby="details-tab" tabindex="0">
-    {# --- 1. (แนะนำ) ลบ enctype ออกจากฟอร์มหลัก เพราะไม่ได้ใช้ส่งไฟล์แล้ว --- #}
     <form method="post" novalidate>
       {{ form.csrf_token }}
       
@@ -54,6 +53,18 @@
         <div class="col-md-4"><label class="form-label">Facebook URL</label>{{ form.facebook_url(class_='form-control' + (' is-invalid' if form.facebook_url.errors else ''), placeholder='Facebook URL') }}</div>
       </div>
 
+      <div class="my-3">
+          <label for="additionalInfo" class="form-label">ข้อมูลเพิ่มเติม</label>
+          {{ form.additional_info(id='additionalInfo', class_='form-control' + (' is-invalid' if form.additional_info.errors else ''), rows=5, placeholder='รายละเอียดอื่นๆ เช่น โปรโมชัน, จุดสังเกต, หรือกฎระเบียบเพิ่มเติม') }}
+          <div id="charCount" class="form-text text-end">0 / 5000</div>
+          {% if form.additional_info.errors %}
+            <div class="invalid-feedback">
+              {% for error in form.additional_info.errors %}
+                <span>{{ error }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
+      </div>
       <hr class="my-4">
       <h2 class="h5">ปักหมุดบนแผนที่</h2>
       <p class="text-muted small">ค้นหาสถานที่หรือคลิกบนแผนที่เพื่อกำหนดตำแหน่งหอพักของคุณ</p>
@@ -65,9 +76,6 @@
       <div class="row">
         {% for amenity in all_amenities %}<div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}" {% if prop and amenity in prop.amenities %}checked{% endif %}><label class="form-check-label" for="amenity-{{ amenity.code }}">{{ amenity.label_th }}</label></div></div>{% endfor %}
       </div>
-
-      {# --- 2. ลบส่วนอัปโหลดรูปภาพสำหรับหน้า "สร้างใหม่" ออกทั้งหมด --- #}
-      {# ส่วนนี้ถูกลบออกไปแล้ว #}
 
       <div class="mt-4">
         {% if prop %}<button class="btn btn-primary" name="save_and_exit" value="true">บันทึกและกลับสู่ Dashboard</button> <button class="btn btn-success" name="save_property" value="true">บันทึกและแก้ไขต่อ</button>{% else %}<button class="btn btn-primary" name="save_property" value="true">สร้างประกาศ</button>{% endif %} <a href="{{ url_for('owner.dashboard') }}" class="btn btn-secondary">ยกเลิก</a>
@@ -82,7 +90,6 @@
     <form class="mb-3" method="post" action="{{ url_for('owner.upload_image', prop_id=prop.id) }}" enctype="multipart/form-data">
         {{ upload_form.csrf_token }}
         <div class="input-group">
-          {# --- 3. แก้ไข Input ให้เป็นแบบเดี่ยวและใช้ WTForms เพื่อให้สอดคล้องกับโค้ด Python --- #}
           {{ upload_form.image(class_='form-control' + (' is-invalid' if upload_form.image.errors else '')) }}
           <button class="btn btn-outline-primary">อัปโหลด</button>
         </div>
@@ -131,9 +138,7 @@
 </div>
 {% endblock %}
 
-
 {% block page_scripts %}
-{# ... ส่วนของ JavaScript ไม่มีการเปลี่ยนแปลง ... #}
 <script>
 (function() {
     'use strict';
@@ -151,12 +156,11 @@
         let marker = null;
         const hiddenInput = document.getElementById('location_pin_json_input');
         
-        // --- NEW: Add Search Control ---
         const searchProvider = new GeoSearch.OpenStreetMapProvider();
         const searchControl = new GeoSearch.GeoSearchControl({
             provider: searchProvider,
-            style: 'bar', // 'bar' or 'button'
-            showMarker: false, // We will handle the marker ourselves
+            style: 'bar',
+            showMarker: false,
             autoClose: true,
             searchLabel: 'ค้นหาสถานที่...',
         });
@@ -169,14 +173,12 @@
             hiddenInput.value = JSON.stringify(geoJsonData);
         }
 
-        // --- NEW: Listen for search result event ---
         map.on('geosearch/showlocation', function(result) {
-            const { x, y } = result.location; // x is lng, y is lat
-            map.setView([y, x], 16); // Center map on the result
+            const { x, y } = result.location;
+            map.setView([y, x], 16);
             updateMarkerAndInput(y, x);
         });
 
-        // Load existing pin data on edit page
         try {
             const existingDataStr = '{{ prop.location_pin | tojson | safe if prop and prop.location_pin else 'null' }}';
             const existingData = JSON.parse(existingDataStr);
@@ -189,10 +191,29 @@
             console.error("Could not parse existing location data:", e);
         }
 
-        // Set marker on map click
         map.on('click', function(e) {
             updateMarkerAndInput(e.latlng.lat, e.latlng.lng);
         });
+    }
+
+    // === SCRIPT FOR CHARACTER COUNTING ===
+    const additionalInfoTextarea = document.getElementById('additionalInfo');
+    const charCountDisplay = document.getElementById('charCount');
+    if (additionalInfoTextarea && charCountDisplay) {
+        const maxLength = 5000;
+        
+        function updateCharCount() {
+            const currentLength = additionalInfoTextarea.value.length;
+            charCountDisplay.textContent = `${currentLength} / ${maxLength}`;
+            if (currentLength > maxLength) {
+                charCountDisplay.classList.add('text-danger');
+            } else {
+                charCountDisplay.classList.remove('text-danger');
+            }
+        }
+        
+        updateCharCount();
+        additionalInfoTextarea.addEventListener('input', updateCharCount);
     }
 
     // === SCRIPT FOR GALLERY DRAG & DROP ===

@@ -1,3 +1,5 @@
+# phuwishpk/finddominitorykmitl/FindDominitoryKMITL-develop-owner/app/models/property.py
+
 from datetime import datetime
 from app.extensions import db
 
@@ -30,8 +32,8 @@ class Property(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey("owners.id", ondelete="CASCADE"), nullable=False)
 
     dorm_name = db.Column(db.String(120), nullable=False)
-    road = db.Column(db.String(255), nullable=True) # <-- แก้ไขตรงนี้
-    soi = db.Column(db.String(255), nullable=True) # <-- เพิ่มบรรทัดนี้
+    road = db.Column(db.String(255), nullable=True)
+    soi = db.Column(db.String(255), nullable=True)
     room_type = db.Column(db.String(30), nullable=False)
     contact_phone = db.Column(db.String(20))
     line_id = db.Column(db.String(80))
@@ -43,6 +45,8 @@ class Property(db.Model):
     water_rate = db.Column(db.Float)
     electric_rate = db.Column(db.Float)
     deposit_amount = db.Column(db.Integer)
+
+    additional_info = db.Column(db.Text, nullable=True) # <-- ส่วนที่เพิ่มเข้ามา
 
     availability_status = db.Column(db.String(16), default="vacant")
     workflow_status = db.Column(db.String(16), default="draft")

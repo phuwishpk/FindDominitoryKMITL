@@ -1,16 +1,17 @@
-# Python
+# Python cache files
 __pycache__/
 *.pyc
 
-# Database
+# Database file
 instance/
 
-# VS Code
+# VS Code editor folder
 .vscode/
 
-# Environment
+# Environment files
 .env
 venv/
 env/
 
+# User uploaded files
 uploads/
