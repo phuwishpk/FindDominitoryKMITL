@@ -12,3 +12,5 @@ instance/
 .env
 venv/
 env/
+
+uploads/
