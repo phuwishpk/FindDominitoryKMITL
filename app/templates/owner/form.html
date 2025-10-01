@@ -137,29 +137,32 @@
     <hr>
     <h2 class="h5">จัดเรียงรูปภาพ</h2>
     <p class="text-muted small">คลิกค้างแล้วลากเพื่อจัดเรียงลำดับรูปภาพ</p>
-    <form id="reorder-form" method="post" action="{{ url_for('owner.reorder_images', prop_id=prop.id) }}">
-      {{ reorder_form.csrf_token }}
-      <div id="gallery" class="row row-cols-2 row-cols-md-3 g-3">
-        {% for img in prop.images|sort(attribute='position') %}
-        <div class="col">
-          <div class="card" draggable="true" data-image-id="{{ img.id }}">
-            <img src="/{{ img.file_path }}" class="card-img-top" alt="#{{ img.id }}">
-            <div class="card-body p-2 d-flex justify-content-between align-items-center">
-              <span class="badge text-bg-light">ลำดับ {{ loop.index }}</span>
-              <form method="post" action="{{ url_for('owner.delete_image', prop_id=prop.id, image_id=img.id) }}" onsubmit="return confirm('ต้องการลบรูปนี้ใช่หรือไม่?');">
-                {{ form.csrf_token }} {# <--- เพิ่มบรรทัดนี้ #}
-                <button type="submit" class="btn btn-sm btn-outline-danger">ลบ</button>
-              </form>
-            </div>
+
+    <div id="gallery" class="row row-cols-2 row-cols-md-3 g-3">
+      {% for img in prop.images|sort(attribute='position') %}
+      <div class="col">
+        <div class="card" draggable="true" data-image-id="{{ img.id }}">
+          <img src="/{{ img.file_path }}" class="card-img-top" alt="#{{ img.id }}">
+          <div class="card-body p-2 d-flex justify-content-between align-items-center">
+            <span class="badge text-bg-light">ลำดับ {{ loop.index }}</span>
+            <form method="post" action="{{ url_for('owner.delete_image', prop_id=prop.id, image_id=img.id) }}" onsubmit="return confirm('ต้องการลบรูปนี้ใช่หรือไม่?');">
+              {{ form.csrf_token }}
+              <button type="submit" class="btn btn-sm btn-outline-danger">ลบ</button>
+            </form>
           </div>
         </div>
-        {% else %}
-        <div class="col"><div class="alert alert-secondary w-100">ยังไม่มีรูป</div></div>
-        {% endfor %}
       </div>
+      {% else %}
+      <div class="col"><div class="alert alert-secondary w-100">ยังไม่มีรูป</div></div>
+      {% endfor %}
+    </div>
+
+    <form id="reorder-form" method="post" action="{{ url_for('owner.reorder_images', prop_id=prop.id) }}">
+      {{ reorder_form.csrf_token }}
       <div id="positions-container" class="d-none"></div>
       <button type="submit" class="btn btn-outline-secondary mt-3">บันทึกการจัดเรียง</button>
     </form>
+
   </div>
 
   {# --- Settings/Danger Zone Tab --- #}
@@ -169,7 +172,7 @@
         <p>หากคุณต้องการลบประกาศนี้อย่างถาวร สามารถทำได้ที่นี่ การกระทำนี้ไม่สามารถย้อนกลับได้</p>
         <form method="post" action="{{ url_for('owner.delete_property', prop_id=prop.id) }}"
               onsubmit="return confirm('คุณต้องการลบประกาศนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้');">
-          {{ form.csrf_token }} {# <--- เพิ่มบรรทัดนี้ #}
+          {{ form.csrf_token }}
           <button type="submit" class="btn btn-danger">ลบประกาศนี้</button>
         </form>
     </div>
