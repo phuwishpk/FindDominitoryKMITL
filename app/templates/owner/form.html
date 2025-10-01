@@ -181,6 +181,21 @@
 (function() {
     'use strict';
     
+    // --- vvv โค้ดส่วนแก้ไข vvv ---
+    // ส่วนนี้จะอ่าน URL parameter 'tab' แล้วสลับไปแท็บนั้นๆ
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabToShow = urlParams.get('tab');
+        if (tabToShow === 'images') {
+            const imageTabButton = document.querySelector('#images-tab');
+            if (imageTabButton) {
+                const tab = new bootstrap.Tab(imageTabButton);
+                tab.show();
+            }
+        }
+    });
+    // --- ^^^ สิ้นสุดส่วนแก้ไข ^^^ ---
+
     // === SCRIPT FOR LEAFLET MAP WITH SEARCH ===
     const mapContainer = document.getElementById('map');
     if (mapContainer) {

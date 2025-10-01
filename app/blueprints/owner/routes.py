@@ -42,11 +42,9 @@ def new_property():
         form_data.pop('csrf_token', None)
         form_data['amenities'] = request.form.getlist('amenities')
         
-        # 1. สร้าง Property หลัก (Service จะกรองฟิลด์ 'images' ออกเอง)
         prop = prop_svc.create(current_user.ref_id, form_data)
         
-        # 2. จัดการไฟล์รูปภาพที่ถูกส่งมา
-        images = form.images.data # ใช้ข้อมูลจากฟอร์มที่ผ่านการ validate แล้ว
+        images = form.images.data
         if images and images[0].filename:
             for i, file_storage in enumerate(images):
                 if i >= PropertyPolicy.MAX_IMAGES:
@@ -141,7 +139,7 @@ def upload_image(prop_id: int):
         flash("อัปโหลดรูปสำเร็จ", "success")
     else:
         flash("กรุณาเลือกไฟล์รูปภาพ", "danger")
-    return redirect(url_for("owner.edit_property", prop_id=prop.id))
+    return redirect(url_for("owner.edit_property", prop_id=prop.id, tab="images"))
 
 @bp.post("/property/<int:prop_id>/image/<int:image_id>/delete")
 @login_required
@@ -154,7 +152,7 @@ def delete_image(prop_id: int, image_id: int):
     db.session.delete(img)
     db.session.commit()
     flash("ลบรูปแล้ว", "success")
-    return redirect(url_for("owner.edit_property", prop_id=prop.id))
+    return redirect(url_for("owner.edit_property", prop_id=prop.id, tab="images"))
 
 @bp.post("/property/<int:prop_id>/images/reorder")
 @login_required
@@ -166,7 +164,7 @@ def reorder_images(prop_id: int):
     form = ReorderImagesForm()
     if not form.validate_on_submit():
         flash("รูปแบบข้อมูลจัดเรียงไม่ถูกต้อง", "danger")
-        return redirect(url_for("owner.edit_property", prop_id=prop.id))
+        return redirect(url_for("owner.edit_property", prop_id=prop.id, tab="images"))
     mapping = {}
     for field in form.positions:
         try:
@@ -182,7 +180,7 @@ def reorder_images(prop_id: int):
         im.position = mapping.get(im.id, im.position)
     db.session.commit()
     flash("จัดเรียงรูปแล้ว", "success")
-    return redirect(url_for("owner.edit_property", prop_id=prop.id))
+    return redirect(url_for("owner.edit_property", prop_id=prop.id, tab="images"))
 
 @bp.post("/property/<int:prop_id>/submit")
 @login_required
