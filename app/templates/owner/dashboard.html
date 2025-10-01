@@ -1,26 +1,28 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="d-flex align-items-center justify-content-between">
-  <h1 class="h4 mb-3">Owner Dashboard</h1>
-  <a href="/" class="btn btn-link">กลับไปหน้า User</a>
+  <h1 class="h4 mb-3">Owner Dashboard</h1>
+  <a href="/" class="btn btn-link">กลับไปหน้า User</a>
 </div>
 <a class="btn btn-primary btn-sm mb-3" href="/owner/property/new">+ สร้างประกาศ</a>
 <div class="list-group">
-  {% for p in props %}
+  {% for p in props %}
 <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-  <a href="/owner/property/{{ p.id }}/edit" class="text-decoration-none text-dark flex-grow-1">
-    <span>{{ p.dorm_name }}</span>
-  </a>
-  
-  {% if p.workflow_status == 'draft' %}
-  <form method="post" action="{{ url_for('owner.submit_for_approval', prop_id=p.id) }}" class="ms-2" onsubmit="return confirm('คุณต้องการส่งประกาศนี้เพื่อขออนุมัติใช่หรือไม่?');">
-    <button class="btn btn-sm btn-info">ส่งอนุมัติ</button>
-  </form>
-  {% endif %}
-  <span class="badge text-bg-secondary ms-2">{{ p.workflow_status }}</span>
+  <a href="/owner/property/{{ p.id }}/edit" class="text-decoration-none text-dark flex-grow-1">
+    <span>{{ p.dorm_name }}</span>
+  </a>
+  
+  {% if p.workflow_status == 'draft' or p.workflow_status == 'rejected' %}
+  <form method="post" action="{{ url_for('owner.submit_for_approval', prop_id=p.id) }}" class="ms-2" onsubmit="return confirm('คุณต้องการส่งประกาศนี้เพื่อขออนุมัติใช่หรือไม่?');">
+    {# 💡 แก้ไขที่นี่: เพิ่ม CSRF Token #}
+    {{ submit_form.csrf_token }} 
+    <button class="btn btn-sm btn-info">ส่งอนุมัติ</button>
+  </form>
+  {% endif %}
+  <span class="badge text-bg-secondary ms-2">{{ p.workflow_status }}</span>
 </div>
 {% else %}
-  <div class="alert alert-secondary">ยังไม่มีประกาศ</div>
-  {% endfor %}
+  <div class="alert alert-secondary">ยังไม่มีประกาศ</div>
+  {% endfor %}
 </div>
 {% endblock %}

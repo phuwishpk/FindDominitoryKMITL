@@ -16,13 +16,15 @@ class ApprovalService:
         prop = self.property_repo.get(property_id)
         if not prop or prop.owner_id != owner_id:
             raise ValueError("Property not found or not owned by user")
-
+        
+        # 💡 Logic การเปลี่ยนสถานะและสร้าง Approval Request
         prop.workflow_status = "submitted"
         approval_request = ApprovalRequest(property_id=property_id, owner_id=owner_id, status="pending")
         
         self.approval_repo.add_request(approval_request)
         self.property_repo.save(prop)
 
+        # 💡 Logic การบันทึก AuditLog
         AuditLog.log(
             actor_type="owner",
             actor_id=owner_id,

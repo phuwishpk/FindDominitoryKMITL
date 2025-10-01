@@ -1,8 +1,25 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="d-flex align-items-center justify-content-between">
-  <h1 class="h4">Admin Queue</h1>
-  <a href="/" class="btn btn-link">กลับไปหน้า User</a>
+    <h1 class="h4 mb-3">Admin: รายการคำขออนุมัติ (Queue)</h1>
+    <a href="/" class="btn btn-link">กลับไปหน้า User</a>
 </div>
-<p>ใส่คิวตรวจอนุมัติที่นี่</p>
+
+{% if props %}
+<div class="list-group">
+  {% for p in props %}
+  <a href="{{ url_for('admin.review_property', prop_id=p.id) }}" class="list-group-item list-group-item-action">
+    <div class="d-flex w-100 justify-content-between">
+      <h5 class="mb-1">{{ p.dorm_name }}</h5>
+      <small class="text-muted">ส่งเมื่อ: {{ p.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+    </div>
+    <p class="mb-1">Owner ID: {{ p.owner_id }}</p>
+    <small class="badge text-bg-warning">{{ p.workflow_status }}</small>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info mt-3">ไม่มีรายการประกาศที่รอการอนุมัติในขณะนี้</div>
+{% endif %}
+
 {% endblock %}

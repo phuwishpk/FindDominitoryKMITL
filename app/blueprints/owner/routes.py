@@ -5,7 +5,8 @@ from flask_login import login_required, current_user
 from sqlalchemy import func
 from . import bp
 from app.forms.owner import PropertyForm
-from app.forms.upload import UploadImageForm, ReorderImagesForm
+# 💡 แก้ไขการนำเข้า: นำเข้า EmptyForm ด้วย
+from app.forms.upload import UploadImageForm, ReorderImagesForm, EmptyForm 
 from app.models.property import Property, PropertyImage, Amenity
 from app.models.approval import ApprovalRequest
 from app.extensions import owner_required, db
@@ -24,7 +25,10 @@ except Exception:
 @owner_required
 def dashboard():
     props = Property.query.filter_by(owner_id=current_user.ref_id).all()
-    return render_template("owner/dashboard.html", props=props)
+    # 💡 เพิ่มการสร้าง EmptyForm และส่งไปยัง Template
+    submit_form = EmptyForm()
+    return render_template("owner/dashboard.html", props=props, submit_form=submit_form)
+
 
 @bp.route("/property/new", methods=["GET","POST"])
 @login_required
@@ -189,12 +193,16 @@ def submit_for_approval(prop_id: int):
     prop = Property.query.get_or_404(prop_id)
     if prop.owner_id != current_user.ref_id:
         return redirect(url_for("owner.dashboard"))
-    if prop.workflow_status == 'draft' or prop.workflow_status == 'rejected':
-        approval_svc = current_app.extensions["container"]["approval_service"]
-        approval_svc.submit(prop, current_user.ref_id)
+    
+    approval_svc = current_app.extensions["container"]["approval_service"]
+    
+    try:
+        # ใช้ submit_property ที่มีอยู่ใน ApprovalService
+        approval_svc.submit_property(property_id=prop_id, owner_id=current_user.ref_id)
         flash("ส่งประกาศเพื่อขออนุมัติแล้ว", "success")
-    else:
-        flash("ไม่สามารถส่งประกาศนี้ได้", "warning")
+    except ValueError as e:
+        flash(f"ไม่สามารถส่งประกาศได้: {str(e)}", "danger")
+    
     return redirect(url_for("owner.dashboard"))
 
 @bp.post("/property/<int:prop_id>/delete")

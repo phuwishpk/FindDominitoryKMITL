@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="h4 mb-3">ตรวจสอบคำขออนุมัติ: {{ prop.dorm_name }}</h1>
+
+<a href="{{ url_for('admin.queue') }}" class="btn btn-secondary btn-sm mb-3">← กลับไปที่รายการ</a>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                ข้อมูลหลัก
+            </div>
+            <div class="card-body">
+                <p><strong>ชื่อหอพัก:</strong> {{ prop.dorm_name }}</p>
+                <p><strong>ประเภทห้อง:</strong> {{ prop.room_type }}</p>
+                <p><strong>ค่าเช่า:</strong> {{ "{:,.0f}".format(prop.rent_price) if prop.rent_price is not none else '-' }} บาท/เดือน</p>
+                <p><strong>เงินประกัน:</strong> {{ "{:,.0f}".format(prop.deposit_amount) if prop.deposit_amount is not none else '-' }} บาท</p>
+                <p><strong>ค่าน้ำ/ค่าไฟ:</strong> น้ำ {{ prop.water_rate or '-' }} / ไฟ {{ prop.electric_rate or '-' }}</p>
+                <p><strong>ข้อมูลเพิ่มเติม:</strong> {{ prop.additional_info or 'N/A' }}</p>
+
+                <h6 class="mt-3">ข้อมูลติดต่อ</h6>
+                <p>โทร: {{ prop.contact_phone or 'N/A' }} | LINE: {{ prop.line_id or 'N/A' }} | Facebook: <a href="{{ prop.facebook_url }}" target="_blank">{{ prop.facebook_url or 'N/A' }}</a></p>
+                
+                <h6 class="mt-3">สิ่งอำนวยความสะดวก</h6>
+                {% if prop.amenities.all() %}
+                    {% for amenity in prop.amenities %}
+                        <span class="badge text-bg-info me-2">{{ amenity.label_th }}</span>
+                    {% endfor %}
+                {% else %}
+                    <p>ไม่มีสิ่งอำนวยความสะดวกที่ระบุ</p>
+                {% endif %}
+
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                รูปภาพหอพัก
+            </div>
+            <div class="card-body">
+                <div class="row row-cols-md-3 g-3">
+                    {% for img in images %}
+                        <div class="col">
+                            <img src="/{{ img.file_path }}" class="img-fluid rounded" alt="Property Image">
+                        </div>
+                    {% else %}
+                        <div class="col-12"><p>ไม่มีรูปภาพ</p></div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-3">
+            <div class="card-header bg-secondary text-white">
+                ข้อมูลเจ้าของ
+            </div>
+            <div class="card-body">
+                <p><strong>ชื่อ-สกุล:</strong> {{ owner.full_name_th or 'N/A' }}</p>
+                <p><strong>อีเมล:</strong> {{ owner.email }}</p>
+                <p><strong>เบอร์โทร:</strong> {{ owner.phone or 'N/A' }}</p>
+                <p><strong>เลขบัตรประชาชน:</strong> {{ owner.citizen_id or 'N/A' }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-header">
+                สถานะและการดำเนินการ
+                <span class="badge text-bg-warning float-end">{{ prop.workflow_status }}</span>
+            </div>
+            <div class="card-body">
+                <h6 class="text-success">การอนุมัติ</h6>
+                <form method="POST" action="{{ url_for('admin.approve', prop_id=prop.id) }}" onsubmit="return confirm('คุณแน่ใจที่จะอนุมัติคำขอนี้หรือไม่?');">
+                    {{ approve_form.csrf_token }} 
+                    <button type="submit" class="btn btn-success w-100 mb-2">✅ อนุมัติคำขอ</button>
+                </form>
+
+                <h6 class="mt-3 text-danger">การปฏิเสธ</h6>
+                <button class="btn btn-danger w-100 mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#rejectCollapse" aria-expanded="false" aria-controls="rejectCollapse">
+                    ❌ ไม่อนุมัติ (ระบุเหตุผล)
+                </button>
+
+                <div class="collapse {% if reject_form.errors %}show{% endif %}" id="rejectCollapse">
+                    <div class="card card-body p-3">
+                        <form method="POST" action="{{ url_for('admin.reject', prop_id=prop.id) }}">
+                            {{ reject_form.csrf_token }}
+                            <div class="mb-3">
+                                {{ reject_form.note.label(class="form-label") }}
+                                {{ reject_form.note(class="form-control", rows="3") }}
+                                {% for error in reject_form.note.errors %}
+                                    <span class="text-danger small d-block">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {{ reject_form.submit(class="btn btn-danger w-100") }}
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
