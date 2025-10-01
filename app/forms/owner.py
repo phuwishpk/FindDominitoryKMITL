@@ -1,9 +1,10 @@
 # phuwishpk/finddominitorykmitl/FindDominitoryKMITL-develop-owner/app/forms/owner.py
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, FloatField, IntegerField, HiddenField, TextAreaField, SelectField
+from wtforms import StringField, FloatField, IntegerField, HiddenField, TextAreaField, SelectField, MultipleFileField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional, URL
 from wtforms import ValidationError
+from app.utils.validation import validate_image_file
 
 class PropertyForm(FlaskForm):
     dorm_name = StringField("ชื่อหอ", validators=[DataRequired("กรุณากรอกชื่อหอพัก"), Length(max=120)])
@@ -36,6 +37,12 @@ class PropertyForm(FlaskForm):
     deposit_amount = IntegerField("เงินประกัน", validators=[DataRequired("กรุณากรอกเงินประกัน"), NumberRange(min=0)])
     location_pin_json = HiddenField("Location Pin JSON")
     additional_info = TextAreaField("ข้อมูลเพิ่มเติม", validators=[Optional(), Length(max=5000, message="ข้อมูลเพิ่มเติมต้องมีความยาวไม่เกิน 5000 ตัวอักษร")])
+    images = MultipleFileField('รูปภาพ', validators=[Optional()])
+
+    def validate_images(self, field):
+        if field.data and field.data[0].filename:
+            for file_storage in field.data:
+                validate_image_file(file_storage, max_mb=3)
 
     def validate(self, **kwargs):
         if not super().validate(**kwargs):

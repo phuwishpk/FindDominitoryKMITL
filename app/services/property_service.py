@@ -28,6 +28,10 @@ class PropertyService:
 
     def create(self, owner_id: int, data: dict) -> Property:
         amenity_codes = data.pop('amenities', [])
+        # --- vvv ส่วนที่แก้ไข Error vvv ---
+        # นำข้อมูลรูปภาพออกจาก dict ก่อนส่งไปสร้าง Property
+        data.pop('images', None)
+        # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
         
         prepared_data = self._prepare_data(data)
 
@@ -43,6 +47,10 @@ class PropertyService:
             return None
 
         amenity_codes = data.pop('amenities', [])
+        # --- vvv ส่วนที่แก้ไข Error vvv ---
+        # นำข้อมูลรูปภาพออกจาก dict ก่อนส่งไปอัปเดต
+        data.pop('images', None)
+        # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
         prepared_data = self._prepare_data(data)
 
         for k, v in prepared_data.items():

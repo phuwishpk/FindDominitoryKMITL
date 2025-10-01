@@ -28,10 +28,10 @@
   
   {# --- Main Details Tab --- #}
   <div class="{% if prop %}tab-pane fade show active{% endif %}" id="details-tab-pane" role="tabpanel" aria-labelledby="details-tab" tabindex="0">
-    <form method="post" novalidate>
+    <form method="post" novalidate enctype="multipart/form-data">
       {{ form.csrf_token }}
       
-      <p class="text-muted small">{% if not prop %}กรุณากรอกข้อมูลหลักให้ครบถ้วน จากนั้นกด "สร้างประกาศ" เพื่อไปสู่ขั้นตอนจัดการรูปภาพ{% else %}คุณสามารถแก้ไขข้อมูลประกาศได้ที่นี่{% endif %}</p>
+      <p class="text-muted small">{% if not prop %}กรุณากรอกข้อมูลหลักและอัปโหลดรูปภาพให้ครบถ้วน จากนั้นกด "สร้างประกาศ"{% else %}คุณสามารถแก้ไขข้อมูลประกาศได้ที่นี่{% endif %}</p>
       
       <div class="mb-3"><label class="form-label">ชื่อหอ</label>{{ form.dorm_name(class_='form-control' + (' is-invalid' if form.dorm_name.errors else ''), placeholder='ชื่อหอ') }}</div>
       <div class="row g-3 mb-3">
@@ -94,6 +94,23 @@
         {% for amenity in all_amenities %}<div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}" {% if prop and amenity in prop.amenities %}checked{% endif %}><label class="form-check-label" for="amenity-{{ amenity.code }}">{{ amenity.label_th }}</label></div></div>{% endfor %}
       </div>
 
+      {# --- ส่วนอัปโหลดรูปภาพใหม่ (สำหรับหน้าสร้างประกาศ) --- #}
+      {% if not prop %}
+      <hr class="my-4">
+      <h2 class="h5">อัปโหลดรูปภาพ</h2>
+      <p class="text-muted small">คุณสามารถเพิ่มรูปภาพได้สูงสุด {{ PropertyPolicy.MAX_IMAGES }} รูป (อัปโหลดทีละรูป)</p>
+      
+      <div class="input-group mb-3">
+          <input type="file" class="form-control" id="image-input" accept="image/jpeg,image/png,image/webp">
+          <button class="btn btn-outline-primary" type="button" id="add-image-btn">อัปโหลด</button>
+      </div>
+
+      <div id="image-preview-container" class="row row-cols-2 row-cols-md-3 g-3 mb-3">
+          </div>
+      
+      {{ form.images(id="image-file-list", style="display:none;") }}
+      {% endif %}
+
       <div class="mt-4">
         {% if prop %}
           <button class="btn btn-primary" name="save_and_exit" value="true">บันทึกข้อมูล</button>
@@ -105,7 +122,7 @@
       </form>
   </div>
   
-  {# --- Image Management Tab --- #}
+  {# --- Image Management Tab (สำหรับหน้าแก้ไข) --- #}
   {% if prop %}
   <div class="tab-pane fade" id="images-tab-pane" role="tabpanel" aria-labelledby="images-tab" tabindex="0">
     <h2 class="h5">อัปโหลดรูปภาพใหม่</h2>
@@ -128,9 +145,8 @@
           <div class="card" draggable="true" data-image-id="{{ img.id }}">
             <img src="/{{ img.file_path }}" class="card-img-top" alt="#{{ img.id }}">
             <div class="card-body p-2 d-flex justify-content-between align-items-center">
-              <span class="badge text-bg-light">ลำดับ {{ img.position }}</span>
+              <span class="badge text-bg-light">ลำดับ {{ loop.index }}</span>
               <form method="post" action="{{ url_for('owner.delete_image', prop_id=prop.id, image_id=img.id) }}" onsubmit="return confirm('ต้องการลบรูปนี้ใช่หรือไม่?');">
-                {{ reorder_form.csrf_token }}
                 <button type="submit" class="btn btn-sm btn-outline-danger">ลบ</button>
               </form>
             </div>
@@ -152,7 +168,6 @@
         <p>หากคุณต้องการลบประกาศนี้อย่างถาวร สามารถทำได้ที่นี่ การกระทำนี้ไม่สามารถย้อนกลับได้</p>
         <form method="post" action="{{ url_for('owner.delete_property', prop_id=prop.id) }}"
               onsubmit="return confirm('คุณต้องการลบประกาศนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้');">
-          {{ form.csrf_token }}
           <button type="submit" class="btn btn-danger">ลบประกาศนี้</button>
         </form>
     </div>
@@ -264,7 +279,7 @@
         }
     });
 
-    // === SCRIPT FOR GALLERY DRAG & DROP ===
+    // === SCRIPT FOR GALLERY DRAG & DROP (EDIT PAGE) ===
     const gallery = document.getElementById('gallery');
     if (gallery) {
         let dragEl = null;
@@ -307,6 +322,72 @@
                 });
             });
         }
+    }
+    
+    // === SCRIPT FOR NEW PROPERTY IMAGE UPLOAD PREVIEW (NEW PAGE) ===
+    const imageInput = document.getElementById('image-input');
+    const addImageBtn = document.getElementById('add-image-btn');
+    const previewContainer = document.getElementById('image-preview-container');
+    const mainForm = document.querySelector('form');
+    const fileCollector = document.getElementById('image-file-list');
+    const maxImages = {{ PropertyPolicy.MAX_IMAGES }};
+
+    if (imageInput && addImageBtn && previewContainer && mainForm && fileCollector) {
+        const fileStore = new Map();
+
+        const renderPreviews = () => {
+            previewContainer.innerHTML = '';
+            let index = 1;
+            fileStore.forEach((file, key) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const col = document.createElement('div');
+                    col.className = 'col';
+                    col.innerHTML = `
+                        <div class="card h-100">
+                            <img src="${e.target.result}" class="card-img-top" alt="Preview">
+                            <div class="card-body p-2 d-flex justify-content-between align-items-center">
+                                <span class="badge text-bg-light">ลำดับ ${index++}</span>
+                                <button type="button" class="btn btn-sm btn-outline-danger remove-img-btn" data-key="${key}">ลบ</button>
+                            </div>
+                        </div>
+                    `;
+                    previewContainer.appendChild(col);
+                };
+                reader.readAsDataURL(file);
+            });
+        };
+
+        addImageBtn.addEventListener('click', () => {
+            if (imageInput.files.length > 0) {
+                const file = imageInput.files[0];
+                if (fileStore.size >= maxImages) {
+                    alert(`สามารถอัปโหลดได้สูงสุด ${maxImages} รูปเท่านั้น`);
+                    return;
+                }
+                const key = Date.now() + '-' + file.name;
+                fileStore.set(key, file);
+                renderPreviews();
+                imageInput.value = '';
+            } else {
+                alert('กรุณาเลือกไฟล์รูปภาพก่อน');
+            }
+        });
+
+        previewContainer.addEventListener('click', (e) => {
+            const removeBtn = e.target.closest('.remove-img-btn');
+            if (removeBtn) {
+                const key = removeBtn.dataset.key;
+                fileStore.delete(key);
+                renderPreviews();
+            }
+        });
+
+        mainForm.addEventListener('submit', () => {
+            const dataTransfer = new DataTransfer();
+            fileStore.forEach(file => dataTransfer.items.add(file));
+            fileCollector.files = dataTransfer.files;
+        });
     }
 })();
 </script>

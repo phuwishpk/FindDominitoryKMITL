@@ -36,17 +36,34 @@ def new_property():
 
     if form.validate_on_submit():
         prop_svc = current_app.extensions["container"]["property_service"]
+        upload_svc = current_app.extensions["container"]["upload_service"]
         
         form_data = form.data.copy()
         form_data.pop('csrf_token', None)
         form_data['amenities'] = request.form.getlist('amenities')
-
+        
+        # 1. สร้าง Property หลัก (Service จะกรองฟิลด์ 'images' ออกเอง)
         prop = prop_svc.create(current_user.ref_id, form_data)
         
-        flash("สร้างประกาศสำเร็จแล้ว กรุณาจัดการรูปภาพต่อ", "success")
-        return redirect(url_for("owner.edit_property", prop_id=prop.id))
+        # 2. จัดการไฟล์รูปภาพที่ถูกส่งมา
+        images = form.images.data # ใช้ข้อมูลจากฟอร์มที่ผ่านการ validate แล้ว
+        if images and images[0].filename:
+            for i, file_storage in enumerate(images):
+                if i >= PropertyPolicy.MAX_IMAGES:
+                    flash(f"อัปโหลดได้สูงสุด {PropertyPolicy.MAX_IMAGES} รูปเท่านั้น", "warning")
+                    break
+                
+                if file_storage:
+                    path = upload_svc.save_image(current_user.ref_id, file_storage)
+                    img = PropertyImage(property_id=prop.id, file_path=path, position=i + 1)
+                    db.session.add(img)
+            db.session.commit()
+
+        flash("สร้างประกาศสำเร็จแล้ว", "success")
+        return redirect(url_for("owner.dashboard"))
         
     return render_template("owner/form.html", form=form, all_amenities=all_amenities, prop=None, upload_form=upload_form, PropertyPolicy=PropertyPolicy)
+
 
 @bp.route("/property/<int:prop_id>/edit", methods=["GET","POST"])
 @login_required
@@ -56,17 +73,13 @@ def edit_property(prop_id: int):
     if prop.owner_id != current_user.ref_id:
         return redirect(url_for("owner.dashboard"))
     
-    # --- vvv ส่วนที่แก้ไข Error vvv ---
-    # สร้าง instance ของ form ขึ้นมาก่อน
     form = PropertyForm(obj=prop) 
     predefined_choices = [choice[0] for choice in form.room_type.choices]
 
-    # จัดการข้อมูลเริ่มต้นสำหรับ GET request
     if request.method == "GET":
         if prop.room_type not in predefined_choices:
             form.room_type.data = 'อื่นๆ'
             form.other_room_type.data = prop.room_type
-    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
 
     upload_form = UploadImageForm()
     reorder_form = ReorderImagesForm()
@@ -81,7 +94,6 @@ def edit_property(prop_id: int):
     if form.validate_on_submit() and ("save_property" in request.form or "save_and_exit" in request.form):
         prop_svc = current_app.extensions["container"]["property_service"]
         
-        # ใช้ form ที่รับข้อมูลจาก POST request มา validate และประมวลผล
         form_data = PropertyForm(request.form).data
         form_data.pop('csrf_token', None)
         form_data['amenities'] = request.form.getlist('amenities')
@@ -101,7 +113,6 @@ def edit_property(prop_id: int):
                            approval_note=approval_note,
                            PropertyPolicy=PropertyPolicy)
 
-# ... (โค้ดส่วนที่เหลือของไฟล์เหมือนเดิม) ...
 @bp.post("/property/<int:prop_id>/image")
 @login_required
 @owner_required
