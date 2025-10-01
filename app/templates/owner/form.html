@@ -119,7 +119,7 @@
         {% endif %} 
         <a href="{{ url_for('owner.dashboard') }}" class="btn btn-secondary">ยกเลิก</a>
       </div>
-      </form>
+    </form>
   </div>
   
   {# --- Image Management Tab (สำหรับหน้าแก้ไข) --- #}
@@ -147,6 +147,7 @@
             <div class="card-body p-2 d-flex justify-content-between align-items-center">
               <span class="badge text-bg-light">ลำดับ {{ loop.index }}</span>
               <form method="post" action="{{ url_for('owner.delete_image', prop_id=prop.id, image_id=img.id) }}" onsubmit="return confirm('ต้องการลบรูปนี้ใช่หรือไม่?');">
+                {{ form.csrf_token }} {# <--- เพิ่มบรรทัดนี้ #}
                 <button type="submit" class="btn btn-sm btn-outline-danger">ลบ</button>
               </form>
             </div>
@@ -168,6 +169,7 @@
         <p>หากคุณต้องการลบประกาศนี้อย่างถาวร สามารถทำได้ที่นี่ การกระทำนี้ไม่สามารถย้อนกลับได้</p>
         <form method="post" action="{{ url_for('owner.delete_property', prop_id=prop.id) }}"
               onsubmit="return confirm('คุณต้องการลบประกาศนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้');">
+          {{ form.csrf_token }} {# <--- เพิ่มบรรทัดนี้ #}
           <button type="submit" class="btn btn-danger">ลบประกาศนี้</button>
         </form>
     </div>
