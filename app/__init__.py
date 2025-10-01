@@ -1,18 +1,105 @@
-import os
-from flask import Flask
-<<<<<<< HEAD
-from flask import Flask, send_from_directory
-from .extensions import db, migrate, login_manager, babel, limiter, csrf
-from .config import Config
-=======
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash
->>>>>>> 1145fb37df589e62d147797326b34b586c4f3865
+import click
+from flask import Flask, current_app
+from dependency_injector import containers, providers
 
-# --- ส่วนของการสร้าง Application และตั้งค่า ---
+# from . import models, repositories # Import ที่จำเป็น
+from .services.auth_service import AuthService
+from .extensions import db, migrate, bcrypt, login_manager
 
-# สร้าง instance ของ SQLAlchemy แต่ยังไม่ผูกกับ app
-db = SQLAlchemy()
+class Container(containers.DeclarativeContainer):
+    """
+    Dependency Injection Container
+    - ผูก (wire) dependencies ต่างๆ เข้าด้วยกัน
+    - ทำให้สามารถสลับ implementation ได้ง่าย (เช่น สลับไปใช้ MockRepository ตอนทดสอบ)
+    """
+    # กำหนด config ที่จะรับเข้ามา
+    config = providers.Configuration()
+
+    # Database session provider
+    db_session = providers.Singleton(lambda: db.session)
+
+    # --- Repositories ---
+    # Factory จะสร้าง instance ใหม่ทุกครั้งที่เรียกใช้
+    owner_repository = providers.Factory(
+        repositories.OwnerRepository,
+        session_factory=db_session
+    )
+    admin_repository = providers.Factory(
+        repositories.AdminRepository,
+        session_factory=db_session
+    )
+    amenity_repository = providers.Factory(
+        repositories.AmenityRepository,
+        session_factory=db_session
+    )
+    # ... เพิ่ม repositories อื่นๆ ตามต้องการ
+
+    # --- Services ---
+    # AuthService จะถูกสร้างขึ้นโดยรับ repository instances ที่ DI container สร้างให้
+    auth_service = providers.Factory(
+        AuthService,
+        owner_repository=owner_repository,
+        admin_repository=admin_repository,
+    )
+
+def register_dependencies(app: Flask):
+    """
+    สร้างและผูก DI container เข้ากับ application
+    """
+    container = Container()
+    app.container = container
+    # ทำให้ container สามารถเข้าถึง config ของ app ได้
+    container.config.from_dict(app.config)
+    # ทำให้ DI container สามารถ inject dependency ไปยัง route/blueprint ได้
+    # container.wire(modules=[__name__, ".routes.auth", ".routes.properties"])
+
+
+def register_cli_commands(app: Flask):
+    """
+    ลงทะเบียนคำสั่งสำหรับ Command-Line Interface (CLI)
+    """
+    @app.cli.command("seed-amenities")
+    def seed_amenities_command():
+        """เติมข้อมูล master data (amenities)"""
+        with app.app_context():
+            # เข้าถึง repository ผ่าน DI container ของ app
+            amenity_repo = current_app.container.amenity_repository()
+            
+            amenities_to_add = ["สระว่ายน้ำ", "ฟิตเนส", "ที่จอดรถ", "Wi-Fi"]
+            for name in amenities_to_add:
+                if not amenity_repo.find_by_name(name):
+                    amenity_repo.create(name=name)
+            
+            click.echo("Amenities have been seeded.")
+
+    @app.cli.command("seed-sample")
+    def seed_sample_command():
+        """เติมข้อมูลตัวอย่าง (admin/owner/property)"""
+        with app.app_context():
+            # เข้าถึง service ผ่าน DI container ของ app
+            auth_service = current_app.container.auth_service()
+            
+            # สร้าง Admin ตัวอย่าง
+            admin_repo = current_app.container.admin_repository()
+            if not admin_repo.find_by_username("admin"):
+                hashed_pass = bcrypt.generate_password_hash("password").decode('utf-8')
+                admin_repo.create(username="admin", password_hash=hashed_pass)
+                click.echo("Sample admin created.")
+
+            # สร้าง Owner ตัวอย่าง
+            owner_repo = current_app.container.owner_repository()
+            if not owner_repo.find_by_email("owner@example.com"):
+                hashed_pass = bcrypt.generate_password_hash("password").decode('utf-8')
+                owner_repo.create(
+                    email="owner@example.com",
+                    password_hash=hashed_pass,
+                    first_name="Sample",
+                    last_name="Owner"
+                )
+                click.echo("Sample owner created.")
+        
+        click.echo("Sample data has been seeded.")
+
 
 def create_app(config_object="app.config.Config"):
     """
@@ -21,143 +108,21 @@ def create_app(config_object="app.config.Config"):
     app = Flask(__name__)
     app.config.from_object(config_object)
 
-    # ผูก extensions เข้ากับ app
+    # --- Initialize Extensions ---
     db.init_app(app)
-
-    from .extensions import login_manager, principal
+    migrate.init_app(app, db)
+    bcrypt.init_app(app)
     login_manager.init_app(app)
-    principal.init_app(app)
-    login_manager.login_view = 'auth.login' # ตั้งค่าหน้า login สำหรับ redirect
 
-    with app.app_context():
-        # สร้าง Dependency Injection Container
-        register_dependencies(app)
+    # --- Register Dependencies ---
+    register_dependencies(app)
 
-        # Import models เพื่อให้ SQLAlchemy สร้างตารางได้
-        from . import models
-        db.create_all()
+    # --- Register CLI Commands ---
+    register_cli_commands(app)
 
-<<<<<<< HEAD
-    # ❗️ เพิ่มโค้ดส่วนนี้เข้าไปทั้งหมด ❗️
-    @app.route('/uploads/<path:filename>')
-    def serve_uploads(filename):
-        return send_from_directory(
-            app.config['UPLOAD_FOLDER'],
-            filename,
-            as_attachment=False
-        )
-
-    @app.get("/health")
-    def health():
-        return {"ok": True}
-=======
-        # Register Blueprints (ถ้ามี)
-        # from .routes import main_bp
-        # app.register_blueprint(main_bp)
->>>>>>> 1145fb37df589e62d147797326b34b586c4f3865
-
-        # Register CLI commands
-        register_cli_commands(app)
+    # --- Register Blueprints ---
+    # from .routes import auth_bp, property_bp
+    # app.register_blueprint(auth_bp, url_prefix='/auth')
+    # app.register_blueprint(property_bp)
 
     return app
-
-def register_dependencies(app) -> None:
-    """
-    ผูก Dependency Injection (DI):
-    สร้าง instances ของ Repositories และ Services แล้วเก็บไว้ใน app.config
-    เพื่อให้สามารถเรียกใช้ได้จากส่วนต่างๆ ของแอปพลิเคชัน
-    """
-    from .repositories import AdminRepository, OwnerRepository, PropertyRepository, AmenityRepository
-    from .services import AuthService
-
-    # สร้าง instances ของ Repositories โดยส่ง db.session เข้าไป
-    admin_repo = AdminRepository(db.session)
-    owner_repo = OwnerRepository(db.session)
-    prop_repo = PropertyRepository(db.session)
-    amenity_repo = AmenityRepository(db.session)
-
-    # สร้าง instances ของ Services โดยส่ง repositories ที่จำเป็นเข้าไป
-    auth_service = AuthService(owner_repo=owner_repo, admin_repo=admin_repo)
-
-    # เก็บ instances ไว้ใน container (ใช้ dict ใน app.config)
-    app.config["container"] = {
-        "admin_repository": admin_repo,
-        "owner_repository": owner_repo,
-        "property_repository": prop_repo,
-        "amenity_repository": amenity_repo,
-        "auth_service": auth_service,
-    }
-    print("Dependencies registered.")
-
-def register_cli_commands(app):
-    """
-    ลงทะเบียนคำสั่งสำหรับ Flask CLI
-    """
-    @app.cli.command("seed-amenities")
-    def seed_amenities():
-        """เติมข้อมูล master data (amenities)"""
-        from .models import Amenity
-        container = app.config["container"]
-        amenity_repo = container["amenity_repository"]
-
-        if amenity_repo.get_all():
-            print("Amenities already exist. Skipping.")
-            return
-
-        amenities_to_add = [
-            Amenity(name="Wi-Fi"),
-            Amenity(name="Air Conditioning"),
-            Amenity(name="Swimming Pool"),
-            Amenity(name="Parking"),
-            Amenity(name="Gym"),
-        ]
-        for amenity in amenities_to_add:
-            amenity_repo.add(amenity)
-
-        print(f"Added {len(amenities_to_add)} amenities to the database.")
-
-
-    @app.cli.command("seed-sample")
-    def seed_sample():
-        """เติมข้อมูลตัวอย่าง (admin, owner, property)"""
-        from .models import Admin, Owner, Property
-        container = app.config["container"]
-        auth_service = container["auth_service"]
-        owner_repo = container["owner_repository"]
-        admin_repo = container["admin_repository"]
-        prop_repo = container["property_repository"]
-
-        # 1. สร้าง Admin
-        if not admin_repo.find_by_username("admin"):
-            admin_user = Admin(
-                username="admin",
-                password_hash=generate_password_hash("password123")
-            )
-            admin_repo.add(admin_user)
-            print("Admin user 'admin' created.")
-        else:
-            print("Admin user 'admin' already exists.")
-
-        # 2. สร้าง Owner
-        if not owner_repo.find_by_email("owner@example.com"):
-            owner_data = {
-                "email": "owner@example.com",
-                "password": "password123",
-                "first_name": "John",
-                "last_name": "Doe",
-                "id_card_pdf_path": "/static/docs/sample_id.pdf"
-            }
-            new_owner = auth_service.register_owner(owner_data)
-            print(f"Owner '{new_owner.email}' created.")
-
-            # 3. สร้าง Property
-            if not prop_repo.find_by_name("Sample Villa"):
-                sample_property = Property(
-                    name="Sample Villa",
-                    address="123 Main St, Bangkok",
-                    owner_id=new_owner.id
-                )
-                prop_repo.add(sample_property)
-                print(f"Property '{sample_property.name}' created for owner '{new_owner.email}'.")
-        else:
-            print("Sample owner and property already exist.")
