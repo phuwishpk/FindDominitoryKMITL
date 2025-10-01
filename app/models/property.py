@@ -30,18 +30,19 @@ class Property(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey("owners.id", ondelete="CASCADE"), nullable=False)
 
     dorm_name = db.Column(db.String(120), nullable=False)
+    road = db.Column(db.String(255), nullable=True) # <-- แก้ไขตรงนี้
+    soi = db.Column(db.String(255), nullable=True) # <-- เพิ่มบรรทัดนี้
     room_type = db.Column(db.String(30), nullable=False)
     contact_phone = db.Column(db.String(20))
     line_id = db.Column(db.String(80))
     facebook_url = db.Column(db.String(255))
+    
+    location_pin = db.Column(db.JSON, nullable=True)
 
     rent_price = db.Column(db.Integer)
     water_rate = db.Column(db.Float)
     electric_rate = db.Column(db.Float)
     deposit_amount = db.Column(db.Integer)
-
-    lat = db.Column(db.Float)
-    lng = db.Column(db.Float)
 
     availability_status = db.Column(db.String(16), default="vacant")
     workflow_status = db.Column(db.String(16), default="draft")

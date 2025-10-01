@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+
 {% block content %}
 <h1 class="h4">{% if prop %}แก้ไข{% else %}สร้าง{% endif %}ประกาศหอพัก</h1>
 
@@ -8,7 +9,7 @@
 </div>
 {% endif %}
 
-{# --- ถ้าเป็นการแก้ไข ให้แสดง Tab --- #}
+{# --- Tabs for Edit Mode --- #}
 {% if prop %}
 <ul class="nav nav-tabs mt-4" id="formTab" role="tablist">
   <li class="nav-item" role="presentation">
@@ -25,6 +26,7 @@
 
 <div class="{% if prop %}tab-content bg-white p-3 border border-top-0 rounded-bottom mb-4{% else %}bg-white p-3 border rounded mb-4{% endif %}">
   
+  {# --- Main Details Tab --- #}
   <div class="{% if prop %}tab-pane fade show active{% endif %}" id="details-tab-pane" role="tabpanel" aria-labelledby="details-tab" tabindex="0">
     <form method="post" novalidate enctype="multipart/form-data">
       {{ form.csrf_token }}
@@ -32,110 +34,52 @@
       
       <p class="text-muted small">{% if not prop %}กรุณากรอกข้อมูลและอัปโหลดรูปภาพหลัก 1 รูปให้ครบถ้วน{% else %}คุณสามารถแก้ไขข้อมูลประกาศได้ที่นี่{% endif %}</p>
       
-      {# --- Form Fields --- #}
-      <div class="mb-3">
-        <label for="dorm_name" class="form-label">ชื่อหอ</label>
-        {{ form.dorm_name(class_='form-control' + (' is-invalid' if form.dorm_name.errors else ''), placeholder='ชื่อหอ') }}
-        {% if form.dorm_name.errors %}<div class="invalid-feedback">{{ form.dorm_name.errors[0] }}</div>{% endif %}
+      <div class="mb-3"><label class="form-label">ชื่อหอ</label>{{ form.dorm_name(class_='form-control' + (' is-invalid' if form.dorm_name.errors else ''), placeholder='ชื่อหอ') }}</div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6"><label class="form-label">ถนน</label>{{ form.road(class_='form-control' + (' is-invalid' if form.road.errors else ''), placeholder='เช่น ลาดกระบัง') }}</div>
+        <div class="col-md-6"><label class="form-label">ซอย</label>{{ form.soi(class_='form-control' + (' is-invalid' if form.soi.errors else ''), placeholder='เช่น ลาดกระบัง 1') }}</div>
       </div>
-      <div class="mb-3">
-        <label for="room_type" class="form-label">ประเภทห้อง</label>
-        {{ form.room_type(class_='form-control' + (' is-invalid' if form.room_type.errors else ''), placeholder='เช่น studio, 1br, 2br, other') }}
-        {% if form.room_type.errors %}<div class="invalid-feedback">{{ form.room_type.errors[0] }}</div>{% endif %}
+      <div class="mb-3"><label class="form-label">ประเภทห้อง</label>{{ form.room_type(class_='form-control' + (' is-invalid' if form.room_type.errors else ''), placeholder='เช่น studio, 1br, 2br, other') }}</div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-4"><label class="form-label">ค่าเช่า (บาท/เดือน)</label>{{ form.rent_price(class_='form-control' + (' is-invalid' if form.rent_price.errors else ''), placeholder='เช่น 6500') }}</div>
+        <div class="col-md-4"><label class="form-label">ค่าน้ำ (บาท/หน่วย)</label>{{ form.water_rate(class_='form-control' + (' is-invalid' if form.water_rate.errors else ''), placeholder='ค่าน้ำ') }}</div>
+        <div class="col-md-4"><label class="form-label">ค่าไฟ (บาท/หน่วย)</label>{{ form.electric_rate(class_='form-control' + (' is-invalid' if form.electric_rate.errors else ''), placeholder='ค่าไฟ') }}</div>
       </div>
       <div class="row g-3 mb-3">
-        <div class="col-md-4">
-          <label for="rent_price" class="form-label">ค่าเช่า (บาท/เดือน)</label>
-          {{ form.rent_price(class_='form-control' + (' is-invalid' if form.rent_price.errors else ''), placeholder='เช่น 6500') }}
-          {% if form.rent_price.errors %}<div class="invalid-feedback">{{ form.rent_price.errors[0] }}</div>{% endif %}
-        </div>
-        <div class="col-md-4">
-          <label for="water_rate" class="form-label">ค่าน้ำ (บาท/หน่วย)</label>
-          {{ form.water_rate(class_='form-control' + (' is-invalid' if form.water_rate.errors else ''), placeholder='ค่าน้ำ') }}
-          {% if form.water_rate.errors %}<div class="invalid-feedback">{{ form.water_rate.errors[0] }}</div>{% endif %}
-        </div>
-        <div class="col-md-4">
-          <label for="electric_rate" class="form-label">ค่าไฟ (บาท/หน่วย)</label>
-          {{ form.electric_rate(class_='form-control' + (' is-invalid' if form.electric_rate.errors else ''), placeholder='ค่าไฟ') }}
-          {% if form.electric_rate.errors %}<div class="invalid-feedback">{{ form.electric_rate.errors[0] }}</div>{% endif %}
-        </div>
-      </div>
-      <div class="row g-3 mb-3">
-        <div class="col-md-6">
-          <label for="deposit_amount" class="form-label">เงินประกัน (บาท)</label>
-          {{ form.deposit_amount(class_='form-control' + (' is-invalid' if form.deposit_amount.errors else ''), placeholder='เงินประกัน') }}
-          {% if form.deposit_amount.errors %}<div class="invalid-feedback">{{ form.deposit_amount.errors[0] }}</div>{% endif %}
-        </div>
-        <div class="col-md-3">
-          <label for="lat" class="form-label">ละติจูด</label>
-          {{ form.lat(class_='form-control' + (' is-invalid' if form.lat.errors else ''), placeholder='เช่น 13.7292') }}
-          {% if form.lat.errors %}<div class="invalid-feedback">{{ form.lat.errors[0] }}</div>{% endif %}
-        </div>
-        <div class="col-md-3">
-          <label for="lng" class="form-label">ลองจิจูด</label>
-          {{ form.lng(class_='form-control' + (' is-invalid' if form.lng.errors else ''), placeholder='เช่น 100.7758') }}
-          {% if form.lng.errors %}<div class="invalid-feedback">{{ form.lng.errors[0] }}</div>{% endif %}
-        </div>
+        <div class="col-md-6"><label class="form-label">เงินประกัน (บาท)</label>{{ form.deposit_amount(class_='form-control' + (' is-invalid' if form.deposit_amount.errors else ''), placeholder='เงินประกัน') }}</div>
       </div>
       <div class="row g-3">
-        <div class="col-md-4">
-          <label for="contact_phone" class="form-label">เบอร์โทรติดต่อ</label>
-          {{ form.contact_phone(class_='form-control' + (' is-invalid' if form.contact_phone.errors else ''), placeholder='เบอร์โทร') }}
-          {% if form.contact_phone.errors %}<div class="invalid-feedback">{{ form.contact_phone.errors[0] }}</div>{% endif %}
-        </div>
-        <div class="col-md-4">
-          <label for="line_id" class="form-label">LINE ID</label>
-          {{ form.line_id(class_='form-control' + (' is-invalid' if form.line_id.errors else ''), placeholder='LINE ID') }}
-          {% if form.line_id.errors %}<div class="invalid-feedback">{{ form.line_id.errors[0] }}</div>{% endif %}
-        </div>
-        <div class="col-md-4">
-          <label for="facebook_url" class="form-label">Facebook URL</label>
-          {{ form.facebook_url(class_='form-control' + (' is-invalid' if form.facebook_url.errors else ''), placeholder='Facebook URL') }}
-          {% if form.facebook_url.errors %}<div class="invalid-feedback">{{ form.facebook_url.errors[0] }}</div>{% endif %}
-        </div>
+        <div class="col-md-4"><label class="form-label">เบอร์โทรติดต่อ</label>{{ form.contact_phone(class_='form-control' + (' is-invalid' if form.contact_phone.errors else ''), placeholder='เบอร์โทร') }}</div>
+        <div class="col-md-4"><label class="form-label">LINE ID</label>{{ form.line_id(class_='form-control' + (' is-invalid' if form.line_id.errors else ''), placeholder='LINE ID') }}</div>
+        <div class="col-md-4"><label class="form-label">Facebook URL</label>{{ form.facebook_url(class_='form-control' + (' is-invalid' if form.facebook_url.errors else ''), placeholder='Facebook URL') }}</div>
       </div>
 
-      {# --- Amenities --- #}
+      <hr class="my-4">
+      <h2 class="h5">ปักหมุดบนแผนที่</h2>
+      <p class="text-muted small">ค้นหาสถานที่หรือคลิกบนแผนที่เพื่อกำหนดตำแหน่งหอพักของคุณ</p>
+      <div id="map" style="height: 400px;" class="mb-3 border rounded"></div>
+      {{ form.location_pin_json(id='location_pin_json_input') }}
+
       <hr class="my-4">
       <h2 class="h5">สิ่งอำนวยความสะดวก</h2>
       <div class="row">
-        {% for amenity in all_amenities %}
-        <div class="col-md-4">
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}"
-                   {% if prop and amenity in prop.amenities %}checked{% endif %}>
-            <label class="form-check-label" for="amenity-{{ amenity.code }}">{{ amenity.label_th }}</label>
-          </div>
-        </div>
-        {% endfor %}
+        {% for amenity in all_amenities %}<div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}" {% if prop and amenity in prop.amenities %}checked{% endif %}><label class="form-check-label" for="amenity-{{ amenity.code }}">{{ amenity.label_th }}</label></div></div>{% endfor %}
       </div>
 
-      {# --- Image Upload (only on New Form) --- #}
       {% if not prop %}
-      <hr class="my-4">
+  <hr class="my-4">
       <h2 class="h5">รูปภาพหลัก</h2>
-      <p class="text-muted small">อัปโหลดรูปภาพหลักสำหรับประกาศของคุณ (สามารถเพิ่มรูปภาพอื่นๆ ได้ในภายหลัง)</p>
-      <div class="mb-3">
-        {{ upload_form.image(class_='form-control' + (' is-invalid' if upload_form.image.errors else '')) }}
-        {% if upload_form.image.errors %}
-          <div class="invalid-feedback">{{ upload_form.image.errors[0] }}</div>
-        {% endif %}
-      </div>
+      <p class="text-muted small">อัปโหลดรูปภาพสำหรับประกาศของคุณ (เลือกได้หลายรูป สูงสุด {{ PropertyPolicy.MAX_IMAGES }} รูป)</p>
+      <div class="mb-3">{{ upload_form.image(class_='form-control' + (' is-invalid' if upload_form.image.errors else '')) }}</div>
       {% endif %}
 
-      {# --- Action Buttons --- #}
       <div class="mt-4">
-        {% if prop %}
-        <button class="btn btn-primary" name="save_and_exit" value="true">บันทึกและกลับสู่ Dashboard</button>
-        <button class="btn btn-success" name="save_property" value="true">บันทึกและแก้ไขต่อ</button>
-        {% else %}
-        <button class="btn btn-primary" name="save_property" value="true">สร้างประกาศ</button>
-        {% endif %}
-        <a href="{{ url_for('owner.dashboard') }}" class="btn btn-secondary">ยกเลิก</a>
+        {% if prop %}<button class="btn btn-primary" name="save_and_exit" value="true">บันทึกและกลับสู่ Dashboard</button> <button class="btn btn-success" name="save_property" value="true">บันทึกและแก้ไขต่อ</button>{% else %}<button class="btn btn-primary" name="save_property" value="true">สร้างประกาศ</button>{% endif %} <a href="{{ url_for('owner.dashboard') }}" class="btn btn-secondary">ยกเลิก</a>
       </div>
     </form>
   </div>
 
+  {# --- Image Management Tab --- #}
   {% if prop %}
   <div class="tab-pane fade" id="images-tab-pane" role="tabpanel" aria-labelledby="images-tab" tabindex="0">
     <h2 class="h5">อัปโหลดรูปภาพใหม่</h2>
@@ -160,7 +104,7 @@
               <span class="badge text-bg-light">ลำดับ {{ img.position }}</span>
               <form method="post" action="{{ url_for('owner.delete_image', prop_id=prop.id, image_id=img.id) }}" onsubmit="return confirm('ต้องการลบรูปนี้ใช่หรือไม่?');">
                 {{ reorder_form.csrf_token }}
-                <button class="btn btn-sm btn-outline-danger">ลบ</button>
+                <button type="submit" class="btn btn-sm btn-outline-danger">ลบ</button>
               </form>
             </div>
           </div>
@@ -169,59 +113,133 @@
         <div class="col"><div class="alert alert-secondary w-100">ยังไม่มีรูป</div></div>
         {% endfor %}
       </div>
-      <div id="positions-container"></div>
-      <button class="btn btn-outline-secondary mt-3">บันทึกการจัดเรียง</button>
+      <div id="positions-container" class="d-none"></div>
+      <button type="submit" class="btn btn-outline-secondary mt-3">บันทึกการจัดเรียง</button>
     </form>
   </div>
-  
-  <div class="tab-pane fade" id="settings-tab-pane" role="tabpanel" aria-labelledby="settings-tab" tabindex="0">
-      <h2 class="h5 text-danger">โซนอันตราย</h2>
-      <hr>
-      <p>หากคุณต้องการลบประกาศนี้อย่างถาวร สามารถทำได้ที่นี่ การกระทำนี้ไม่สามารถย้อนกลับได้</p>
-      <form method="post" action="{{ url_for('owner.delete_property', prop_id=prop.id) }}"
-            onsubmit="return confirm('คุณต้องการลบประกาศนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้');">
-        <button type="submit" class="btn btn-danger">ลบประกาศนี้</button>
-      </form>
-  </div>
+
+  {# --- Settings/Danger Zone Tab --- #}
+    <div class="tab-pane fade" id="settings-tab-pane" role="tabpanel" aria-labelledby="settings-tab" tabindex="0">
+        <h2 class="h5 text-danger">โซนอันตราย</h2>
+        <hr>
+        <p>หากคุณต้องการลบประกาศนี้อย่างถาวร สามารถทำได้ที่นี่ การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+        <form method="post" action="{{ url_for('owner.delete_property', prop_id=prop.id) }}"
+              onsubmit="return confirm('คุณต้องการลบประกาศนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้');">
+          {{ form.csrf_token }}
+          <button type="submit" class="btn btn-danger">ลบประกาศนี้</button>
+        </form>
+    </div>
   {% endif %}
 </div>
+{% endblock %}
 
-{% if prop %}
+
+{% block page_scripts %}
 <script>
-// Script for drag and drop reordering
-const gallery = document.getElementById('gallery');
-if (gallery) {
-  let dragEl = null;
-  gallery.addEventListener('dragstart', (e) => {
-    const card = e.target.closest('[draggable="true"]');
-    if (!card) return;
-    dragEl = card;
-    e.dataTransfer.effectAllowed = 'move';
-  });
-  gallery.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    const card = e.target.closest('[draggable="true"]');
-    if (!card || card === dragEl) return;
-    const rect = card.getBoundingClientRect();
-    const next = (e.clientY - rect.top) / rect.height > 0.5;
-    gallery.insertBefore(dragEl.parentElement, next ? card.parentElement.nextSibling : card.parentElement);
-  });
-  gallery.addEventListener('dragend', () => { dragEl = null; });
-  document.getElementById('reorder-form').addEventListener('submit', (e) => {
-    const container = document.getElementById('positions-container');
-    container.innerHTML = '';
-    let pos = 1;
-    gallery.querySelectorAll('[draggable="true"]').forEach(card => {
-      const id = card.getAttribute('data-image-id');
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'positions-' + (pos-1);
-      input.value = id + ':' + pos;
-      container.appendChild(input);
-      pos += 1;
-    });
-  });
-}
+(function() {
+    'use strict';
+
+    // === SCRIPT FOR LEAFLET MAP WITH SEARCH ===
+    const mapContainer = document.getElementById('map');
+    if (mapContainer) {
+        const initialCoords = [13.7292, 100.7758]; // KMITL Default
+        const map = L.map('map').setView(initialCoords, 15);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        let marker = null;
+        const hiddenInput = document.getElementById('location_pin_json_input');
+        
+        // --- NEW: Add Search Control ---
+        const searchProvider = new GeoSearch.OpenStreetMapProvider();
+        const searchControl = new GeoSearch.GeoSearchControl({
+            provider: searchProvider,
+            style: 'bar', // 'bar' or 'button'
+            showMarker: false, // We will handle the marker ourselves
+            autoClose: true,
+            searchLabel: 'ค้นหาสถานที่...',
+        });
+        map.addControl(searchControl);
+
+        function updateMarkerAndInput(lat, lng) {
+            if (marker) map.removeLayer(marker);
+            marker = L.marker([lat, lng]).addTo(map);
+            const geoJsonData = { "type": "Point", "coordinates": [lng, lat] };
+            hiddenInput.value = JSON.stringify(geoJsonData);
+        }
+
+        // --- NEW: Listen for search result event ---
+        map.on('geosearch/showlocation', function(result) {
+            const { x, y } = result.location; // x is lng, y is lat
+            map.setView([y, x], 16); // Center map on the result
+            updateMarkerAndInput(y, x);
+        });
+
+        // Load existing pin data on edit page
+        try {
+            const existingDataStr = '{{ prop.location_pin | tojson | safe if prop and prop.location_pin else 'null' }}';
+            const existingData = JSON.parse(existingDataStr);
+            if (existingData && existingData.type === 'Point' && Array.isArray(existingData.coordinates)) {
+                const [lng, lat] = existingData.coordinates;
+                updateMarkerAndInput(lat, lng);
+                map.setView([lat, lng], 16);
+            }
+        } catch (e) {
+            console.error("Could not parse existing location data:", e);
+        }
+
+        // Set marker on map click
+        map.on('click', function(e) {
+            updateMarkerAndInput(e.latlng.lat, e.latlng.lng);
+        });
+    }
+
+    // === SCRIPT FOR GALLERY DRAG & DROP ===
+    const gallery = document.getElementById('gallery');
+    if (gallery) {
+        let dragEl = null;
+        gallery.addEventListener('dragstart', (e) => {
+            const card = e.target.closest('[draggable="true"]');
+            if (card) {
+                dragEl = card;
+                e.dataTransfer.effectAllowed = 'move';
+            }
+        });
+
+        gallery.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const card = e.target.closest('[draggable="true"]');
+            if (card && card !== dragEl) {
+                const rect = card.getBoundingClientRect();
+                const next = (e.clientY - rect.top) / rect.height > 0.5;
+                gallery.insertBefore(dragEl.parentElement, next ? card.parentElement.nextSibling : card.parentElement);
+            }
+        });
+
+        gallery.addEventListener('dragend', () => {
+            dragEl = null;
+        });
+        
+        const reorderForm = document.getElementById('reorder-form');
+        if (reorderForm) {
+            reorderForm.addEventListener('submit', () => {
+                const container = document.getElementById('positions-container');
+                container.innerHTML = '';
+                let pos = 1;
+                gallery.querySelectorAll('[draggable="true"]').forEach(card => {
+                    const id = card.getAttribute('data-image-id');
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'positions-' + (pos - 1);
+                    input.value = id + ':' + pos;
+                    container.appendChild(input);
+                    pos++;
+                });
+            });
+        }
+    }
+})();
 </script>
-{% endif %}
 {% endblock %}

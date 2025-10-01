@@ -1,4 +1,5 @@
 from flask import Flask
+from flask import Flask, send_from_directory
 from .extensions import db, migrate, login_manager, babel, limiter, csrf
 from .config import Config
 
@@ -51,6 +52,15 @@ def create_app() -> Flask:
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(api_bp, url_prefix="/api")
+
+    # ❗️ เพิ่มโค้ดส่วนนี้เข้าไปทั้งหมด ❗️
+    @app.route('/uploads/<path:filename>')
+    def serve_uploads(filename):
+        return send_from_directory(
+            app.config['UPLOAD_FOLDER'],
+            filename,
+            as_attachment=False
+        )
 
     @app.get("/health")
     def health():

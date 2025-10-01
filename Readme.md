@@ -283,8 +283,13 @@ flask --app run.py seed_sample
 
 # รันเว็บ (ทำการrunเเค่นี้ก็พอ)
 python run.py 
+# หรือ
+flask run
 # เปิด http://127.0.0.1:5000/
 บัญชีทดสอบ
+#ถ้า run error เพราะ database ใช้คำสั่งนี้
+flask --app run.py db upgrade
+
 ```
 Admin: admin / admin
 

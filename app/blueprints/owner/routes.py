@@ -1,3 +1,4 @@
+# phuwishpk/finddominitorykmitl/FindDominitoryKMITL-owner-pin-map/app/blueprints/owner/routes.py
 from flask import render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from sqlalchemy import func
@@ -41,7 +42,6 @@ def new_property():
 
         prop = prop_svc.create(current_user.ref_id, form_data)
         
-        # Save uploaded images if they exist
         if upload_form.image.data and upload_form.image.data[0].filename:
             upload_svc = current_app.extensions["container"]["upload_service"]
             
@@ -56,7 +56,8 @@ def new_property():
         flash("สร้างประกาศสำเร็จแล้ว", "success")
         return redirect(url_for("owner.dashboard"))
         
-    return render_template("owner/form.html", form=form, all_amenities=all_amenities, prop=None, upload_form=upload_form)
+    # --- แก้ไขบรรทัดนี้ ---
+    return render_template("owner/form.html", form=form, all_amenities=all_amenities, prop=None, upload_form=upload_form, PropertyPolicy=PropertyPolicy)
 
 @bp.route("/property/<int:prop_id>/edit", methods=["GET","POST"])
 @login_required
@@ -92,12 +93,15 @@ def edit_property(prop_id: int):
         else:
             return redirect(url_for("owner.edit_property", prop_id=prop.id))
 
+    # --- แก้ไขส่วนนี้ ---
     return render_template("owner/form.html",
                            form=form, prop=prop,
                            upload_form=upload_form, reorder_form=reorder_form,
                            all_amenities=all_amenities,
-                           approval_note=approval_note)
+                           approval_note=approval_note,
+                           PropertyPolicy=PropertyPolicy) # <-- เพิ่มบรรทัดนี้
 
+# ... (โค้ดส่วนที่เหลือของไฟล์) ...
 @bp.post("/property/<int:prop_id>/image")
 @login_required
 @owner_required

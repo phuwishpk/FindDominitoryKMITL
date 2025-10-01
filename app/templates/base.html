@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Dorm Finder{% endblock %}</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <!-- Leaflet Geosearch CSS (For Search Bar) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.11.0/dist/geosearch.css"/>
+
 </head>
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg bg-body-tertiary">
@@ -16,13 +22,24 @@
   </div>
 </nav>
 <main class="container py-4">
-  {% with messages = get_flashed_messages() %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-      <div class="alert alert-info">{{ messages[0] }}</div>
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category or 'info' }}">{{ message }}</div>
+      {% endfor %}
     {% endif %}
   {% endwith %}
   {% block content %}{% endblock %}
 </main>
+
+<!-- Scripts at the end of body -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<!-- Leaflet Geosearch JS (For Search Bar) -->
+<script src="https://unpkg.com/leaflet-geosearch@3.11.0/dist/geosearch.umd.js"></script>
+
+<!-- Block for page-specific JavaScript -->
+{% block page_scripts %}{% endblock %}
+
 </body>
 </html>
