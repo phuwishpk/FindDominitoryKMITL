@@ -13,7 +13,7 @@
   </a>
   
   {% if p.workflow_status == 'draft' %}
-  <form method="post" action="{{ url_for('owner.submit_for_approval', prop_id=p.id) }}" class="ms-2">
+  <form method="post" action="{{ url_for('owner.submit_for_approval', prop_id=p.id) }}" class="ms-2" onsubmit="return confirm('คุณต้องการส่งประกาศนี้เพื่อขออนุมัติใช่หรือไม่?');">
     <button class="btn btn-sm btn-info">ส่งอนุมัติ</button>
   </form>
   {% endif %}
