@@ -2,17 +2,19 @@
 
 {% block content %}
 <div class="container my-5">
-    <a href="{{ url_for('public.index') }}" class="btn btn-sm btn-outline-secondary mb-3">← กลับสู่หน้าหลัก</a>
+    <a href="{{ url_for('admin.queue') }}" class="btn btn-sm btn-outline-secondary mb-3">← กลับสู่คิวรออนุมัติ</a>
     
     {% if not prop %}
-    <div class="alert alert-danger">ไม่พบประกาศนี้ หรือประกาศยังไม่ได้รับการอนุมัติ</div>
+    <div class="alert alert-danger">ไม่พบข้อมูลหอพักนี้</div>
     {% else %}
+
+    <h1 class="mb-4">ตรวจสอบหอพัก: {{ prop.dorm_name }}</h1>
+    <span class="badge bg-warning mb-4">{{ prop.workflow_status }}</span>
 
     <div class="row">
         
         <div class="col-lg-8">
-            <h1 class="mb-3">{{ prop.dorm_name }}</h1>
-
+            
             <div id="propertyCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
                 <div class="carousel-inner rounded shadow-sm">
                     {% for img in prop.images %}
@@ -62,18 +64,23 @@
                 </div>
             </div>
 
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">ข้อมูลเจ้าของ (สำหรับยืนยันตัวตน)</h5>
+                    <p class="card-text"><strong>ชื่อ-สกุล:</strong> {{ owner.full_name_th or 'N/A' }}</p>
+                    <p class="card-text"><strong>บัตรประชาชน:</strong> {{ owner.citizen_id or 'N/A' }}</p>
+                    <p class="card-text"><strong>อีเมล:</strong> {{ owner.email or 'N/A' }}</p>
+                    <p class="card-text"><strong>โทรศัพท์:</strong> {{ owner.phone or 'N/A' }}</p>
+                </div>
+            </div>
+
         </div>
 
         <div class="col-lg-4">
             <div class="card sticky-top shadow-lg" style="top: 20px;">
                 <div class="card-body">
-                    <h5 class="card-title text-success">ติดต่อสอบถาม</h5>
-                    <p class="mb-2"><strong>โทรศัพท์:</strong> <a href="tel:{{ prop.contact_phone }}">{{ prop.contact_phone or 'N/A' }}</a></p>
-                    <p class="mb-2"><strong>LINE ID:</strong> {{ prop.line_id or 'N/A' }}</p>
-                    <p class="mb-2"><strong>Facebook:</strong> <a href="{{ prop.facebook_url }}" target="_blank">{{ prop.facebook_url or 'N/A' }}</a></p>
                     
-                    <hr>
-                    <h5 class="mt-3">ตำแหน่งที่ตั้ง</h5>
+                    <h5 class="mt-3">ตำแหน่งที่ตั้ง (ตรวจสอบพิกัด)</h5>
                     <p class="card-text">{{ prop.soi or 'N/A' }} ถ. {{ prop.road or 'N/A' }}</p>
                     
                     {# 💡 ส่วนแสดงแผนที่ #}
@@ -81,13 +88,44 @@
                     
                     <div class="mt-2 text-center">
                         {% if prop.location_pin and prop.location_pin.coordinates %}
+                        {# 💡 แก้ไข: เพิ่มเงื่อนไขตรวจสอบ prop.location_pin ก่อนใช้ #}
                         <a href="https://www.google.com/maps/search/?api=1&query={{ prop.location_pin.coordinates[1] }},{{ prop.location_pin.coordinates[0] }}" target="_blank" class="btn btn-sm btn-outline-success w-100">
                             เปิดใน Google Maps
                         </a>
                         {% else %}
-                        <p class="text-danger small">ไม่มีข้อมูลพิกัด</p>
+                        <p class="text-danger small">ไม่มีข้อมูลพิกัด (ไม่สามารถตรวจสอบแผนที่ได้)</p>
                         {% endif %}
                     </div>
+
+                    <hr class="my-4">
+                    
+                    <h5 class="mb-3">ดำเนินการตรวจสอบ</h5>
+
+                    <form method="POST" action="{{ url_for('admin.approve', prop_id=prop.id) }}" class="d-inline">
+                        {{ approve_form.csrf_token }}
+                        <button type="submit" class="btn btn-success w-100 mb-2">✅ อนุมัติ (Approve)</button>
+                    </form>
+
+                    <button class="btn btn-outline-danger w-100" type="button" data-bs-toggle="collapse" data-bs-target="#rejectCollapse" aria-expanded="false" aria-controls="rejectCollapse">
+                        ❌ ไม่อนุมัติ (ระบุเหตุผล)
+                    </button>
+
+                    <div class="collapse mt-3 {% if reject_form.errors %}show{% endif %}" id="rejectCollapse">
+                        <div class="card card-body p-3 bg-light">
+                            <form method="POST" action="{{ url_for('admin.reject', prop_id=prop.id) }}">
+                                {{ reject_form.csrf_token }}
+                                <div class="mb-3">
+                                    {{ reject_form.note.label(class="form-label") }}
+                                    {{ reject_form.note(class="form-control" + (' is-invalid' if reject_form.note.errors else ''), rows="3") }}
+                                    {% for error in reject_form.note.errors %}
+                                        <span class="text-danger small d-block">{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                                {{ reject_form.submit(class="btn btn-danger w-100") }}
+                            </form>
+                        </div>
+                    </div>
+                    
                 </div>
             </div>
         </div>
@@ -99,22 +137,28 @@
 {% block page_scripts %}
 <script>
     // 💡 โค้ด JavaScript สำหรับ LeafletJS Map
+    
+    // ตรวจสอบว่ามีข้อมูลพิกัดหรือไม่ (GeoJSON format: [lng, lat])
     {% if prop and prop.location_pin and prop.location_pin.coordinates %}
     const lng = {{ prop.location_pin.coordinates[0] }};
     const lat = {{ prop.location_pin.coordinates[1] }};
 
+    // สร้างแผนที่
     const map = L.map('map').setView([lat, lng], 16); 
 
+    // เพิ่ม Tile Layer (OpenStreetMap)
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
 
+    // ปักหมุดที่ตำแหน่งหอพัก
     L.marker([lat, lng]).addTo(map)
         .bindPopup('<b>{{ prop.dorm_name }}</b><br>พิกัดที่ปักหมุด.')
         .openPopup();
     
     {% else %}
+    // ถ้าไม่มีพิกัด, แสดงข้อความในกล่องแผนที่
     document.getElementById('map').innerHTML = '<div class="text-center p-5 text-muted">ไม่พบข้อมูลพิกัด</div>';
     {% endif %}
 </script>

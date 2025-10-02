@@ -2,7 +2,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, logout_user
 from app.models.user import Owner, Admin
 from app.extensions import Principal
-from app.repositories.interfaces.user_repo import IUserRepo
+from app.repositories.interfaces.user_repo import IUserRepo # 💡 นี่คือการ Import ที่ถูกต้อง
 
 class AuthService:
     def __init__(self, user_repo: IUserRepo):
