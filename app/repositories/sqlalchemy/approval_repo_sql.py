@@ -1,15 +1,28 @@
 from app.models.property import Property
 from app.models.approval import ApprovalRequest, AuditLog
 from app.extensions import db
+from sqlalchemy import or_
 
 class SqlApprovalRepo:
     
-    def get_pending_properties(self):
+    def get_pending_properties(self, search_query: str = None):
         """
         💡 ดึงรายการ Properties ทั้งหมดที่อยู่ในสถานะ 'submitted' (รออนุมัติ)
+        พร้อมความสามารถในการค้นหา
         """
-        # ใช้ filter_by('submitted') เพื่อดึงรายการที่ Owner ส่งเข้ามา
-        return Property.query.filter_by(workflow_status='submitted').all()
+        query = Property.query.filter_by(workflow_status='submitted')
+        
+        if search_query:
+            like_query = f"%{search_query}%"
+            # ค้นหาจากชื่อหอพัก หรือ Owner ID
+            query = query.filter(
+                or_(
+                    Property.dorm_name.ilike(like_query),
+                    Property.owner_id.ilike(like_query) 
+                )
+            )
+            
+        return query.order_by(Property.created_at.desc()).all()
 
     def get_pending_request(self, property_id: int) -> ApprovalRequest | None:
         """

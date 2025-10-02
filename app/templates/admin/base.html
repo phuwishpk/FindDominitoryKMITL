@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    {# --- Sidebar --- #}
+    <div class="col-lg-3">
+        <div class="card shadow-sm sticky-top" style="top: 20px;">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Admin Panel</h5>
+                <div class="list-group">
+                    <a href="{{ url_for('admin.dashboard') }}" 
+                       class="list-group-item list-group-item-action {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                        📊 หน้าหลัก (Dashboard)
+                    </a>
+                    <a href="{{ url_for('admin.queue') }}" 
+                       class="list-group-item list-group-item-action {% if request.endpoint in ['admin.queue', 'admin.review_property'] %}active{% endif %}">
+                        📥 อนุมัติหอพัก (Queue)
+                    </a>
+                    <a href="{{ url_for('admin.logs') }}" 
+                       class="list-group-item list-group-item-action {% if request.endpoint == 'admin.logs' %}active{% endif %}">
+                       📜 ประวัติการดำเนินการ
+                    </a>
+                    {# --- เพิ่มลิงก์อื่นๆ ตามรูปภาพในอนาคต --- #}
+                    <a href="#" class="list-group-item list-group-item-action disabled">👤 ข้อมูล Owner (เร็วๆ นี้)</a>
+                    <a href="#" class="list-group-item list-group-item-action disabled">🏨 ข้อมูลหอพัก (เร็วๆ นี้)</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# --- Main Content --- #}
+    <div class="col-lg-9">
+        {% block admin_content %}{% endblock %}
+    </div>
+</div>
+{% endblock %}

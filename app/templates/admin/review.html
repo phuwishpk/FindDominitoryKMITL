@@ -1,6 +1,6 @@
-{% extends 'base.html' %}
+{% extends 'admin/base.html' %}
 
-{% block content %}
+{% block admin_content %}
 <div class="container my-5">
     <a href="{{ url_for('admin.queue') }}" class="btn btn-sm btn-outline-secondary mb-3">← กลับสู่คิวรออนุมัติ</a>
     
@@ -83,12 +83,10 @@
                     <h5 class="mt-3">ตำแหน่งที่ตั้ง (ตรวจสอบพิกัด)</h5>
                     <p class="card-text">{{ prop.soi or 'N/A' }} ถ. {{ prop.road or 'N/A' }}</p>
                     
-                    {# 💡 ส่วนแสดงแผนที่ #}
                     <div id="map" style="height: 250px; width: 100%;" class="border rounded mb-3"></div>
                     
                     <div class="mt-2 text-center">
                         {% if prop.location_pin and prop.location_pin.coordinates %}
-                        {# 💡 แก้ไข: เพิ่มเงื่อนไขตรวจสอบ prop.location_pin ก่อนใช้ #}
                         <a href="https://www.google.com/maps/search/?api=1&query={{ prop.location_pin.coordinates[1] }},{{ prop.location_pin.coordinates[0] }}" target="_blank" class="btn btn-sm btn-outline-success w-100">
                             เปิดใน Google Maps
                         </a>
@@ -101,10 +99,11 @@
                     
                     <h5 class="mb-3">ดำเนินการตรวจสอบ</h5>
 
-                    <form method="POST" action="{{ url_for('admin.approve', prop_id=prop.id) }}" class="d-inline">
-                        {{ approve_form.csrf_token }}
-                        <button type="submit" class="btn btn-success w-100 mb-2">✅ อนุมัติ (Approve)</button>
-                    </form>
+                    <!-- vvv FIX: Changed button to trigger modal -->
+                    <button type="button" class="btn btn-success w-100 mb-2" data-bs-toggle="modal" data-bs-target="#confirmApproveModal">
+                        ✅ อนุมัติ (Approve)
+                    </button>
+                    <!-- ^^^ End of FIX -->
 
                     <button class="btn btn-outline-danger w-100" type="button" data-bs-toggle="collapse" data-bs-target="#rejectCollapse" aria-expanded="false" aria-controls="rejectCollapse">
                         ❌ ไม่อนุมัติ (ระบุเหตุผล)
@@ -132,34 +131,52 @@
     </div>
     {% endif %}
 </div>
+
+<!-- vvv NEW: Approval Confirmation Modal -->
+<div class="modal fade" id="confirmApproveModal" tabindex="-1" aria-labelledby="confirmApproveModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmApproveModalLabel">ยืนยันการอนุมัติ</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          คุณแน่ใจหรือไม่ว่าต้องการอนุมัติหอพัก <strong>"{{ prop.dorm_name }}"</strong>?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+          <form method="POST" action="{{ url_for('admin.approve', prop_id=prop.id) }}" class="d-inline">
+              {{ approve_form.csrf_token }}
+              <button type="submit" class="btn btn-success">ยืนยันอนุมัติ</button>
+          </form>
+        </div>
+      </div>
+    </div>
+</div>
+<!-- ^^^ End of NEW -->
 {% endblock %}
 
 {% block page_scripts %}
+{{ super() }}
 <script>
-    // 💡 โค้ด JavaScript สำหรับ LeafletJS Map
-    
-    // ตรวจสอบว่ามีข้อมูลพิกัดหรือไม่ (GeoJSON format: [lng, lat])
     {% if prop and prop.location_pin and prop.location_pin.coordinates %}
     const lng = {{ prop.location_pin.coordinates[0] }};
     const lat = {{ prop.location_pin.coordinates[1] }};
 
-    // สร้างแผนที่
     const map = L.map('map').setView([lat, lng], 16); 
 
-    // เพิ่ม Tile Layer (OpenStreetMap)
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
 
-    // ปักหมุดที่ตำแหน่งหอพัก
     L.marker([lat, lng]).addTo(map)
         .bindPopup('<b>{{ prop.dorm_name }}</b><br>พิกัดที่ปักหมุด.')
         .openPopup();
     
     {% else %}
-    // ถ้าไม่มีพิกัด, แสดงข้อความในกล่องแผนที่
     document.getElementById('map').innerHTML = '<div class="text-center p-5 text-muted">ไม่พบข้อมูลพิกัด</div>';
     {% endif %}
 </script>
 {% endblock %}
+

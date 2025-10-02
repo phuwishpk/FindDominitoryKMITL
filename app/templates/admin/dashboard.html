@@ -1,0 +1,139 @@
+{% extends 'admin/base.html' %}
+
+{% block admin_content %}
+<h1 class="h4 mb-4">Admin Dashboard</h1>
+
+<!-- Summary Cards -->
+<div class="row">
+    <div class="col-md-3 mb-4">
+        <div class="card text-white bg-primary shadow h-100">
+            <div class="card-body">
+                <h6 class="card-title">จำนวน Owner</h6>
+                <p class="card-text fs-4 fw-bold">{{ stats.total_owners }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card text-white bg-success shadow h-100">
+            <div class="card-body">
+                <h6 class="card-title">จำนวนหอพักทั้งหมด</h6>
+                <p class="card-text fs-4 fw-bold">{{ stats.total_properties }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card text-white bg-warning shadow h-100">
+            <div class="card-body">
+                <h6 class="card-title">รออนุมัติ (หอพัก)</h6>
+                <p class="card-text fs-4 fw-bold">{{ stats.pending_properties }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card text-white bg-info shadow h-100">
+            <div class="card-body">
+                <h6 class="card-title">รออนุมัติ (Owner)</h6>
+                <p class="card-text fs-4 fw-bold">0</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row">
+    <div class="col-lg-5 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="card-title">สัดส่วนหอพักตามถนน (Top 5)</h6>
+                <!-- FIX: Added a wrapper div with a defined height to contain the chart -->
+                <div style="position: relative; height: 350px;">
+                    <canvas id="locationPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="card-title">การเติบโตของ Owner และ หอพัก (6 เดือนล่าสุด)</h6>
+                <!-- FIX: Added a wrapper div with a defined height to contain the chart -->
+                <div style="position: relative; height: 350px;">
+                    <canvas id="growthLineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // --- Pie Chart ---
+    const pieCtx = document.getElementById('locationPieChart');
+    if (pieCtx) {
+        new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: {{ pie_chart.labels|tojson }},
+                datasets: [{
+                    label: 'จำนวนหอพัก',
+                    data: {{ pie_chart.data|tojson }},
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(153, 102, 255, 0.7)',
+                    ],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+            }
+        });
+    }
+
+    // --- Line Chart ---
+    const lineCtx = document.getElementById('growthLineChart');
+    if (lineCtx) {
+        new Chart(lineCtx, {
+            type: 'line',
+            data: {
+                labels: {{ line_chart.labels|tojson }},
+                datasets: [
+                    {
+                        label: 'Owners',
+                        data: {{ line_chart.owners|tojson }},
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        fill: true,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'หอพัก',
+                        data: {{ line_chart.properties|tojson }},
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        fill: true,
+                        tension: 0.1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+
