@@ -3,14 +3,12 @@ from app.models.approval import ApprovalRequest, AuditLog
 from app.extensions import db
 
 class SqlApprovalRepo:
-    """
-    Repository สำหรับจัดการ ApprovalRequest และ AuditLog
-    """
+    
     def get_pending_properties(self):
         """
-        ดึงรายการ Properties ทั้งหมดที่อยู่ในสถานะ 'submitted' (รออนุมัติ)
+        💡 ดึงรายการ Properties ทั้งหมดที่อยู่ในสถานะ 'submitted' (รออนุมัติ)
         """
-        # ใช้ .all() เพื่อให้ได้ list ของ Property objects
+        # ใช้ filter_by('submitted') เพื่อดึงรายการที่ Owner ส่งเข้ามา
         return Property.query.filter_by(workflow_status='submitted').all()
 
     def get_pending_request(self, property_id: int) -> ApprovalRequest | None:
@@ -40,7 +38,7 @@ class SqlApprovalRepo:
         """
         ดึง AuditLog ทั้งหมดพร้อมการแบ่งหน้า (Pagination)
         """
-        # ใช้ .paginate() ของ SQLAlchemy 2.0
+        from app.extensions import db
         return db.paginate(
             AuditLog.query.order_by(AuditLog.created_at.desc()), 
             page=page, per_page=per_page, error_out=False

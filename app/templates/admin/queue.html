@@ -1,19 +1,20 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="d-flex align-items-center justify-content-between">
-    <h1 class="h4 mb-3">Admin: รายการคำขออนุมัติ (Queue)</h1>
-    <a href="/" class="btn btn-link">กลับไปหน้า User</a>
+  <h1 class="h4">Admin Queue</h1>
+  <a href="/" class="btn btn-link">กลับไปหน้า User</a>
 </div>
 
-{% if props %}
+{% if properties %}
 <div class="list-group">
-  {% for p in props %}
+  {% for p in properties %}
+  {# 💡 แก้ไขลิงก์ให้ชี้ไปที่ review_property #}
   <a href="{{ url_for('admin.review_property', prop_id=p.id) }}" class="list-group-item list-group-item-action">
     <div class="d-flex w-100 justify-content-between">
       <h5 class="mb-1">{{ p.dorm_name }}</h5>
       <small class="text-muted">ส่งเมื่อ: {{ p.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
     </div>
-    <p class="mb-1">Owner ID: {{ p.owner_id }}</p>
+    <p class="mb-1">Property ID: {{ p.id }}</p>
     <small class="badge text-bg-warning">{{ p.workflow_status }}</small>
   </a>
   {% endfor %}

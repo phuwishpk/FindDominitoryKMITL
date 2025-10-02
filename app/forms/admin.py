@@ -10,13 +10,9 @@ class RejectForm(FlaskForm):
     note = TextAreaField(
         'เหตุผลในการไม่อนุมัติ', 
         validators=[
-            DataRequired(message="กรุณาระบุเหตุผลในการไม่อนุมัติ"), 
-            Length(max=500)
+            DataRequired("กรุณาระบุเหตุผลในการไม่อนุมัติ"), 
+            Length(max=500, message="เหตุผลต้องไม่เกิน 500 ตัวอักษร")
         ],
         render_kw={"placeholder": "ระบุเหตุผลในการปฏิเสธคำขออนุมัติ..."}
     )
     submit = SubmitField('ปฏิเสธคำขอ')
-
-class EmptyForm(FlaskForm):
-    """ฟอร์มว่างสำหรับรับ CSRF token เท่านั้น (ใช้ในการอนุมัติ)"""
-    pass
