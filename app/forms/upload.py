@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import MultipleFileField, FieldList, HiddenField 
+from wtforms import MultipleFileField, FieldList, HiddenField # <-- แก้ไข import
 from wtforms.validators import Optional
 from app.utils.validation import validate_image_file
 
@@ -17,5 +17,5 @@ class ReorderImagesForm(FlaskForm):
     positions = FieldList(HiddenField('positions'), min_entries=0)
     
 class EmptyForm(FlaskForm): # 💡 เพิ่มคลาสนี้
-    """ฟอร์มว่างสำหรับรับ CSRF token เท่านั้น"""
+    """ฟอร์มว่างสำหรับใช้ CSRF Token"""
     pass
