@@ -1,6 +1,7 @@
 from flask import Flask
 from flask import Flask, send_from_directory
-from .extensions import db, migrate, login_manager, babel, limiter, csrf
+# 💡 แก้ไข: นำเข้า babel_ext
+from .extensions import db, migrate, login_manager, babel_ext, limiter, csrf 
 from .config import Config
 
 from .blueprints.public import bp as public_bp
@@ -20,6 +21,9 @@ from .services.approval_service import ApprovalService
 from .services.upload_service import UploadService
 
 def register_dependencies(app: Flask):
+    """
+    สร้างและผูก DI Container (แบบ Manual Dictionary) เข้ากับ application
+    """
     container = {}
     container["user_repo"] = SqlUserRepo()
     container["property_repo"] = SqlPropertyRepo()
@@ -27,7 +31,7 @@ def register_dependencies(app: Flask):
     container["auth_service"] = AuthService(container["user_repo"])
     container["property_service"] = PropertyService(container["property_repo"])
     container["search_service"] = SearchService(container["property_repo"])
-    # 💡 แก้ไขบรรทัดนี้: ส่ง approval_repo และ property_repo เข้าไป
+    # แก้ไข: ส่ง approval_repo และ property_repo เข้าไปใน ApprovalService
     container["approval_service"] = ApprovalService(container["approval_repo"], container["property_repo"])
     container["upload_service"] = UploadService(app.config.get("UPLOAD_FOLDER", "uploads"))
     if not hasattr(app, "extensions"):
@@ -35,19 +39,24 @@ def register_dependencies(app: Flask):
     app.extensions["container"] = container
 
 def create_app() -> Flask:
+    """
+    Application Factory Function
+    """
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(Config)
 
+    # --- Initialize Extensions ---
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    babel.init_app(app)
+    babel_ext.init_app(app) # 💡 แก้ไข: ใช้ babel_ext
     limiter.init_app(app)
     csrf.init_app(app)
 
     with app.app_context():
         register_dependencies(app)
 
+    # --- Register Blueprints ---
     app.register_blueprint(public_bp)
     app.register_blueprint(owner_bp, url_prefix="/owner")
     app.register_blueprint(admin_bp, url_prefix="/admin")
@@ -67,6 +76,7 @@ def create_app() -> Flask:
     def health():
         return {"ok": True}
 
+    # ❗️ โค้ดสำหรับ CLI Commands ❗️
     @app.cli.command("seed_amenities")
     def seed_amenities():
         from app.models.property import Amenity
@@ -98,7 +108,6 @@ def create_app() -> Flask:
         from app.extensions import db
         from werkzeug.security import generate_password_hash
         
-        # GeoJSON Point: [lng, lat] (ใช้พิกัด KMITL โดยประมาณ)
         location_pin_data = {"type": "Point", "coordinates": [100.7758, 13.7292]}
 
         if not Owner.query.filter_by(email="owner@example.com").first():
@@ -106,7 +115,6 @@ def create_app() -> Flask:
                       email="owner@example.com", password_hash=generate_password_hash("password"))
             db.session.add(o); db.session.commit()
             
-            # แก้ไข: ใช้ location_pin แทน lat/lng
             p = Property(owner_id=o.id, dorm_name="ตัวอย่างหอพัก", room_type="studio",
                          rent_price=6500, 
                          location_pin=location_pin_data, 
