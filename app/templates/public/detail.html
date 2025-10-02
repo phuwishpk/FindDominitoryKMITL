@@ -1,9 +1,101 @@
 {% extends 'base.html' %}
+
 {% block content %}
-{% if prop %}
-<h1 class="h4">{{ prop.dorm_name }}</h1>
-<p class="text-muted">{{ prop.room_type }} · ค่าเช่า {{ prop.rent_price or '-' }} THB</p>
-{% else %}
-<div class="alert alert-warning">ไม่พบประกาศ</div>
-{% endif %}
+<div class="container my-5">
+    <a href="{{ url_for('public.index') }}" class="btn btn-sm btn-outline-secondary mb-3">← กลับสู่หน้าหลัก</a>
+    
+    {% if not prop %}
+    <div class="alert alert-danger">ไม่พบประกาศนี้ หรือประกาศยังไม่ได้รับการอนุมัติ</div>
+    {% else %}
+
+    <div class="row">
+        <div class="col-lg-8">
+            <h1 class="mb-3">{{ prop.dorm_name }}</h1>
+
+            <div id="propertyCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
+                <div class="carousel-inner rounded shadow-sm">
+                    {# 💡 ตรวจสอบให้แน่ใจว่า Prop.images ถูกโหลด (จากความสัมพันธ์ใน Model) #}
+                    {% for img in prop.images %}
+                    <div class="carousel-item {% if loop.first %}active{% endif %}">
+                        {# 💡 ใช้พาธที่ถูกต้อง (สมมติว่า img.file_path คือ 'uploads/...') #}
+                        <img src="/{{ img.file_path }}" class="d-block w-100" alt="{{ prop.dorm_name }}" style="height: 450px; object-fit: cover;">
+                    </div>
+                    {% else %}
+                    <div class="carousel-item active">
+                        <div class="d-flex justify-content-center align-items-center bg-light text-muted" style="height: 450px;">ไม่มีรูปภาพ</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                {% if prop.images|length > 1 %}
+                <button class="carousel-control-prev" type="button" data-bs-target="#propertyCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#propertyCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+                {% endif %}
+            </div>
+
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">รายละเอียดหอพัก</h5>
+                    <p class="card-text" style="white-space: pre-wrap;">{{ prop.description or 'ไม่มีคำอธิบายเพิ่มเติม' }}</p>
+                </div>
+            </div>
+
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">ราคาและค่าบริการ</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong>ค่าเช่าต่อเดือน:</strong> <span class="float-end text-primary h6">{{ "{:,.0f}".format(prop.rent_price) if prop.rent_price is not none else 'N/A' }} บาท</span></li>
+                        <li class="list-group-item"><strong>เงินประกัน:</strong> <span class="float-end">{{ "{:,.0f}".format(prop.deposit_amount) if prop.deposit_amount is not none else 'N/A' }} บาท</span></li>
+                        <li class="list-group-item"><strong>ค่าน้ำ:</strong> <span class="float-end">{{ prop.water_rate or 'N/A' }} บาท</span></li>
+                        <li class="list-group-item"><strong>ค่าไฟ:</strong> <span class="float-end">{{ prop.electric_rate or 'N/A' }} บาท</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">สิ่งอำนวยความสะดวก</h5>
+                    {% if prop.amenities.all() %}
+                        {% for amenity in prop.amenities %}
+                            <span class="badge bg-info text-dark me-2 mb-1">{{ amenity.label_th }}</span>
+                        {% endfor %}
+                    {% else %}
+                        <p>ไม่พบข้อมูลสิ่งอำนวยความสะดวก</p>
+                    {% endif %}
+                </div>
+            </div>
+
+             <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">ข้อมูลเพิ่มเติม</h5>
+                    <p class="card-text">{{ prop.additional_info or 'ไม่มีข้อมูลเพิ่มเติม' }}</p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card sticky-top shadow-lg" style="top: 20px;">
+                <div class="card-body">
+                    <h5 class="card-title text-success">ติดต่อสอบถาม</h5>
+                    <p class="mb-2"><strong>โทรศัพท์:</strong> <a href="tel:{{ prop.contact_phone }}">{{ prop.contact_phone or 'N/A' }}</a></p>
+                    <p class="mb-2"><strong>LINE ID:</strong> {{ prop.line_id or 'N/A' }}</p>
+                    <p class="mb-2"><strong>Facebook:</strong> <a href="{{ prop.facebook_url }}" target="_blank">{{ prop.facebook_url or 'N/A' }}</a></p>
+                    
+                    <hr>
+                    <h6 class="mt-3">ที่ตั้ง</h6>
+                    <p class="card-text">{{ prop.address or 'N/A' }}, ซอย {{ prop.soi or 'N/A' }}, ถนน {{ prop.road or 'N/A' }}</p>
+                    <p class="card-text">{{ prop.district or 'N/A' }}, {{ prop.province or 'N/A' }} {{ prop.postal_code }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}
