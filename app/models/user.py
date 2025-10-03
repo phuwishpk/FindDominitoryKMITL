@@ -12,7 +12,12 @@ class Owner(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     phone = db.Column(db.String(20))
     password_hash = db.Column(db.String(255), nullable=False)
-    is_active = db.Column(db.Boolean, default=True)
+    
+    # --- vvv ส่วนที่แก้ไข vvv ---
+    is_active = db.Column(db.Boolean, default=False, nullable=False)
+    approval_status = db.Column(db.String(16), default="pending", nullable=False) # pending, approved, rejected
+    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

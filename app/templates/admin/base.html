@@ -14,8 +14,14 @@
                     </a>
                     <a href="{{ url_for('admin.queue') }}"
                        class="list-group-item list-group-item-action {% if request.endpoint in ['admin.queue', 'admin.review_property'] %}active{% endif %}">
-                        📥 อนุมัติหอพัก (Queue)
+                        📥 อนุมัติหอพัก
                     </a>
+                    {# --- vvv ส่วนที่เพิ่มเข้ามา vvv --- #}
+                    <a href="{{ url_for('admin.owner_queue') }}"
+                       class="list-group-item list-group-item-action {% if request.endpoint in ['admin.owner_queue', 'admin.review_owner'] %}active{% endif %}">
+                        👤 อนุมัติ Owner
+                    </a>
+                    {# --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ --- #}
                     <a href="{{ url_for('admin.logs') }}"
                        class="list-group-item list-group-item-action {% if request.endpoint == 'admin.logs' %}active{% endif %}">
                        📜 ประวัติการดำเนินการ
@@ -24,10 +30,9 @@
                        class="list-group-item list-group-item-action {% if request.endpoint == 'admin.properties' %}active{% endif %}">
                        🏨 ข้อมูลหอพัก
                     </a>
-                    {# ส่วนที่แก้ไข: เปิดใช้งานลิงก์นี้ #}
                     <a href="{{ url_for('admin.owners') }}"
                        class="list-group-item list-group-item-action {% if request.endpoint == 'admin.owners' %}active{% endif %}">
-                       👤 ข้อมูล Owner
+                       👥 ข้อมูล Owner
                     </a>
                 </div>
             </div>

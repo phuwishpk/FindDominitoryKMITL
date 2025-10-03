@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, current_app, request, jsonify
+from flask import render_template, redirect, url_for, flash, current_app, request
 from flask_login import login_required, current_user
 from . import bp
 from app.extensions import admin_required, db
@@ -10,23 +10,28 @@ from sqlalchemy import func
 from datetime import datetime, timedelta
 from collections import OrderedDict
 
-@bp.route("/")
-@login_required
-@admin_required
-def index():
-    return redirect(url_for("admin.dashboard"))
-
 @bp.route("/dashboard")
 @login_required
 @admin_required
 def dashboard():
-    # ... (โค้ดส่วนนี้เหมือนเดิม) ...
+    """
+    แสดงหน้า Dashboard พร้อมข้อมูลสรุปและกราฟ
+    """
     approval_repo = current_app.extensions["container"]["approval_repo"]
+    # --- vvv ส่วนที่แก้ไข vvv ---
+    user_repo = current_app.extensions["container"]["user_repo"]
+    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
+
     stats = {
         "total_owners": Owner.query.count(),
         "total_properties": Property.query.count(),
-        "pending_properties": len(approval_repo.get_pending_properties())
+        "pending_properties": len(approval_repo.get_pending_properties()),
+        # --- vvv ส่วนที่แก้ไข vvv ---
+        "pending_owners": len(user_repo.get_pending_owners()) # นับจำนวน Owner ที่รออนุมัติ
+        # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
     }
+
+    # ... (โค้ดส่วนที่เหลือของฟังก์ชัน dashboard เหมือนเดิม) ...
     pie_data_query = db.session.query(
         Property.road, func.count(Property.id).label('count')
     ).filter(Property.road != None, Property.road != '').group_by(Property.road).order_by(func.count(Property.id).desc()).limit(5).all()
@@ -52,12 +57,18 @@ def dashboard():
     }
     return render_template("admin/dashboard.html", stats=stats, pie_chart=pie_chart, line_chart=line_chart)
 
+# ... (โค้ดส่วนที่เหลือของ routes.py เหมือนเดิม) ...
+@bp.route("/")
+@login_required
+@admin_required
+def index():
+    return redirect(url_for("admin.dashboard"))
+
 
 @bp.route("/queue")
 @login_required
 @admin_required
 def queue():
-    # ... (โค้ดส่วนนี้เหมือนเดิม) ...
     search_query = request.args.get('q', None)
     approval_repo = current_app.extensions["container"]["approval_repo"]
     pending_props = approval_repo.get_pending_properties(search_query=search_query)
@@ -67,7 +78,6 @@ def queue():
 @login_required
 @admin_required
 def review_property(prop_id: int):
-    # ... (โค้ดส่วนนี้เหมือนเดิม) ...
     prop = Property.query.get_or_404(prop_id)
     if prop.workflow_status not in ['submitted']:
         flash("This item is not in the approval queue.", "warning")
@@ -86,7 +96,6 @@ def review_property(prop_id: int):
 @login_required
 @admin_required
 def view_property(prop_id: int):
-    # ... (โค้ดส่วนนี้เหมือนเดิม) ...
     prop = Property.query.get_or_404(prop_id)
     owner = Owner.query.get(prop.owner_id)
     return render_template("admin/property_detail.html", prop=prop, owner=owner)
@@ -95,7 +104,6 @@ def view_property(prop_id: int):
 @login_required
 @admin_required
 def approve(prop_id: int):
-    # ... (โค้ดส่วนนี้เหมือนเดิม) ...
     approval_service = current_app.extensions["container"]["approval_service"]
     if not EmptyForm(request.form).validate_on_submit():
         flash("CSRF Token is invalid.", "danger")
@@ -113,7 +121,6 @@ def approve(prop_id: int):
 @login_required
 @admin_required
 def reject(prop_id: int):
-    # ... (โค้ดส่วนนี้เหมือนเดิม) ...
     reject_form = RejectForm()
     if reject_form.validate_on_submit():
         note = reject_form.note.data
@@ -130,11 +137,11 @@ def reject(prop_id: int):
     flash("Please provide a reason for rejection.", "danger")
     return redirect(url_for("admin.review_property", prop_id=prop_id))
 
+
 @bp.route("/logs")
 @login_required
 @admin_required
 def logs():
-    # ... (โค้ดส่วนนี้เหมือนเดิม) ...
     page = request.args.get("page", 1, type=int)
     approval_service = current_app.extensions["container"]["approval_service"]
     log_data = approval_service.get_audit_logs(page=page)
@@ -144,7 +151,6 @@ def logs():
 @login_required
 @admin_required
 def properties():
-    # ... (โค้ดส่วนนี้เหมือนเดิม) ...
     page = request.args.get("page", 1, type=int)
     search_query = request.args.get('q', None)
     
@@ -153,14 +159,10 @@ def properties():
     
     return render_template("admin/properties.html", pagination=pagination, search_query=search_query)
 
-# ส่วนที่เพิ่มเข้ามาใหม่
 @bp.route("/owners")
 @login_required
 @admin_required
 def owners():
-    """
-    แสดงรายการ Owner ทั้งหมด พร้อมค้นหาและแบ่งหน้า
-    """
     page = request.args.get("page", 1, type=int)
     search_query = request.args.get('q', None)
 
@@ -168,3 +170,59 @@ def owners():
     pagination = user_repo.list_all_owners_paginated(search_query=search_query, page=page, per_page=15)
 
     return render_template("admin/owners.html", pagination=pagination, search_query=search_query)
+
+@bp.route("/owners/queue")
+@login_required
+@admin_required
+def owner_queue():
+    user_repo = current_app.extensions["container"]["user_repo"]
+    pending_owners = user_repo.get_pending_owners()
+    return render_template("admin/owner_queue.html", pending_owners=pending_owners)
+
+@bp.route("/owners/<int:owner_id>/review")
+@login_required
+@admin_required
+def review_owner(owner_id: int):
+    user_repo = current_app.extensions["container"]["user_repo"]
+    owner = user_repo.get_owner_by_id(owner_id)
+    return render_template("admin/review_owner.html", owner=owner)
+
+@bp.route("/owners/<int:owner_id>/approve", methods=["POST"])
+@login_required
+@admin_required
+def approve_owner(owner_id: int):
+    form = EmptyForm()
+    if not form.validate_on_submit():
+        flash("Invalid CSRF token.", "danger")
+        return redirect(url_for("admin.owner_queue"))
+    
+    user_repo = current_app.extensions["container"]["user_repo"]
+    owner = user_repo.get_owner_by_id(owner_id)
+    if owner and owner.approval_status == 'pending':
+        owner.is_active = True
+        owner.approval_status = 'approved'
+        user_repo.save_owner(owner)
+        flash(f"อนุมัติบัญชีของ {owner.full_name_th} สำเร็จ", "success")
+    else:
+        flash("ไม่สามารถดำเนินการได้", "danger")
+    return redirect(url_for("admin.owner_queue"))
+
+@bp.route("/owners/<int:owner_id>/reject", methods=["POST"])
+@login_required
+@admin_required
+def reject_owner(owner_id: int):
+    form = EmptyForm()
+    if not form.validate_on_submit():
+        flash("Invalid CSRF token.", "danger")
+        return redirect(url_for("admin.owner_queue"))
+
+    user_repo = current_app.extensions["container"]["user_repo"]
+    owner = user_repo.get_owner_by_id(owner_id)
+    if owner and owner.approval_status == 'pending':
+        owner.is_active = False
+        owner.approval_status = 'rejected'
+        user_repo.save_owner(owner)
+        flash(f"ปฏิเสธบัญชีของ {owner.full_name_th} สำเร็จ", "success")
+    else:
+        flash("ไม่สามารถดำเนินการได้", "danger")
+    return redirect(url_for("admin.owner_queue"))

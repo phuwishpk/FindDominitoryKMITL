@@ -1,6 +1,5 @@
 from flask import Flask
 from flask import Flask, send_from_directory
-# 💡 แก้ไข: นำเข้า babel_ext
 from .extensions import db, migrate, login_manager, babel_ext, limiter, csrf 
 from .config import Config
 
@@ -28,42 +27,44 @@ def register_dependencies(app: Flask):
     container["user_repo"] = SqlUserRepo()
     container["property_repo"] = SqlPropertyRepo()
     container["approval_repo"] = SqlApprovalRepo()
-    container["auth_service"] = AuthService(container["user_repo"])
+    
+    # --- vvv ส่วนที่แก้ไข vvv ---
+    container["upload_service"] = UploadService(app.config.get("UPLOAD_FOLDER", "uploads"))
+    container["auth_service"] = AuthService(
+        user_repo=container["user_repo"],
+        upload_service=container["upload_service"]
+    )
+    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
+    
     container["property_service"] = PropertyService(container["property_repo"])
     container["search_service"] = SearchService(container["property_repo"])
-    # แก้ไข: ส่ง approval_repo และ property_repo เข้าไปใน ApprovalService
     container["approval_service"] = ApprovalService(container["approval_repo"], container["property_repo"])
-    container["upload_service"] = UploadService(app.config.get("UPLOAD_FOLDER", "uploads"))
+    
     if not hasattr(app, "extensions"):
         app.extensions = {}
     app.extensions["container"] = container
 
+# ... (โค้ดส่วนที่เหลือของ create_app() เหมือนเดิม) ...
 def create_app() -> Flask:
-    """
-    Application Factory Function
-    """
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(Config)
 
-    # --- Initialize Extensions ---
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    babel_ext.init_app(app) # 💡 แก้ไข: ใช้ babel_ext
+    babel_ext.init_app(app)
     limiter.init_app(app)
     csrf.init_app(app)
 
     with app.app_context():
         register_dependencies(app)
 
-    # --- Register Blueprints ---
     app.register_blueprint(public_bp)
     app.register_blueprint(owner_bp, url_prefix="/owner")
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(api_bp, url_prefix="/api")
 
-    # ❗️ โค้ดสำหรับเสิร์ฟไฟล์อัปโหลดและ Health Check ❗️
     @app.route('/uploads/<path:filename>')
     def serve_uploads(filename):
         return send_from_directory(
@@ -76,7 +77,6 @@ def create_app() -> Flask:
     def health():
         return {"ok": True}
 
-    # ❗️ โค้ดสำหรับ CLI Commands ❗️
     @app.cli.command("seed_amenities")
     def seed_amenities():
         from app.models.property import Amenity
