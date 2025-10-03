@@ -51,7 +51,8 @@
                     <div class="mb-3">
                         {{ form.occupancy_pdf.label(class="form-label") }}
                         {{ form.occupancy_pdf(class="form-control" + (" is-invalid" if form.occupancy_pdf.errors else "")) }}
-                        <div class="form-text">แนบเอกสาร (ถ้ามี, ไฟล์ PDF ขนาดไม่เกิน 10MB)</div>
+<div class="form-text">แนบเอกสาร(ถ้ามี, ไฟล์ PDF ขนาดไม่เกิน 10MB)</div>
+
                         {% for error in form.occupancy_pdf.errors %}
                             <div class="invalid-feedback d-block">{{ error }}</div>
                         {% endfor %}
