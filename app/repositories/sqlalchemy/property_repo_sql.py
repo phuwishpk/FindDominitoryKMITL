@@ -38,3 +38,20 @@ class SqlPropertyRepo:
                        .group_by(Property.id)
                        .having(func.count(func.distinct(Amenity.code)) == len(codes_list)))
         return q
+
+    def list_all_paginated(self, search_query=None, page=1, per_page=15):
+        """
+        ดึงรายการ Properties ทั้งหมด พร้อมค้นหาและแบ่งหน้า
+        (Fetches all properties with search and pagination)
+        """
+        from app.extensions import db
+        q = Property.query
+
+        if search_query:
+            like_filter = f"%{search_query}%"
+            q = q.filter(Property.dorm_name.ilike(like_filter))
+
+        return db.paginate(
+            q.order_by(Property.created_at.desc()),
+            page=page, per_page=per_page, error_out=False
+        )
