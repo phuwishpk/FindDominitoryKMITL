@@ -13,14 +13,19 @@ class SqlUserRepo:
     def get_admin_by_username(self, username: str):
         return Admin.query.filter_by(username=username).first()
 
-    # ส่วนที่เพิ่มเข้ามาใหม่
-    def list_all_owners_paginated(self, search_query=None, page=1, per_page=15):
-        """
-        ดึงรายการ Owners ทั้งหมด พร้อมค้นหาและแบ่งหน้า
-        (Fetches all Owners with search and pagination)
-        """
-        q = Owner.query
+    # --- vvv ส่วนที่เพิ่มเข้ามา vvv ---
+    def get_owner_by_id(self, owner_id: int):
+        return Owner.query.get(owner_id)
+        
+    def get_pending_owners(self):
+        return Owner.query.filter_by(approval_status='pending').order_by(Owner.created_at.asc()).all()
 
+    def save_owner(self, owner: Owner):
+        db.session.commit()
+    # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
+
+    def list_all_owners_paginated(self, search_query=None, page=1, per_page=15):
+        q = Owner.query
         if search_query:
             like_filter = f"%{search_query}%"
             q = q.filter(
@@ -29,7 +34,6 @@ class SqlUserRepo:
                     Owner.email.ilike(like_filter)
                 )
             )
-
         return db.paginate(
             q.order_by(Owner.created_at.desc()),
             page=page, per_page=per_page, error_out=False

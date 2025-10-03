@@ -33,7 +33,9 @@
         <div class="card text-white bg-info shadow h-100">
             <div class="card-body">
                 <h6 class="card-title">รออนุมัติ (Owner)</h6>
-                <p class="card-text fs-4 fw-bold">0</p>
+                {# --- vvv ส่วนที่แก้ไข vvv --- #}
+                <p class="card-text fs-4 fw-bold">{{ stats.pending_owners }}</p>
+                {# --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ --- #}
             </div>
         </div>
     </div>
@@ -45,7 +47,6 @@
         <div class="card shadow-sm h-100">
             <div class="card-body">
                 <h6 class="card-title">สัดส่วนหอพักตามถนน (Top 5)</h6>
-                <!-- FIX: Added a wrapper div with a defined height to contain the chart -->
                 <div style="position: relative; height: 350px;">
                     <canvas id="locationPieChart"></canvas>
                 </div>
@@ -56,7 +57,6 @@
         <div class="card shadow-sm h-100">
             <div class="card-body">
                 <h6 class="card-title">การเติบโตของ Owner และ หอพัก (6 เดือนล่าสุด)</h6>
-                <!-- FIX: Added a wrapper div with a defined height to contain the chart -->
                 <div style="position: relative; height: 350px;">
                     <canvas id="growthLineChart"></canvas>
                 </div>
@@ -136,4 +136,3 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 {% endblock %}
-

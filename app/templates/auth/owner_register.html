@@ -1,15 +1,68 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1 class="h4 mb-3">สมัคร Owner</h1>
-<form method="post" enctype="multipart/form-data">
-  {{ form.csrf_token }}
-  {{ form.full_name_th(class_='form-control mb-2', placeholder='ชื่อ-สกุล (ไทย)') }}
-  {{ form.full_name_en(class_='form-control mb-2', placeholder='Full Name (EN)') }}
-  {{ form.citizen_id(class_='form-control mb-2', placeholder='เลขบัตรประชาชน 13 หลัก') }}
-  {{ form.email(class_='form-control mb-2', placeholder='อีเมล') }}
-  {{ form.phone(class_='form-control mb-2', placeholder='เบอร์โทร') }}
-  {{ form.password(class_='form-control mb-2', placeholder='รหัสผ่าน') }}
-  {{ form.occupancy_pdf(class_='form-control mb-2') }}
-  <button class="btn btn-primary">สมัคร</button>
-</form>
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h4 card-title text-center mb-4">สมัครสมาชิกสำหรับเจ้าของหอพัก</h1>
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {{ form.csrf_token }}
+
+                    <div class="mb-3">
+                        {{ form.full_name_th.label(class="form-label") }}
+                        {{ form.full_name_th(class="form-control" + (" is-invalid" if form.full_name_th.errors else ""), placeholder="ชื่อ-สกุล (ภาษาไทย)") }}
+                        {% for error in form.full_name_th.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.email.label(class="form-label") }}
+                        {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="example@email.com") }}
+                        {% for error in form.email.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.password.label(class="form-label") }}
+                        {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="รหัสผ่านอย่างน้อย 6 ตัวอักษร") }}
+                        {% for error in form.password.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.citizen_id.label(class="form-label") }}
+                        {{ form.citizen_id(class="form-control" + (" is-invalid" if form.citizen_id.errors else ""), placeholder="เลขบัตรประชาชน 13 หลัก") }}
+                        {% for error in form.citizen_id.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.phone.label(class="form-label") }}
+                        {{ form.phone(class="form-control" + (" is-invalid" if form.phone.errors else ""), placeholder="เบอร์โทรศัพท์ (ถ้ามี)") }}
+                         {% for error in form.phone.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.occupancy_pdf.label(class="form-label") }}
+                        {{ form.occupancy_pdf(class="form-control" + (" is-invalid" if form.occupancy_pdf.errors else "")) }}
+                        <div class="form-text">แนบเอกสาร (ถ้ามี, ไฟล์ PDF ขนาดไม่เกิน 10MB)</div>
+                        {% for error in form.occupancy_pdf.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">สมัครสมาชิก</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
