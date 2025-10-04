@@ -5,6 +5,7 @@
     <h1 class="h4 mb-0">รายการรออนุมัติ (Queue)</h1>
 </div>
 
+<!-- ... (โค้ดส่วน Search Bar เหมือนเดิม) ... -->
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <form method="GET" action="{{ url_for('admin.queue') }}">
@@ -47,7 +48,9 @@
         </div>
       </div>
       <div class="card-footer text-muted small">
-        ส่งเมื่อ: {{ p.created_at.strftime('%d/%m/%Y %H:%M') }}
+        {# --- vvv ส่วนที่แก้ไข vvv --- #}
+        ส่งเมื่อ: {{ p.created_at|to_bkk_time }}
+        {# --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ --- #}
       </div>
     </div>
   </div>

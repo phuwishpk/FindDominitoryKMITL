@@ -24,7 +24,9 @@
                         <th scope="row">{{ owner.id }}</th>
                         <td>{{ owner.full_name_th }}</td>
                         <td>{{ owner.email }}</td>
-                        <td>{{ owner.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        {# --- vvv ส่วนที่แก้ไข vvv --- #}
+                        <td>{{ owner.created_at|to_bkk_time }}</td>
+                        {# --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ --- #}
                         <td class="text-end">
                             <a href="{{ url_for('admin.review_owner', owner_id=owner.id) }}" class="btn btn-sm btn-outline-primary">ตรวจสอบ</a>
                         </td>

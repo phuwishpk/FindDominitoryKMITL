@@ -15,13 +15,11 @@ class SqlPropertyRepo:
         from app.extensions import db
         db.session.commit()
 
-    # --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
     def delete(self, prop: Property):
         """ลบ Property ออกจากฐานข้อมูล"""
         from app.extensions import db
         db.session.delete(prop)
         db.session.commit()
-    # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
 
     def list_approved(self, **filters):
         q = Property.query.filter(Property.workflow_status == "approved")
@@ -56,7 +54,9 @@ class SqlPropertyRepo:
             like_filter = f"%{search_query}%"
             q = q.filter(Property.dorm_name.ilike(like_filter))
 
+        # --- vvv ส่วนที่แก้ไข vvv ---
         return db.paginate(
-            q.order_by(Property.created_at.desc()),
+            q.order_by(Property.id.asc()), # เปลี่ยนเป็นเรียงตาม ID น้อยไปมาก
             page=page, per_page=per_page, error_out=False
         )
+        # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---

@@ -1,7 +1,10 @@
-from flask import Flask
 from flask import Flask, send_from_directory
 from .extensions import db, migrate, login_manager, babel_ext, limiter, csrf 
 from .config import Config
+
+# --- vvv ส่วนที่เพิ่มเข้ามา vvv ---
+from .utils.helpers import format_as_bangkok_time
+# --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
 
 from .blueprints.public import bp as public_bp
 from .blueprints.owner import bp as owner_bp
@@ -20,22 +23,15 @@ from .services.approval_service import ApprovalService
 from .services.upload_service import UploadService
 
 def register_dependencies(app: Flask):
-    """
-    สร้างและผูก DI Container (แบบ Manual Dictionary) เข้ากับ application
-    """
     container = {}
     container["user_repo"] = SqlUserRepo()
     container["property_repo"] = SqlPropertyRepo()
     container["approval_repo"] = SqlApprovalRepo()
-    
-    # --- vvv ส่วนที่แก้ไข vvv ---
     container["upload_service"] = UploadService(app.config.get("UPLOAD_FOLDER", "uploads"))
     container["auth_service"] = AuthService(
         user_repo=container["user_repo"],
         upload_service=container["upload_service"]
     )
-    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
-    
     container["property_service"] = PropertyService(container["property_repo"])
     container["search_service"] = SearchService(container["property_repo"])
     container["approval_service"] = ApprovalService(container["approval_repo"], container["property_repo"])
@@ -44,7 +40,6 @@ def register_dependencies(app: Flask):
         app.extensions = {}
     app.extensions["container"] = container
 
-# ... (โค้ดส่วนที่เหลือของ create_app() เหมือนเดิม) ...
 def create_app() -> Flask:
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(Config)
@@ -55,6 +50,11 @@ def create_app() -> Flask:
     babel_ext.init_app(app)
     limiter.init_app(app)
     csrf.init_app(app)
+
+    # --- vvv ส่วนที่เพิ่มเข้ามา vvv ---
+    # ลงทะเบียนฟิลเตอร์ที่เราสร้างขึ้นเพื่อให้ Template รู้จัก
+    app.jinja_env.filters['to_bkk_time'] = format_as_bangkok_time
+    # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
 
     with app.app_context():
         register_dependencies(app)
@@ -73,6 +73,7 @@ def create_app() -> Flask:
             as_attachment=False
         )
 
+    # ... (โค้ดส่วนที่เหลือของ CLI Commands เหมือนเดิม) ...
     @app.get("/health")
     def health():
         return {"ok": True}
