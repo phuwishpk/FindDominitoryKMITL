@@ -6,38 +6,44 @@
 <!-- Summary Cards -->
 <div class="row">
     <div class="col-md-3 mb-4">
-        <div class="card text-white bg-primary shadow h-100">
-            <div class="card-body">
-                <h6 class="card-title">จำนวน Owner</h6>
-                <p class="card-text fs-4 fw-bold">{{ stats.total_owners }}</p>
+        <a href="{{ url_for('admin.owners') }}" class="text-decoration-none">
+            <div class="card text-white bg-primary shadow h-100">
+                <div class="card-body">
+                    <h6 class="card-title">จำนวน Owner</h6>
+                    <p class="card-text fs-4 fw-bold">{{ stats.total_owners }}</p>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-md-3 mb-4">
-        <div class="card text-white bg-success shadow h-100">
-            <div class="card-body">
-                <h6 class="card-title">จำนวนหอพักทั้งหมด</h6>
-                <p class="card-text fs-4 fw-bold">{{ stats.total_properties }}</p>
+        <a href="{{ url_for('admin.properties') }}" class="text-decoration-none">
+            <div class="card text-white bg-success shadow h-100">
+                <div class="card-body">
+                    <h6 class="card-title">จำนวนหอพักทั้งหมด</h6>
+                    <p class="card-text fs-4 fw-bold">{{ stats.total_properties }}</p>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-md-3 mb-4">
-        <div class="card text-white bg-warning shadow h-100">
-            <div class="card-body">
-                <h6 class="card-title">รออนุมัติ (หอพัก)</h6>
-                <p class="card-text fs-4 fw-bold">{{ stats.pending_properties }}</p>
+        <a href="{{ url_for('admin.queue') }}" class="text-decoration-none">
+            <div class="card text-white bg-warning shadow h-100">
+                <div class="card-body">
+                    <h6 class="card-title">รออนุมัติ (หอพัก)</h6>
+                    <p class="card-text fs-4 fw-bold">{{ stats.pending_properties }}</p>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-md-3 mb-4">
-        <div class="card text-white bg-info shadow h-100">
-            <div class="card-body">
-                <h6 class="card-title">รออนุมัติ (Owner)</h6>
-                {# --- vvv ส่วนที่แก้ไข vvv --- #}
-                <p class="card-text fs-4 fw-bold">{{ stats.pending_owners }}</p>
-                {# --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ --- #}
+        <a href="{{ url_for('admin.owner_queue') }}" class="text-decoration-none">
+            <div class="card text-white bg-info shadow h-100">
+                <div class="card-body">
+                    <h6 class="card-title">รออนุมัติ (Owner)</h6>
+                    <p class="card-text fs-4 fw-bold">{{ stats.pending_owners }}</p>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 
@@ -136,3 +142,4 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 {% endblock %}
+

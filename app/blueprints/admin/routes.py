@@ -10,28 +10,25 @@ from sqlalchemy import func
 from datetime import datetime, timedelta
 from collections import OrderedDict
 
+@bp.route("/")
+@login_required
+@admin_required
+def index():
+    return redirect(url_for("admin.dashboard"))
+
 @bp.route("/dashboard")
 @login_required
 @admin_required
 def dashboard():
-    """
-    แสดงหน้า Dashboard พร้อมข้อมูลสรุปและกราฟ
-    """
     approval_repo = current_app.extensions["container"]["approval_repo"]
-    # --- vvv ส่วนที่แก้ไข vvv ---
     user_repo = current_app.extensions["container"]["user_repo"]
-    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
 
     stats = {
         "total_owners": Owner.query.count(),
         "total_properties": Property.query.count(),
         "pending_properties": len(approval_repo.get_pending_properties()),
-        # --- vvv ส่วนที่แก้ไข vvv ---
-        "pending_owners": len(user_repo.get_pending_owners()) # นับจำนวน Owner ที่รออนุมัติ
-        # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
+        "pending_owners": len(user_repo.get_pending_owners())
     }
-
-    # ... (โค้ดส่วนที่เหลือของฟังก์ชัน dashboard เหมือนเดิม) ...
     pie_data_query = db.session.query(
         Property.road, func.count(Property.id).label('count')
     ).filter(Property.road != None, Property.road != '').group_by(Property.road).order_by(func.count(Property.id).desc()).limit(5).all()
@@ -56,14 +53,6 @@ def dashboard():
         "properties": list(prop_data.values())
     }
     return render_template("admin/dashboard.html", stats=stats, pie_chart=pie_chart, line_chart=line_chart)
-
-# ... (โค้ดส่วนที่เหลือของ routes.py เหมือนเดิม) ...
-@bp.route("/")
-@login_required
-@admin_required
-def index():
-    return redirect(url_for("admin.dashboard"))
-
 
 @bp.route("/queue")
 @login_required
@@ -158,6 +147,28 @@ def properties():
     pagination = prop_repo.list_all_paginated(search_query=search_query, page=page, per_page=15)
     
     return render_template("admin/properties.html", pagination=pagination, search_query=search_query)
+
+# --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
+@bp.route("/property/<int:prop_id>/delete", methods=["POST"])
+@login_required
+@admin_required
+def delete_property(prop_id: int):
+    form = EmptyForm()
+    if not form.validate_on_submit():
+        flash("Invalid CSRF token.", "danger")
+        return redirect(url_for('admin.properties'))
+
+    prop_repo = current_app.extensions["container"]["property_repo"]
+    prop = prop_repo.get(prop_id)
+
+    if prop:
+        prop_repo.delete(prop)
+        flash(f"ลบหอพัก '{prop.dorm_name}' (ID: {prop_id}) เรียบร้อยแล้ว", "success")
+    else:
+        flash("ไม่พบหอพักที่ต้องการลบ", "warning")
+
+    return redirect(url_for('admin.properties'))
+# --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
 
 @bp.route("/owners")
 @login_required

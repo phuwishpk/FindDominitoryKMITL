@@ -7,12 +7,21 @@ class SqlPropertyRepo:
 
     def add(self, prop: Property) -> Property:
         from app.extensions import db
-        db.session.add(prop); db.session.commit()
+        db.session.add(prop)
+        db.session.commit()
         return prop
 
     def save(self, prop: Property):
         from app.extensions import db
         db.session.commit()
+
+    # --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
+    def delete(self, prop: Property):
+        """ลบ Property ออกจากฐานข้อมูล"""
+        from app.extensions import db
+        db.session.delete(prop)
+        db.session.commit()
+    # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
 
     def list_approved(self, **filters):
         q = Property.query.filter(Property.workflow_status == "approved")
@@ -40,10 +49,6 @@ class SqlPropertyRepo:
         return q
 
     def list_all_paginated(self, search_query=None, page=1, per_page=15):
-        """
-        ดึงรายการ Properties ทั้งหมด พร้อมค้นหาและแบ่งหน้า
-        (Fetches all properties with search and pagination)
-        """
         from app.extensions import db
         q = Property.query
 

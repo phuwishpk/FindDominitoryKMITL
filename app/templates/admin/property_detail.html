@@ -2,7 +2,6 @@
 
 {% block admin_content %}
 <div class="container my-5">
-    {# ปุ่มนี้จะพากลับไปยังหน้า 'ข้อมูลหอพัก' ทั้งหมด #}
     <a href="{{ url_for('admin.properties') }}" class="btn btn-sm btn-outline-secondary mb-3">← กลับสู่หน้าข้อมูลหอพัก</a>
     
     {% if not prop %}
@@ -11,7 +10,6 @@
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="mb-0">รายละเอียดหอพัก: {{ prop.dorm_name }}</h1>
-        {# แสดงสถานะปัจจุบันของหอพัก #}
         {% if prop.workflow_status == 'approved' %}
             <span class="badge bg-success fs-6">Approved</span>
         {% elif prop.workflow_status == 'submitted' %}
@@ -24,9 +22,8 @@
     </div>
 
     <div class="row">
-        
         <div class="col-lg-8">
-            
+            <!-- ... (โค้ดแสดงรายละเอียดหอพักเหมือนเดิม) ... -->
             <div id="propertyCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
                 <div class="carousel-inner rounded shadow-sm">
                     {% for img in prop.images %}
@@ -39,30 +36,22 @@
                     </div>
                     {% endfor %}
                 </div>
-                
                 {% if prop.images|length > 1 %}
-                <button class="carousel-control-prev" type="button" data-bs-target="#propertyCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#propertyCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                </button>
+                <button class="carousel-control-prev" type="button" data-bs-target="#propertyCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon" aria-hidden="true"></span></button>
+                <button class="carousel-control-next" type="button" data-bs-target="#propertyCarousel" data-bs-slide="next"><span class="carousel-control-next-icon" aria-hidden="true"></span></button>
                 {% endif %}
             </div>
-
             <div class="card mb-4 shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">รายละเอียดหอพัก</h5>
                     <p class="card-text"><strong>ประเภทห้อง:</strong> {{ prop.room_type }}</p>
                     <p class="card-text"><strong>คำอธิบายเพิ่มเติม:</strong> {{ prop.additional_info or 'ไม่มีข้อมูลเพิ่มเติม' }}</p>
-                    
                     <h6 class="mt-3">ราคาและค่าบริการ</h6>
                     <ul class="list-unstyled">
                         <li><strong>ค่าเช่าต่อเดือน:</strong> {{ "{:,.0f}".format(prop.rent_price) if prop.rent_price is not none else 'N/A' }} บาท</li>
                         <li><strong>เงินประกัน:</strong> {{ "{:,.0f}".format(prop.deposit_amount) if prop.deposit_amount is not none else 'N/A' }} บาท</li>
                         <li><strong>ค่าน้ำ/ค่าไฟ:</strong> น้ำ {{ prop.water_rate or 'N/A' }} / ไฟ {{ prop.electric_rate or 'N/A' }}</li>
                     </ul>
-
                     <h6 class="mt-3">สิ่งอำนวยความสะดวก</h6>
                     {% if prop.amenities.all() %}
                         {% for amenity in prop.amenities %}
@@ -73,61 +62,78 @@
                     {% endif %}
                 </div>
             </div>
-
         </div>
 
         <div class="col-lg-4">
             <div class="card sticky-top shadow-lg" style="top: 20px;">
                 <div class="card-body">
+                    <!-- ... (โค้ดแสดงข้อมูลเจ้าของและแผนที่เหมือนเดิม) ... -->
                     <h5 class="card-title">ข้อมูลเจ้าของ</h5>
                     <p class="card-text"><strong>ชื่อ-สกุล:</strong> {{ owner.full_name_th or 'N/A' }}</p>
-                    <p class="card-text"><strong>บัตรประชาชน:</strong> {{ owner.citizen_id or 'N/A' }}</p>
                     <p class="card-text"><strong>อีเมล:</strong> {{ owner.email or 'N/A' }}</p>
                     <p class="card-text"><strong>โทรศัพท์:</strong> {{ owner.phone or 'N/A' }}</p>
-                    
                     <hr>
-                    
                     <h5 class="mt-3">ตำแหน่งที่ตั้ง</h5>
                     <p class="card-text">{{ prop.soi or 'N/A' }} ถ. {{ prop.road or 'N/A' }}</p>
-                    
                     <div id="map" style="height: 250px; width: 100%;" class="border rounded mb-3"></div>
-                    
                     <div class="mt-2 text-center">
                         {% if prop.location_pin and prop.location_pin.coordinates %}
-                        <a href="https://www.google.com/maps/search/?api=1&query={{ prop.location_pin.coordinates[1] }},{{ prop.location_pin.coordinates[0] }}" target="_blank" class="btn btn-sm btn-outline-success w-100">
-                            เปิดใน Google Maps
-                        </a>
+                        <a href="https://www.google.com/maps/search/?api=1&query={{ prop.location_pin.coordinates[1] }},{{ prop.location_pin.coordinates[0] }}" target="_blank" class="btn btn-sm btn-outline-success w-100">เปิดใน Google Maps</a>
                         {% else %}
                         <p class="text-danger small">ไม่มีข้อมูลพิกัด</p>
                         {% endif %}
                     </div>
 
+                    <!-- --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv --- -->
+                    <hr class="my-4">
+                    <h5 class="text-danger">โซนอันตราย (Danger Zone)</h5>
+                    <p class="small text-muted">การลบหอพักจะลบข้อมูลทั้งหมดอย่างถาวรและไม่สามารถกู้คืนได้</p>
+                    <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#deletePropertyModal">
+                        ลบหอพักนี้
+                    </button>
+                    <!-- --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ --- -->
                 </div>
             </div>
         </div>
     </div>
     {% endif %}
 </div>
+
+<!-- --- vvv Modal ที่เพิ่มเข้ามาใหม่ vvv --- -->
+<div class="modal fade" id="deletePropertyModal" tabindex="-1" aria-labelledby="deletePropertyModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deletePropertyModalLabel">ยืนยันการลบหอพัก</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        คุณแน่ใจหรือไม่ว่าต้องการลบหอพัก <strong>"{{ prop.dorm_name }}"</strong>? <br>
+        <span class="text-danger">การกระทำนี้ไม่สามารถย้อนกลับได้</span>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+        <form action="{{ url_for('admin.delete_property', prop_id=prop.id) }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger">ยืนยันการลบ</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- --- ^^^ สิ้นสุด Modal ^^^ --- -->
 {% endblock %}
 
 {% block page_scripts %}
 {{ super() }}
 <script>
+    // ... (โค้ด JavaScript สำหรับแผนที่เหมือนเดิม) ...
     {% if prop and prop.location_pin and prop.location_pin.coordinates %}
     const lng = {{ prop.location_pin.coordinates[0] }};
     const lat = {{ prop.location_pin.coordinates[1] }};
-
     const map = L.map('map').setView([lat, lng], 16); 
-
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
-
-    L.marker([lat, lng]).addTo(map)
-        .bindPopup('<b>{{ prop.dorm_name }}</b><br>พิกัดที่ปักหมุด.')
-        .openPopup();
-    
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+    L.marker([lat, lng]).addTo(map).bindPopup('<b>{{ prop.dorm_name }}</b>').openPopup();
     {% else %}
     document.getElementById('map').innerHTML = '<div class="text-center p-5 text-muted">ไม่พบข้อมูลพิกัด</div>';
     {% endif %}
