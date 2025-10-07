@@ -18,14 +18,24 @@ class SqlUserRepo:
         return Owner.query.get(owner_id)
         
     def get_pending_owners(self):
-        # หน้านี้เรียงตามวันที่สมัครก่อนดีกว่า เพื่อให้คนที่สมัครก่อนได้อนุมัติก่อน
         return Owner.query.filter_by(approval_status='pending').order_by(Owner.created_at.asc()).all()
 
     def save_owner(self, owner: Owner):
         db.session.commit()
 
+    # --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
+    def get_deleted_owners_paginated(self, page=1, per_page=15):
+        q = Owner.query.filter(Owner.deleted_at.isnot(None))
+        return db.paginate(q.order_by(Owner.deleted_at.desc()), page=page, per_page=per_page, error_out=False)
+    
+    def permanently_delete_owner(self, owner: Owner):
+        db.session.delete(owner)
+        db.session.commit()
+    # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
+
     def list_all_owners_paginated(self, search_query=None, page=1, per_page=15):
-        q = Owner.query
+        # กรองเอาเฉพาะ Owner ที่ยังไม่ถูกลบ
+        q = Owner.query.filter(Owner.deleted_at.is_(None))
 
         if search_query:
             like_filter = f"%{search_query}%"
@@ -36,9 +46,7 @@ class SqlUserRepo:
                 )
             )
             
-        # --- vvv ส่วนที่แก้ไข vvv ---
         return db.paginate(
-            q.order_by(Owner.id.asc()), # เปลี่ยนเป็นเรียงตาม ID น้อยไปมาก
+            q.order_by(Owner.id.asc()),
             page=page, per_page=per_page, error_out=False
         )
-        # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---

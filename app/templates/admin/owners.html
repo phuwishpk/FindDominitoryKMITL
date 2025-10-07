@@ -1,10 +1,14 @@
 {% extends 'admin/base.html' %}
 
 {% block admin_content %}
-<h1 class="h3 mb-4 fw-bold">จัดการข้อมูล Owner</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 fw-bold mb-0">จัดการข้อมูล Owner</h1>
+    <a href="{{ url_for('admin.deleted_owners') }}" class="btn btn-sm btn-outline-secondary">
+        <i data-feather="trash-2" class="me-1" style="width:16px;"></i> ถังขยะ
+    </a>
+</div>
 
-<!-- Search Bar -->
-<div class="card shadow-sm mb-4 border-0">
+<div class="card mb-4 border-0">
     <div class="card-body">
         <form method="GET" action="{{ url_for('admin.owners') }}">
             <div class="input-group">
@@ -16,71 +20,72 @@
     </div>
 </div>
 
-<!-- Owners Table -->
-<div class="card shadow-sm border-0">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th scope="col">ID</th>
-                        <th scope="col">ชื่อ-สกุล (ไทย)</th>
-                        <th scope="col">อีเมล</th>
-                        <th scope="col">เบอร์โทร</th>
-                        <th scope="col">สถานะ</th>
-                        <th scope="col">วันที่สมัคร</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for owner in pagination.items %}
-                    <tr>
-                        <th scope="row">{{ owner.id }}</th>
-                        <td>{{ owner.full_name_th }}</td>
-                        <td>{{ owner.email }}</td>
-                        <td>{{ owner.phone or '-' }}</td>
-                        <td>
-                            {% if owner.approval_status == 'approved' %}
-                                <span class="badge bg-success-subtle text-success-emphasis">Approved</span>
-                            {% elif owner.approval_status == 'pending' %}
-                                <span class="badge bg-warning-subtle text-warning-emphasis">Pending</span>
-                            {% elif owner.approval_status == 'rejected' %}
-                                <span class="badge bg-danger-subtle text-danger-emphasis">Rejected</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ owner.created_at|to_bkk_time }}</td>
-                    </tr>
+<div class="table-responsive">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">ชื่อ-สกุล (ไทย)</th>
+                <th scope="col">อีเมล</th>
+                <th scope="col">สถานะ</th>
+                <th scope="col" class="text-end">การกระทำ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for owner in pagination.items %}
+            <tr>
+                <th scope="row">{{ owner.id }}</th>
+                <td>{{ owner.full_name_th }}</td>
+                <td>{{ owner.email }}</td>
+                <td>
+                    {% if owner.is_active %}
+                        <span class="badge bg-success-subtle text-success-emphasis rounded-pill">Active</span>
                     {% else %}
-                    <tr>
-                        <td colspan="6" class="text-center text-muted py-5">ไม่พบข้อมูล Owner</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+                        <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill">Inactive</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    <a href="{{ url_for('admin.edit_owner', owner_id=owner.id) }}" class="btn btn-sm btn-outline-secondary me-1" title="แก้ไข">
+                        <i data-feather="edit-2" style="width:16px;"></i>
+                    </a>
+                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteOwnerModal-{{ owner.id }}" title="ลบ">
+                        <i data-feather="trash-2" style="width:16px;"></i>
+                    </button>
+                    </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center text-muted py-5 card">ไม่พบข้อมูล Owner</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 
-<!-- Pagination -->
 {% if pagination.pages > 1 %}
-<nav aria-label="Page navigation" class="mt-4 d-flex justify-content-center">
-    <ul class="pagination">
-        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-            <a class="page-link" href="{{ url_for('admin.owners', page=pagination.prev_num, q=search_query or '') }}">‹</a>
-        </li>
-        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-            {% if page_num %}
-                <li class="page-item {% if pagination.page == page_num %}active{% endif %}">
-                    <a class="page-link" href="{{ url_for('admin.owners', page=page_num, q=search_query or '') }}">{{ page_num }}</a>
-                </li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">…</span></li>
-            {% endif %}
-        {% endfor %}
-        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-            <a class="page-link" href="{{ url_for('admin.owners', page=pagination.next_num, q=search_query or '') }}">›</a>
-        </li>
-    </ul>
-</nav>
-{% endif %}
+    {% endif %}
+
+{% for owner in pagination.items %}
+<div class="modal fade" id="deleteOwnerModal-{{ owner.id }}" tabindex="-1" aria-labelledby="deleteOwnerModalLabel-{{ owner.id }}" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteOwnerModalLabel-{{ owner.id }}">ยืนยันการลบ Owner</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        คุณแน่ใจหรือไม่ว่าต้องการย้าย Owner <strong>"{{ owner.full_name_th }}"</strong> ไปยังถังขยะ?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+        <form action="{{ url_for('admin.delete_owner', owner_id=owner.id) }}" method="POST">
+            {{ delete_form.csrf_token }}
+            <button type="submit" class="btn btn-danger">ยืนยัน</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
 
 {% endblock %}

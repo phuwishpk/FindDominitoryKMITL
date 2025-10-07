@@ -2,14 +2,30 @@
 
 {% block content %}
 <style>
+    /* --- Modern Admin Theme --- */
+    :root {
+        --admin-bg: #F4F7FC; /* Softer background color */
+        --sidebar-bg: #1a202c;
+        --sidebar-text: #a0aec0;
+        --sidebar-text-hover: #ffffff;
+        --sidebar-active-bg: #4FAAFF; /* Primary color from base.html */
+        --card-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        --card-border-radius: 0.75rem;
+    }
+
+    /* Override body background for admin section */
+    body.admin-body {
+        background-color: var(--admin-bg);
+    }
+
     .sidebar {
         position: fixed;
         top: 0;
         left: 0;
         bottom: 0;
         width: 260px;
-        background-color: #1a202c; /* Dark background */
-        color: #a0aec0; /* Lighter text */
+        background-color: var(--sidebar-bg);
+        color: var(--sidebar-text);
         padding: 1.5rem 1rem;
         display: flex;
         flex-direction: column;
@@ -24,10 +40,21 @@
         margin-bottom: 2rem;
         letter-spacing: 1px;
     }
+    /* --- vvv ส่วนที่เพิ่มเข้ามาเพื่อให้ลิงก์ดูดี vvv --- */
+    .sidebar-header a {
+        color: inherit; /* ใช้สีเดียวกับข้อความปกติ */
+        text-decoration: none; /* เอาขีดเส้นใต้ออก */
+        transition: color 0.2s;
+    }
+    .sidebar-header a:hover {
+        color: var(--sidebar-active-bg); /* เปลี่ยนสีเมื่อเมาส์ชี้ */
+    }
+    /* --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ --- */
+
     .sidebar-nav .nav-link {
         display: flex;
         align-items: center;
-        color: #a0aec0;
+        color: var(--sidebar-text);
         padding: 0.75rem 1rem;
         margin-bottom: 0.5rem;
         border-radius: 0.5rem;
@@ -41,10 +68,10 @@
     }
     .sidebar-nav .nav-link:hover {
         background-color: #2d3748;
-        color: #fff;
+        color: var(--sidebar-text-hover);
     }
     .sidebar-nav .nav-link.active {
-        background-color: var(--bs-primary);
+        background-color: var(--sidebar-active-bg);
         color: #fff;
         box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.3);
     }
@@ -56,11 +83,41 @@
         padding: 2rem;
         width: calc(100% - 260px);
     }
+    
+    .card {
+        border: none;
+        border-radius: var(--card-border-radius);
+        box-shadow: var(--card-shadow);
+    }
+    .table {
+        border-collapse: separate;
+        border-spacing: 0 0.5rem;
+    }
+    .table thead th {
+        border-top: none;
+        border-bottom: 2px solid #e9ecef;
+    }
+    .table tbody tr {
+        background-color: #fff;
+        box-shadow: var(--card-shadow);
+        border-radius: var(--card-border-radius);
+    }
+    .table tbody td, .table tbody th {
+        border: none;
+        vertical-align: middle;
+    }
+    .table tbody tr:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        transition: all 0.2s ease-in-out;
+    }
 </style>
 
 <div class="sidebar">
     <div>
-        <h1 class="sidebar-header">Dorm Admin</h1>
+        <h1 class="sidebar-header">
+            <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+        </h1>
         <ul class="nav flex-column sidebar-nav">
             <li class="nav-item">
                 <a class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" href="{{ url_for('admin.dashboard') }}">

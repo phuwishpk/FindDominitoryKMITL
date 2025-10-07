@@ -1,0 +1,112 @@
+{% extends 'admin/base.html' %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 fw-bold mb-0">ถังขยะ (Deleted Owners)</h1>
+    <a href="{{ url_for('admin.owners') }}" class="btn btn-sm btn-outline-secondary">← กลับสู่หน้าจัดการ Owner</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">ชื่อ-สกุล (ไทย)</th>
+                <th scope="col">อีเมล</th>
+                <th scope="col">วันที่ลบ</th>
+                <th scope="col" class="text-end">การกระทำ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for owner in pagination.items %}
+            <tr>
+                <th scope="row">{{ owner.id }}</th>
+                <td>{{ owner.full_name_th }}</td>
+                <td>{{ owner.email }}</td>
+                <td>{{ owner.deleted_at|to_bkk_time }}</td>
+                <td class="text-end">
+                    <button type="button" class="btn btn-sm btn-outline-success me-1" data-bs-toggle="modal" data-bs-target="#restoreModal-{{ owner.id }}">
+                        กู้คืน
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ owner.id }}">
+                        ลบถาวร
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center text-muted py-5 card">
+                    <i data-feather="trash-2" class="mb-3" style="width: 48px; height: 48px;"></i>
+                    <h5 class="mb-0">ถังขยะว่าง</h5>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if pagination.pages > 1 %}
+<nav aria-label="Page navigation" class="mt-4 d-flex justify-content-center">
+    <ul class="pagination">
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('admin.deleted_owners', page=pagination.prev_num) }}">‹</a>
+        </li>
+        {% for page_num in pagination.iter_pages() %}
+            <li class="page-item {% if pagination.page == page_num %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('admin.deleted_owners', page=page_num) }}">{{ page_num }}</a>
+            </li>
+        {% endfor %}
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('admin.deleted_owners', page=pagination.next_num) }}">›</a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+
+{% for owner in pagination.items %}
+<div class="modal fade" id="restoreModal-{{ owner.id }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">ยืนยันการกู้คืน</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        คุณต้องการกู้คืนข้อมูลของ <strong>"{{ owner.full_name_th }}"</strong> ใช่หรือไม่?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+        <form action="{{ url_for('admin.restore_owner', owner_id=owner.id) }}" method="POST">
+            {{ restore_form.csrf_token }}
+            <button type="submit" class="btn btn-success">ยืนยันกู้คืน</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="deleteModal-{{ owner.id }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-danger">ยืนยันการลบถาวร</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        คุณแน่ใจหรือไม่ว่าต้องการลบ <strong>"{{ owner.full_name_th }}"</strong> ออกจากระบบอย่างถาวร?
+        <p class="text-danger mt-2"><strong>คำเตือน:</strong> การกระทำนี้ไม่สามารถย้อนกลับได้ และจะลบข้อมูลหอพักทั้งหมดของ Owner นี้ด้วย</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+        <form action="{{ url_for('admin.permanently_delete_owner', owner_id=owner.id) }}" method="POST">
+            {{ delete_form.csrf_token }}
+            <button type="submit" class="btn btn-danger">ยืนยันลบถาวร</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}

@@ -13,13 +13,15 @@ class Owner(db.Model):
     phone = db.Column(db.String(20))
     password_hash = db.Column(db.String(255), nullable=False)
     
-    # --- vvv ส่วนที่แก้ไข vvv ---
     is_active = db.Column(db.Boolean, default=False, nullable=False)
-    approval_status = db.Column(db.String(16), default="pending", nullable=False) # pending, approved, rejected
-    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
+    approval_status = db.Column(db.String(16), default="pending", nullable=False)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
+    deleted_at = db.Column(db.DateTime, nullable=True) # สำหรับ Soft Delete
+    # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
 
     def __repr__(self) -> str:
         return f"<Owner id={self.id} email={self.email!r}>"

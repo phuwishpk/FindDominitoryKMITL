@@ -1,10 +1,20 @@
 {% extends 'admin/base.html' %}
 
 {% block admin_content %}
+
+<style>
+    .queue-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+
+    .queue-card:hover {
+        transform: translateY(-5px); /* ทำให้การ์ดลอยขึ้นเล็กน้อย */
+        box-shadow: 0 12px 24px rgba(0,0,0,0.12); /* เพิ่มเงาให้เข้มและชัดขึ้น */
+    }
+</style>
 <h1 class="h3 mb-4 fw-bold">อนุมัติหอพัก (Queue)</h1>
 
-<!-- Search Bar -->
-<div class="card shadow-sm mb-4 border-0">
+<div class="card mb-4 border-0">
     <div class="card-body">
          <form method="GET" action="{{ url_for('admin.queue') }}">
             <div class="input-group">
@@ -16,13 +26,12 @@
     </div>
 </div>
 
-
 {% if properties %}
 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
   {% for p in properties %}
   <div class="col">
-    <div class="card h-100 shadow-sm border-0">
-      {% set first_image = p.images|sort(attribute='position')|first %}
+    <div class="card h-100 queue-card">
+    {% set first_image = p.images|sort(attribute='position')|first %}
       <a href="{{ url_for('admin.review_property', prop_id=p.id) }}">
         {% if first_image %}
           <img src="/{{ first_image.file_path }}" class="card-img-top" alt="{{ p.dorm_name }}" style="height: 200px; object-fit: cover;">
@@ -44,15 +53,15 @@
             </a>
         </div>
       </div>
-      <div class="card-footer text-muted small bg-light border-0">
-        <i data-feather="clock" style="width:14px; height:14px;"></i> ส่งเมื่อ: {{ p.created_at|to_bkk_time }}
+      <div class="card-footer text-muted small bg-light-subtle border-0">
+        <i data-feather="clock" style="width:14px; height:14px;" class="me-1"></i> ส่งเมื่อ: {{ p.created_at|to_bkk_time }}
       </div>
     </div>
   </div>
   {% endfor %}
 </div>
 {% else %}
-<div class="text-center py-5">
+<div class="text-center py-5 card">
     <i data-feather="inbox" class="text-muted mb-3" style="width: 48px; height: 48px;"></i>
     <h4>ไม่มีรายการรออนุมัติ</h4>
     <p class="text-muted">

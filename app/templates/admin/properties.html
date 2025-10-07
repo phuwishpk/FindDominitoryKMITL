@@ -3,8 +3,7 @@
 {% block admin_content %}
 <h1 class="h3 mb-4 fw-bold">จัดการข้อมูลหอพัก</h1>
 
-<!-- Search Bar -->
-<div class="card shadow-sm mb-4 border-0">
+<div class="card mb-4 border-0">
     <div class="card-body">
         <form method="GET" action="{{ url_for('admin.properties') }}">
             <div class="input-group">
@@ -16,55 +15,49 @@
     </div>
 </div>
 
-<!-- Properties Table -->
-<div class="card shadow-sm border-0">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th scope="col">ID</th>
-                        <th scope="col">ชื่อหอพัก</th>
-                        <th scope="col">Owner ID</th>
-                        <th scope="col">สถานะ</th>
-                        <th scope="col" class="text-end">การกระทำ</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for prop in pagination.items %}
-                    <tr>
-                        <th scope="row">{{ prop.id }}</th>
-                        <td>{{ prop.dorm_name }}</td>
-                        <td>{{ prop.owner_id }}</td>
-                        <td>
-                            {% if prop.workflow_status == 'approved' %}
-                                <span class="badge bg-success-subtle text-success-emphasis">Approved</span>
-                            {% elif prop.workflow_status == 'submitted' %}
-                                <span class="badge bg-warning-subtle text-warning-emphasis">Submitted</span>
-                            {% elif prop.workflow_status == 'rejected' %}
-                                <span class="badge bg-danger-subtle text-danger-emphasis">Rejected</span>
-                            {% else %}
-                                <span class="badge bg-secondary-subtle text-secondary-emphasis">Draft</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-end">
-                            <a href="{{ url_for('admin.view_property', prop_id=prop.id) }}" class="btn btn-sm btn-outline-secondary">
-                                <i data-feather="eye" class="me-1" style="width:16px; height: 16px;"></i> ดูรายละเอียด
-                            </a>
-                        </td>
-                    </tr>
+<div class="table-responsive">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">ชื่อหอพัก</th>
+                <th scope="col">Owner ID</th>
+                <th scope="col">สถานะ</th>
+                <th scope="col" class="text-end">การกระทำ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for prop in pagination.items %}
+            <tr>
+                <th scope="row">{{ prop.id }}</th>
+                <td>{{ prop.dorm_name }}</td>
+                <td>{{ prop.owner_id }}</td>
+                <td>
+                    {% if prop.workflow_status == 'approved' %}
+                        <span class="badge bg-success-subtle text-success-emphasis rounded-pill">Approved</span>
+                    {% elif prop.workflow_status == 'submitted' %}
+                        <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">Submitted</span>
+                    {% elif prop.workflow_status == 'rejected' %}
+                        <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill">Rejected</span>
                     {% else %}
-                    <tr>
-                        <td colspan="5" class="text-center text-muted py-5">ไม่พบข้อมูลหอพัก</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+                        <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill">Draft</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    <a href="{{ url_for('admin.view_property', prop_id=prop.id) }}" class="btn btn-sm btn-outline-secondary">
+                        <i data-feather="eye" class="me-1" style="width:16px; height: 16px;"></i> ดูรายละเอียด
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center text-muted py-5 card">ไม่พบข้อมูลหอพัก</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 
-<!-- Pagination -->
 {% if pagination.pages > 1 %}
 <nav aria-label="Page navigation" class="mt-4 d-flex justify-content-center">
     <ul class="pagination">

@@ -5,11 +5,12 @@ from app.extensions import admin_required, db
 from app.models.property import Property
 from app.models.user import Owner
 from app.forms.upload import EmptyForm
-from app.forms.admin import RejectForm
-from sqlalchemy import func
+from app.forms.admin import RejectForm, AdminEditOwnerForm
+from sqlalchemy import func, or_
 from datetime import datetime, timedelta
 from collections import OrderedDict
 
+# ... (โค้ดส่วน index, dashboard, queue, review_property, approve, reject, logs, properties, delete_property ไม่มีการแก้ไข) ...
 @bp.route("/")
 @login_required
 @admin_required
@@ -148,7 +149,6 @@ def properties():
     
     return render_template("admin/properties.html", pagination=pagination, search_query=search_query)
 
-# --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
 @bp.route("/property/<int:prop_id>/delete", methods=["POST"])
 @login_required
 @admin_required
@@ -168,7 +168,6 @@ def delete_property(prop_id: int):
         flash("ไม่พบหอพักที่ต้องการลบ", "warning")
 
     return redirect(url_for('admin.properties'))
-# --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
 
 @bp.route("/owners")
 @login_required
@@ -176,12 +175,108 @@ def delete_property(prop_id: int):
 def owners():
     page = request.args.get("page", 1, type=int)
     search_query = request.args.get('q', None)
-
     user_repo = current_app.extensions["container"]["user_repo"]
     pagination = user_repo.list_all_owners_paginated(search_query=search_query, page=page, per_page=15)
+    
+    delete_form = EmptyForm()
+    return render_template("admin/owners.html", pagination=pagination, search_query=search_query, delete_form=delete_form)
 
-    return render_template("admin/owners.html", pagination=pagination, search_query=search_query)
+# --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
+@bp.route("/owners/<int:owner_id>/edit", methods=["GET", "POST"])
+@login_required
+@admin_required
+def edit_owner(owner_id: int):
+    owner = Owner.query.get_or_404(owner_id)
+    form = AdminEditOwnerForm(obj=owner)
 
+    if form.validate_on_submit():
+        # ตรวจสอบว่าอีเมลมีการเปลี่ยนแปลงและไม่ซ้ำกับคนอื่น
+        if owner.email != form.email.data and Owner.query.filter_by(email=form.email.data).first():
+            flash('อีเมลนี้มีผู้ใช้งานแล้ว', 'danger')
+            return render_template("admin/edit_owner.html", form=form, owner=owner)
+            
+        owner.full_name_th = form.full_name_th.data
+        owner.email = form.email.data
+        owner.phone = form.phone.data
+        owner.is_active = form.is_active.data
+        db.session.commit()
+        flash(f"อัปเดตข้อมูลของ '{owner.full_name_th}' เรียบร้อยแล้ว", "success")
+        return redirect(url_for('admin.owners'))
+
+    return render_template("admin/edit_owner.html", form=form, owner=owner)
+# --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
+
+@bp.route("/owners/<int:owner_id>/delete", methods=["POST"])
+@login_required
+@admin_required
+def delete_owner(owner_id: int):
+    form = EmptyForm()
+    if not form.validate_on_submit():
+        flash("Invalid request.", "danger")
+        return redirect(url_for('admin.owners'))
+
+    owner = Owner.query.get_or_404(owner_id)
+    owner.deleted_at = datetime.utcnow()
+    db.session.commit()
+    
+    flash(f"ย้ายข้อมูล Owner '{owner.full_name_th}' ไปยังถังขยะแล้ว", "success")
+    return redirect(url_for('admin.owners'))
+
+# --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
+@bp.route("/owners/trash")
+@login_required
+@admin_required
+def deleted_owners():
+    page = request.args.get("page", 1, type=int)
+    user_repo = current_app.extensions["container"]["user_repo"]
+    pagination = user_repo.get_deleted_owners_paginated(page=page)
+    
+    restore_form = EmptyForm()
+    delete_form = EmptyForm()
+    
+    return render_template("admin/deleted_owners.html", 
+                           pagination=pagination, 
+                           restore_form=restore_form, 
+                           delete_form=delete_form)
+
+@bp.route("/owners/<int:owner_id>/restore", methods=["POST"])
+@login_required
+@admin_required
+def restore_owner(owner_id: int):
+    form = EmptyForm()
+    if not form.validate_on_submit():
+        flash("Invalid request.", "danger")
+        return redirect(url_for('admin.deleted_owners'))
+
+    owner = Owner.query.get_or_404(owner_id)
+    owner.deleted_at = None
+    db.session.commit()
+    flash(f"กู้คืนข้อมูล Owner '{owner.full_name_th}' สำเร็จ", "success")
+    return redirect(url_for('admin.deleted_owners'))
+
+@bp.route("/owners/<int:owner_id>/permanent_delete", methods=["POST"])
+@login_required
+@admin_required
+def permanently_delete_owner(owner_id: int):
+    form = EmptyForm()
+    if not form.validate_on_submit():
+        flash("Invalid request.", "danger")
+        return redirect(url_for('admin.deleted_owners'))
+    
+    user_repo = current_app.extensions["container"]["user_repo"]
+    owner = user_repo.get_owner_by_id(owner_id)
+    if owner:
+        # อาจจะต้องลบข้อมูลอื่นๆ ที่เกี่ยวข้องก่อน เช่น Property
+        Property.query.filter_by(owner_id=owner.id).delete()
+        user_repo.permanently_delete_owner(owner)
+        flash(f"ลบข้อมูล Owner '{owner.full_name_th}' ออกจากระบบอย่างถาวรแล้ว", "success")
+    else:
+        flash("ไม่พบข้อมูล Owner", "warning")
+        
+    return redirect(url_for('admin.deleted_owners'))
+# --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
+
+# ... (โค้ดส่วน owner_queue, review_owner, approve_owner, reject_owner ไม่มีการแก้ไข) ...
 @bp.route("/owners/queue")
 @login_required
 @admin_required

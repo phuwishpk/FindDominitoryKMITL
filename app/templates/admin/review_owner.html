@@ -1,17 +1,17 @@
 {% extends 'admin/base.html' %}
 
 {% block admin_content %}
-<div class="container my-5">
+<div class="container-fluid my-2">
     <a href="{{ url_for('admin.owner_queue') }}" class="btn btn-sm btn-outline-secondary mb-4">← กลับสู่คิวรออนุมัติ Owner</a>
 
     {% if not owner %}
     <div class="alert alert-danger">ไม่พบข้อมูล Owner นี้</div>
     {% else %}
-    <h1 class="mb-4">ตรวจสอบข้อมูล Owner: {{ owner.full_name_th }}</h1>
+    <h1 class="mb-4 h3 fw-bold">ตรวจสอบข้อมูล Owner: {{ owner.full_name_th }}</h1>
 
     <div class="row">
         <div class="col-lg-8">
-            <div class="card shadow-sm">
+            <div class="card">
                 <div class="card-header">
                     ข้อมูลส่วนตัว
                 </div>
@@ -22,20 +22,17 @@
                     <p><strong>เลขบัตรประชาชน:</strong> {{ owner.citizen_id }}</p>
                     <p><strong>อีเมล:</strong> {{ owner.email }}</p>
                     <p><strong>เบอร์โทรศัพท์:</strong> {{ owner.phone or '-' }}</p>
-                    {# --- vvv ส่วนที่แก้ไข vvv --- #}
                     <p><strong>วันที่สมัคร:</strong> {{ owner.created_at|to_bkk_time }}</p>
-                    {# --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ --- #}
                     {% if owner.occupancy_notice_pdf %}
-                    <p><strong>เอกสารแนบ:</strong> <a href="/{{ owner.occupancy_notice_pdf }}" target="_blank">ดูเอกสาร</a></p>
+                    <p><strong>เอกสารแนบ:</strong> <a href="/{{ owner.occupancy_notice_pdf }}" target="_blank" class="btn btn-sm btn-outline-primary">ดูเอกสาร</a></p>
                     {% else %}
                     <p><strong>เอกสารแนบ:</strong> <span class="text-muted">ไม่มี</span></p>
                     {% endif %}
                 </div>
             </div>
         </div>
-        <!-- ... (โค้ดส่วนปุ่มดำเนินการและ Modal เหมือนเดิม) ... -->
         <div class="col-lg-4">
-            <div class="card shadow-sm sticky-top" style="top: 20px;">
+            <div class="card sticky-top" style="top: 20px;">
                 <div class="card-header">
                     ดำเนินการ
                 </div>
@@ -50,7 +47,6 @@
     {% endif %}
 </div>
 
-<!-- Approve Confirmation Modal -->
 <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -72,7 +68,6 @@
   </div>
 </div>
 
-<!-- Reject Confirmation Modal -->
 <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
