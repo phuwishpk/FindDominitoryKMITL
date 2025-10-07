@@ -1,9 +1,13 @@
 {% extends 'admin/base.html' %}
 
 {% block admin_content %}
-<h1 class="h3 mb-4 fw-bold">จัดการข้อมูลหอพัก</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 fw-bold mb-0">จัดการข้อมูลหอพัก</h1>
+    <a href="{{ url_for('admin.deleted_properties') }}" class="btn btn-sm btn-outline-secondary">
+        <i data-feather="trash-2" class="me-1" style="width:16px;"></i> ถังขยะ
+    </a>
+</div>
 
-<!-- Search Bar -->
 <div class="card mb-4 border-0">
     <div class="card-body">
         <form method="GET" action="{{ url_for('admin.properties') }}">
@@ -16,12 +20,11 @@
     </div>
 </div>
 
-<!-- Properties Table -->
 <div class="table-responsive">
     <table class="table align-middle">
         <thead>
             <tr>
-                <th scope="col">ID</th>
+                <th scope="col" style="width: 5%;">ลำดับ</th>
                 <th scope="col">ชื่อหอพัก</th>
                 <th scope="col">Owner ID</th>
                 <th scope="col">สถานะ</th>
@@ -31,8 +34,8 @@
         <tbody>
             {% for prop in pagination.items %}
             <tr>
-                <th scope="row">{{ prop.id }}</th>
-                <td>{{ prop.dorm_name }}</td>
+                <th scope="row">{{ pagination.per_page * (pagination.page - 1) + loop.index }}</th>
+                <td>{{ prop.dorm_name }} <span class="text-muted small">(ID: {{ prop.id }})</span></td>
                 <td>{{ prop.owner_id }}</td>
                 <td>
                     {% if prop.workflow_status == 'approved' %}
@@ -46,14 +49,15 @@
                     {% endif %}
                 </td>
                 <td class="text-end">
-                    <!-- --- vvv ส่วนที่แก้ไข/เพิ่มเข้ามา vvv --- -->
                     <a href="{{ url_for('admin.view_property', prop_id=prop.id) }}" class="btn btn-sm btn-outline-info me-1" title="ดูรายละเอียด">
                         <i data-feather="eye" style="width:16px;"></i>
                     </a>
-                    <a href="{{ url_for('admin.admin_edit_property', prop_id=prop.id) }}" class="btn btn-sm btn-outline-secondary" title="แก้ไข">
+                    <a href="{{ url_for('admin.admin_edit_property', prop_id=prop.id) }}" class="btn btn-sm btn-outline-secondary me-1" title="แก้ไข">
                         <i data-feather="edit-2" style="width:16px;"></i>
                     </a>
-                    <!-- --- ^^^ สิ้นสุดการแก้ไข ^^^ --- -->
+                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ prop.id }}" title="ย้ายไปถังขยะ">
+                        <i data-feather="trash-2" style="width:16px;"></i>
+                    </button>
                 </td>
             </tr>
             {% else %}
@@ -65,7 +69,6 @@
     </table>
 </div>
 
-<!-- Pagination -->
 {% if pagination.pages > 1 %}
 <nav aria-label="Page navigation" class="mt-4 d-flex justify-content-center">
     <ul class="pagination">
@@ -87,4 +90,28 @@
     </ul>
 </nav>
 {% endif %}
+
+{% for prop in pagination.items %}
+<div class="modal fade" id="deleteModal-{{ prop.id }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">ยืนยันการย้ายไปยังถังขยะ</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        คุณแน่ใจหรือไม่ว่าต้องการย้ายหอพัก <strong>"{{ prop.dorm_name }}"</strong> ไปยังถังขยะ?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+        <form action="{{ url_for('admin.delete_property', prop_id=prop.id) }}" method="POST">
+            {{ delete_form.csrf_token }}
+            <button type="submit" class="btn btn-danger">ยืนยัน</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
 {% endblock %}

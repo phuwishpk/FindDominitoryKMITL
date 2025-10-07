@@ -24,7 +24,7 @@
     <table class="table align-middle">
         <thead>
             <tr>
-                <th scope="col">ID</th>
+                <th scope="col" style="width: 5%;">ลำดับ</th>
                 <th scope="col">ชื่อ-สกุล (ไทย)</th>
                 <th scope="col">อีเมล</th>
                 <th scope="col">สถานะ</th>
@@ -34,8 +34,8 @@
         <tbody>
             {% for owner in pagination.items %}
             <tr>
-                <th scope="row">{{ owner.id }}</th>
-                <td>{{ owner.full_name_th }}</td>
+                <th scope="row">{{ pagination.per_page * (pagination.page - 1) + loop.index }}</th>
+                <td>{{ owner.full_name_th }} <span class="text-muted small">(ID: {{ owner.id }})</span></td>
                 <td>{{ owner.email }}</td>
                 <td>
                     {% if owner.is_active %}
@@ -48,10 +48,10 @@
                     <a href="{{ url_for('admin.edit_owner', owner_id=owner.id) }}" class="btn btn-sm btn-outline-secondary me-1" title="แก้ไข">
                         <i data-feather="edit-2" style="width:16px;"></i>
                     </a>
-                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteOwnerModal-{{ owner.id }}" title="ลบ">
+                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteOwnerModal-{{ owner.id }}" title="ย้ายไปถังขยะ">
                         <i data-feather="trash-2" style="width:16px;"></i>
                     </button>
-                    </td>
+                </td>
             </tr>
             {% else %}
             <tr>
@@ -63,14 +63,33 @@
 </div>
 
 {% if pagination.pages > 1 %}
-    {% endif %}
+<nav aria-label="Page navigation" class="mt-4 d-flex justify-content-center">
+    <ul class="pagination">
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('admin.owners', page=pagination.prev_num, q=search_query or '') }}">‹</a>
+        </li>
+        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                <li class="page-item {% if pagination.page == page_num %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('admin.owners', page=page_num, q=search_query or '') }}">{{ page_num }}</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('admin.owners', page=pagination.next_num, q=search_query or '') }}">›</a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
 
 {% for owner in pagination.items %}
 <div class="modal fade" id="deleteOwnerModal-{{ owner.id }}" tabindex="-1" aria-labelledby="deleteOwnerModalLabel-{{ owner.id }}" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="deleteOwnerModalLabel-{{ owner.id }}">ยืนยันการลบ Owner</h5>
+        <h5 class="modal-title" id="deleteOwnerModalLabel-{{ owner.id }}">ยืนยันการย้ายไปถังขยะ</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">

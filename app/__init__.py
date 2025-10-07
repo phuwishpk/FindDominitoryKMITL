@@ -2,9 +2,9 @@ from flask import Flask, send_from_directory
 from .extensions import db, migrate, login_manager, babel_ext, limiter, csrf 
 from .config import Config
 
-# --- vvv ส่วนที่เพิ่มเข้ามา vvv ---
-from .utils.helpers import format_as_bangkok_time
-# --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
+# --- vvv ส่วนที่แก้ไข vvv ---
+from .utils.helpers import format_as_bangkok_time, from_json_string
+# --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
 
 from .blueprints.public import bp as public_bp
 from .blueprints.owner import bp as owner_bp
@@ -51,10 +51,11 @@ def create_app() -> Flask:
     limiter.init_app(app)
     csrf.init_app(app)
 
-    # --- vvv ส่วนที่เพิ่มเข้ามา vvv ---
+    # --- vvv ส่วนที่แก้ไข vvv ---
     # ลงทะเบียนฟิลเตอร์ที่เราสร้างขึ้นเพื่อให้ Template รู้จัก
     app.jinja_env.filters['to_bkk_time'] = format_as_bangkok_time
-    # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
+    app.jinja_env.filters['fromjson'] = from_json_string # <--- เพิ่มบรรทัดนี้
+    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
 
     with app.app_context():
         register_dependencies(app)
@@ -73,7 +74,7 @@ def create_app() -> Flask:
             as_attachment=False
         )
 
-    # ... (โค้ดส่วนที่เหลือของ CLI Commands เหมือนเดิม) ...
+    # ... (โค้ดส่วน CLI Commands เหมือนเดิม) ...
     @app.get("/health")
     def health():
         return {"ok": True}

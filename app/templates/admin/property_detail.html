@@ -1,7 +1,7 @@
 {% extends 'admin/base.html' %}
 
 {% block admin_content %}
-<div class="container my-5">
+<div class="container-fluid my-2">
     <a href="{{ url_for('admin.properties') }}" class="btn btn-sm btn-outline-secondary mb-3">← กลับสู่หน้าข้อมูลหอพัก</a>
     
     {% if not prop %}
@@ -9,21 +9,20 @@
     {% else %}
 
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="mb-0">รายละเอียดหอพัก: {{ prop.dorm_name }}</h1>
+        <h1 class="mb-0 h3 fw-bold">รายละเอียดหอพัก: {{ prop.dorm_name }}</h1>
         {% if prop.workflow_status == 'approved' %}
-            <span class="badge bg-success fs-6">Approved</span>
+            <span class="badge bg-success-subtle text-success-emphasis rounded-pill">Approved</span>
         {% elif prop.workflow_status == 'submitted' %}
-            <span class="badge bg-warning text-dark fs-6">Submitted</span>
+            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">Submitted</span>
         {% elif prop.workflow_status == 'rejected' %}
-            <span class="badge bg-danger fs-6">Rejected</span>
+            <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill">Rejected</span>
         {% else %}
-            <span class="badge bg-secondary fs-6">Draft</span>
+            <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill">Draft</span>
         {% endif %}
     </div>
 
     <div class="row">
         <div class="col-lg-8">
-            <!-- ... (โค้ดแสดงรายละเอียดหอพักเหมือนเดิม) ... -->
             <div id="propertyCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
                 <div class="carousel-inner rounded shadow-sm">
                     {% for img in prop.images %}
@@ -41,7 +40,7 @@
                 <button class="carousel-control-next" type="button" data-bs-target="#propertyCarousel" data-bs-slide="next"><span class="carousel-control-next-icon" aria-hidden="true"></span></button>
                 {% endif %}
             </div>
-            <div class="card mb-4 shadow-sm">
+            <div class="card mb-4">
                 <div class="card-body">
                     <h5 class="card-title">รายละเอียดหอพัก</h5>
                     <p class="card-text"><strong>ประเภทห้อง:</strong> {{ prop.room_type }}</p>
@@ -55,7 +54,7 @@
                     <h6 class="mt-3">สิ่งอำนวยความสะดวก</h6>
                     {% if prop.amenities.all() %}
                         {% for amenity in prop.amenities %}
-                            <span class="badge bg-info text-dark me-2 mb-1">{{ amenity.label_th }}</span>
+                            <span class="badge bg-info-subtle text-info-emphasis me-2 mb-1">{{ amenity.label_th }}</span>
                         {% endfor %}
                     {% else %}
                         <p>ไม่พบข้อมูลสิ่งอำนวยความสะดวก</p>
@@ -65,33 +64,30 @@
         </div>
 
         <div class="col-lg-4">
-            <div class="card sticky-top shadow-lg" style="top: 20px;">
+            <div class="card sticky-top" style="top: 20px;">
                 <div class="card-body">
-                    <!-- ... (โค้ดแสดงข้อมูลเจ้าของและแผนที่เหมือนเดิม) ... -->
-                    <h5 class="card-title">ข้อมูลเจ้าของ</h5>
-                    <p class="card-text"><strong>ชื่อ-สกุล:</strong> {{ owner.full_name_th or 'N/A' }}</p>
-                    <p class="card-text"><strong>อีเมล:</strong> {{ owner.email or 'N/A' }}</p>
-                    <p class="card-text"><strong>โทรศัพท์:</strong> {{ owner.phone or 'N/A' }}</p>
+                    <h5 class="card-title fw-semibold">ข้อมูลเจ้าของ</h5>
+                    {% if owner %}
+                        <p class="card-text"><strong>ชื่อ-สกุล:</strong> {{ owner.full_name_th or 'N/A' }}</p>
+                        <p class="card-text"><strong>อีเมล:</strong> {{ owner.email or 'N/A' }}</p>
+                        <p class="card-text"><strong>โทรศัพท์:</strong> {{ owner.phone or 'N/A' }}</p>
+                    {% else %}
+                        <p class="text-danger">ไม่พบข้อมูลเจ้าของ (อาจถูกลบออกจากระบบแล้ว)</p>
+                    {% endif %}
                     <hr>
-                    <h5 class="mt-3">ตำแหน่งที่ตั้ง</h5>
-                    <p class="card-text">{{ prop.soi or 'N/A' }} ถ. {{ prop.road or 'N/A' }}</p>
+                    <h5 class="mt-3 fw-semibold">ตำแหน่งที่ตั้ง</h5>
+                    <p class="card-text text-muted">{{ prop.soi or 'N/A' }} ถ. {{ prop.road or 'N/A' }}</p>
                     <div id="map" style="height: 250px; width: 100%;" class="border rounded mb-3"></div>
-                    <div class="mt-2 text-center">
-                        {% if prop.location_pin and prop.location_pin.coordinates %}
-                        <a href="https://www.google.com/maps/search/?api=1&query={{ prop.location_pin.coordinates[1] }},{{ prop.location_pin.coordinates[0] }}" target="_blank" class="btn btn-sm btn-outline-success w-100">เปิดใน Google Maps</a>
-                        {% else %}
-                        <p class="text-danger small">ไม่มีข้อมูลพิกัด</p>
-                        {% endif %}
-                    </div>
+                    {% if prop.location_pin and prop.location_pin.coordinates %}
+                    <a href="https://www.google.com/maps/search/?api=1&query={{ prop.location_pin.coordinates[1] }},{{ prop.location_pin.coordinates[0] }}" target="_blank" class="btn btn-sm btn-outline-primary w-100">เปิดใน Google Maps</a>
+                    {% endif %}
 
-                    <!-- --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv --- -->
                     <hr class="my-4">
-                    <h5 class="text-danger">โซนอันตราย (Danger Zone)</h5>
+                    <h5 class="text-danger fw-semibold">โซนอันตราย (Danger Zone)</h5>
                     <p class="small text-muted">การลบหอพักจะลบข้อมูลทั้งหมดอย่างถาวรและไม่สามารถกู้คืนได้</p>
                     <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#deletePropertyModal">
-                        ลบหอพักนี้
+                        ลบหอพักนี้อย่างถาวร
                     </button>
-                    <!-- --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ --- -->
                 </div>
             </div>
         </div>
@@ -99,35 +95,32 @@
     {% endif %}
 </div>
 
-<!-- --- vvv Modal ที่เพิ่มเข้ามาใหม่ vvv --- -->
-<div class="modal fade" id="deletePropertyModal" tabindex="-1" aria-labelledby="deletePropertyModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="deletePropertyModalLabel">ยืนยันการลบหอพัก</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        คุณแน่ใจหรือไม่ว่าต้องการลบหอพัก <strong>"{{ prop.dorm_name }}"</strong>? <br>
-        <span class="text-danger">การกระทำนี้ไม่สามารถย้อนกลับได้</span>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-        <form action="{{ url_for('admin.delete_property', prop_id=prop.id) }}" method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-danger">ยืนยันการลบ</button>
-        </form>
-      </div>
+<div class="modal fade" id="deletePropertyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">ยืนยันการลบถาวร</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                คุณแน่ใจหรือไม่ว่าต้องการลบหอพัก <strong>"{{ prop.dorm_name }}"</strong> ออกจากระบบอย่างถาวร?
+                <p class="text-danger mt-2"><strong>คำเตือน:</strong> การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                <form action="{{ url_for('admin.permanently_delete_property', prop_id=prop.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">ยืนยันลบถาวร</button>
+                </form>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
-<!-- --- ^^^ สิ้นสุด Modal ^^^ --- -->
 {% endblock %}
 
 {% block page_scripts %}
 {{ super() }}
 <script>
-    // ... (โค้ด JavaScript สำหรับแผนที่เหมือนเดิม) ...
     {% if prop and prop.location_pin and prop.location_pin.coordinates %}
     const lng = {{ prop.location_pin.coordinates[0] }};
     const lat = {{ prop.location_pin.coordinates[1] }};

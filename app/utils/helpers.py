@@ -1,5 +1,6 @@
 from datetime import datetime
 import pytz
+import json
 
 def format_as_bangkok_time(utc_dt):
     """
@@ -17,3 +18,17 @@ def format_as_bangkok_time(utc_dt):
 
     # จัดรูปแบบการแสดงผล
     return bangkok_dt.strftime('%d/%m/%Y %H:%M:%S')
+
+# --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
+def from_json_string(json_string):
+    """
+    ฟิลเตอร์สำหรับ Jinja2 เพื่อแปลง JSON string เป็น Python object
+    """
+    if json_string:
+        try:
+            return json.loads(json_string)
+        except (json.JSONDecodeError, TypeError):
+            # ในกรณีที่ข้อมูลใน meta ไม่ใช่ JSON string ที่ถูกต้อง
+            return None
+    return None
+# --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---

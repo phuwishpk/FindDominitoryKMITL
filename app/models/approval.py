@@ -31,17 +31,18 @@ class AuditLog(db.Model):
     def __repr__(self) -> str:
         return f"<AuditLog id={self.id} action={self.action}>"
 
+    # --- vvv ส่วนที่แก้ไข vvv ---
     @staticmethod
     def log(actor_type: str, actor_id: int, action: str, property_id: int | None = None, meta: dict | None = None):
         """
-        สร้างบันทึกกิจกรรม (AuditLog)
+        สร้าง Object ของ AuditLog แต่ยังไม่ commit ลงฐานข้อมูล
+        เพื่อให้ Service หรือ Route ที่เรียกใช้เป็นผู้จัดการ Transaction เอง
         """
-        log_entry = AuditLog(
+        return AuditLog(
             actor_type=actor_type,
             actor_id=actor_id,
             action=action,
             property_id=property_id,
             meta=json.dumps(meta) if meta else None,
         )
-        db.session.add(log_entry)
-        db.session.commit()
+    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---

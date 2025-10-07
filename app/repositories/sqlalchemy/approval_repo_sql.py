@@ -39,11 +39,11 @@ class SqlApprovalRepo:
         
     def list_logs(self, page: int = 1, per_page: int = 20):
         """
-        ดึง AuditLog ทั้งหมดพร้อมการแบ่งหน้า (Pagination) และเรียงตาม ID น้อยไปมาก
+        ดึง AuditLog ทั้งหมดพร้อมการแบ่งหน้า (Pagination) และเรียงตาม ID จากน้อยไปมาก (เก่าที่สุดก่อน)
         """
         # --- vvv ส่วนที่แก้ไข vvv ---
         return db.paginate(
-            AuditLog.query.order_by(AuditLog.id.asc()), # เปลี่ยนเป็นเรียงตาม ID น้อยไปมาก
+            AuditLog.query.order_by(AuditLog.id.asc()), # เปลี่ยนกลับเป็นเรียงตาม ID น้อยไปมาก
             page=page, per_page=per_page, error_out=False
         )
         # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
