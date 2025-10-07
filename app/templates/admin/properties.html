@@ -1,31 +1,23 @@
 {% extends 'admin/base.html' %}
 
 {% block admin_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h4 mb-0">จัดการข้อมูลหอพัก</h1>
-</div>
+<h1 class="h3 mb-4 fw-bold">จัดการข้อมูลหอพัก</h1>
 
 <!-- Search Bar -->
-<div class="card shadow-sm mb-4">
+<div class="card shadow-sm mb-4 border-0">
     <div class="card-body">
         <form method="GET" action="{{ url_for('admin.properties') }}">
-            <div class="row g-3 align-items-center">
-                <div class="col-md-8">
-                    <input type="text" name="q" class="form-control" placeholder="ค้นหาตามชื่อหอพัก..." value="{{ search_query or '' }}">
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">ค้นหา</button>
-                </div>
-                <div class="col-md-2">
-                    <a href="{{ url_for('admin.properties') }}" class="btn btn-outline-secondary w-100">ล้างฟิลเตอร์</a>
-                </div>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-0"><i data-feather="search"></i></span>
+                <input type="text" name="q" class="form-control border-0" placeholder="ค้นหาตามชื่อหอพัก..." value="{{ search_query or '' }}">
+                <button type="submit" class="btn btn-primary">ค้นหา</button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Properties Table -->
-<div class="card shadow-sm">
+<div class="card shadow-sm border-0">
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-hover align-middle">
@@ -46,23 +38,24 @@
                         <td>{{ prop.owner_id }}</td>
                         <td>
                             {% if prop.workflow_status == 'approved' %}
-                                <span class="badge bg-success">Approved</span>
+                                <span class="badge bg-success-subtle text-success-emphasis">Approved</span>
                             {% elif prop.workflow_status == 'submitted' %}
-                                <span class="badge bg-warning text-dark">Submitted</span>
+                                <span class="badge bg-warning-subtle text-warning-emphasis">Submitted</span>
                             {% elif prop.workflow_status == 'rejected' %}
-                                <span class="badge bg-danger">Rejected</span>
+                                <span class="badge bg-danger-subtle text-danger-emphasis">Rejected</span>
                             {% else %}
-                                <span class="badge bg-secondary">Draft</span>
+                                <span class="badge bg-secondary-subtle text-secondary-emphasis">Draft</span>
                             {% endif %}
                         </td>
                         <td class="text-end">
-                            {# ส่วนที่แก้ไข: เปลี่ยนลิงก์ให้ชี้ไปที่ route ใหม่ #}
-                            <a href="{{ url_for('admin.view_property', prop_id=prop.id) }}" class="btn btn-sm btn-outline-primary">ดูรายละเอียด</a>
+                            <a href="{{ url_for('admin.view_property', prop_id=prop.id) }}" class="btn btn-sm btn-outline-secondary">
+                                <i data-feather="eye" class="me-1" style="width:16px; height: 16px;"></i> ดูรายละเอียด
+                            </a>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="text-center text-muted py-4">ไม่พบข้อมูลหอพัก</td>
+                        <td colspan="5" class="text-center text-muted py-5">ไม่พบข้อมูลหอพัก</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -73,30 +66,24 @@
 
 <!-- Pagination -->
 {% if pagination.pages > 1 %}
-<nav aria-label="Page navigation" class="mt-4">
-    <ul class="pagination justify-content-center">
-        <!-- Prev button -->
+<nav aria-label="Page navigation" class="mt-4 d-flex justify-content-center">
+    <ul class="pagination">
         <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-            <a class="page-link" href="{{ url_for('admin.properties', page=pagination.prev_num, q=search_query or '') }}">ก่อนหน้า</a>
+            <a class="page-link" href="{{ url_for('admin.properties', page=pagination.prev_num, q=search_query or '') }}">‹</a>
         </li>
-
-        <!-- Page numbers -->
         {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
             {% if page_num %}
                 <li class="page-item {% if pagination.page == page_num %}active{% endif %}">
                     <a class="page-link" href="{{ url_for('admin.properties', page=page_num, q=search_query or '') }}">{{ page_num }}</a>
                 </li>
             {% else %}
-                <li class="page-item disabled"><span class="page-link">...</span></li>
+                <li class="page-item disabled"><span class="page-link">…</span></li>
             {% endif %}
         {% endfor %}
-
-        <!-- Next button -->
         <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-            <a class="page-link" href="{{ url_for('admin.properties', page=pagination.next_num, q=search_query or '') }}">ถัดไป</a>
+            <a class="page-link" href="{{ url_for('admin.properties', page=pagination.next_num, q=search_query or '') }}">›</a>
         </li>
     </ul>
 </nav>
 {% endif %}
-
 {% endblock %}

@@ -1,47 +1,119 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row">
-    {# --- Sidebar --- #}
-    <div class="col-lg-3">
-        <div class="card shadow-sm sticky-top" style="top: 20px;">
-            <div class="card-body">
-                <h5 class="card-title mb-3">Admin Panel</h5>
-                <div class="list-group">
-                    <a href="{{ url_for('admin.dashboard') }}"
-                       class="list-group-item list-group-item-action {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
-                        📊 หน้าหลัก (Dashboard)
-                    </a>
-                    <a href="{{ url_for('admin.queue') }}"
-                       class="list-group-item list-group-item-action {% if request.endpoint in ['admin.queue', 'admin.review_property'] %}active{% endif %}">
-                        📥 อนุมัติหอพัก
-                    </a>
-                    {# --- vvv ส่วนที่เพิ่มเข้ามา vvv --- #}
-                    <a href="{{ url_for('admin.owner_queue') }}"
-                       class="list-group-item list-group-item-action {% if request.endpoint in ['admin.owner_queue', 'admin.review_owner'] %}active{% endif %}">
-                        👤 อนุมัติ Owner
-                    </a>
-                    {# --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ --- #}
-                    <a href="{{ url_for('admin.logs') }}"
-                       class="list-group-item list-group-item-action {% if request.endpoint == 'admin.logs' %}active{% endif %}">
-                       📜 ประวัติการดำเนินการ
-                    </a>
-                    <a href="{{ url_for('admin.properties') }}"
-                       class="list-group-item list-group-item-action {% if request.endpoint == 'admin.properties' %}active{% endif %}">
-                       🏨 ข้อมูลหอพัก
-                    </a>
-                    <a href="{{ url_for('admin.owners') }}"
-                       class="list-group-item list-group-item-action {% if request.endpoint == 'admin.owners' %}active{% endif %}">
-                       👥 ข้อมูล Owner
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
+<style>
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 260px;
+        background-color: #1a202c; /* Dark background */
+        color: #a0aec0; /* Lighter text */
+        padding: 1.5rem 1rem;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s;
+        z-index: 100;
+    }
+    .sidebar-header {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #fff;
+        text-align: center;
+        margin-bottom: 2rem;
+        letter-spacing: 1px;
+    }
+    .sidebar-nav .nav-link {
+        display: flex;
+        align-items: center;
+        color: #a0aec0;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        transition: background-color 0.2s, color 0.2s;
+    }
+    .sidebar-nav .nav-link .feather {
+        margin-right: 1rem;
+        width: 20px;
+        height: 20px;
+    }
+    .sidebar-nav .nav-link:hover {
+        background-color: #2d3748;
+        color: #fff;
+    }
+    .sidebar-nav .nav-link.active {
+        background-color: var(--bs-primary);
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.3);
+    }
+    .sidebar-footer {
+        margin-top: auto;
+    }
+    .main-content {
+        margin-left: 260px;
+        padding: 2rem;
+        width: calc(100% - 260px);
+    }
+</style>
 
-    {# --- Main Content --- #}
-    <div class="col-lg-9">
-        {% block admin_content %}{% endblock %}
+<div class="sidebar">
+    <div>
+        <h1 class="sidebar-header">Dorm Admin</h1>
+        <ul class="nav flex-column sidebar-nav">
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" href="{{ url_for('admin.dashboard') }}">
+                    <i data-feather="home"></i> หน้าหลัก
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint in ['admin.queue', 'admin.review_property'] %}active{% endif %}" href="{{ url_for('admin.queue') }}">
+                    <i data-feather="inbox"></i> อนุมัติหอพัก
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint in ['admin.owner_queue', 'admin.review_owner'] %}active{% endif %}" href="{{ url_for('admin.owner_queue') }}">
+                    <i data-feather="user-check"></i> อนุมัติ Owner
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin.properties' %}active{% endif %}" href="{{ url_for('admin.properties') }}">
+                    <i data-feather="briefcase"></i> ข้อมูลหอพัก
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin.owners' %}active{% endif %}" href="{{ url_for('admin.owners') }}">
+                    <i data-feather="users"></i> ข้อมูล Owner
+                </a>
+            </li>
+             <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin.logs' %}active{% endif %}" href="{{ url_for('admin.logs') }}">
+                   <i data-feather="activity"></i> ประวัติการดำเนินการ
+                </a>
+            </li>
+        </ul>
     </div>
+    <div class="sidebar-footer">
+        <a class="nav-link" href="{{ url_for('auth.logout') }}">
+            <i data-feather="log-out"></i> ออกจากระบบ
+        </a>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="flash-messages">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category or 'info' }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+    {% block admin_content %}{% endblock %}
 </div>
 {% endblock %}

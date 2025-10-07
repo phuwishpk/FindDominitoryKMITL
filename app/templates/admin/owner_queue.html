@@ -1,11 +1,9 @@
 {% extends 'admin/base.html' %}
 
 {% block admin_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h4 mb-0">อนุมัติ Owner</h1>
-</div>
+<h1 class="h3 mb-4 fw-bold">อนุมัติ Owner</h1>
 
-<div class="card shadow-sm">
+<div class="card shadow-sm border-0">
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-hover align-middle">
@@ -24,16 +22,19 @@
                         <th scope="row">{{ owner.id }}</th>
                         <td>{{ owner.full_name_th }}</td>
                         <td>{{ owner.email }}</td>
-                        {# --- vvv ส่วนที่แก้ไข vvv --- #}
                         <td>{{ owner.created_at|to_bkk_time }}</td>
-                        {# --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ --- #}
                         <td class="text-end">
-                            <a href="{{ url_for('admin.review_owner', owner_id=owner.id) }}" class="btn btn-sm btn-outline-primary">ตรวจสอบ</a>
+                            <a href="{{ url_for('admin.review_owner', owner_id=owner.id) }}" class="btn btn-sm btn-outline-secondary">
+                                <i data-feather="edit-3" class="me-1" style="width:16px; height: 16px;"></i> ตรวจสอบ
+                            </a>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="text-center text-muted py-4">ไม่มี Owner ที่รอการอนุมัติ</td>
+                        <td colspan="5" class="text-center text-muted py-5">
+                            <i data-feather="user-check" class="mb-3" style="width: 48px; height: 48px;"></i>
+                            <h5 class="mb-0">ไม่มี Owner ที่รอการอนุมัติ</h5>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

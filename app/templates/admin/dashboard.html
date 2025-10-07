@@ -1,46 +1,66 @@
 {% extends 'admin/base.html' %}
 
 {% block admin_content %}
-<h1 class="h4 mb-4">Admin Dashboard</h1>
+<h1 class="h3 mb-4 fw-bold">Admin Dashboard</h1>
 
 <!-- Summary Cards -->
 <div class="row">
     <div class="col-md-3 mb-4">
         <a href="{{ url_for('admin.owners') }}" class="text-decoration-none">
-            <div class="card text-white bg-primary shadow h-100">
-                <div class="card-body">
-                    <h6 class="card-title">จำนวน Owner</h6>
-                    <p class="card-text fs-4 fw-bold">{{ stats.total_owners }}</p>
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="p-3 bg-light text-primary rounded-3 me-3">
+                        <i data-feather="users" style="width: 28px; height: 28px;"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-title text-muted mb-1">จำนวน Owner</h6>
+                        <p class="card-text fs-4 fw-bold mb-0 text-dark">{{ stats.total_owners }}</p>
+                    </div>
                 </div>
             </div>
         </a>
     </div>
     <div class="col-md-3 mb-4">
         <a href="{{ url_for('admin.properties') }}" class="text-decoration-none">
-            <div class="card text-white bg-success shadow h-100">
-                <div class="card-body">
-                    <h6 class="card-title">จำนวนหอพักทั้งหมด</h6>
-                    <p class="card-text fs-4 fw-bold">{{ stats.total_properties }}</p>
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="p-3 bg-light text-success rounded-3 me-3">
+                        <i data-feather="briefcase" style="width: 28px; height: 28px;"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-title text-muted mb-1">หอพักทั้งหมด</h6>
+                        <p class="card-text fs-4 fw-bold mb-0 text-dark">{{ stats.total_properties }}</p>
+                    </div>
                 </div>
             </div>
         </a>
     </div>
     <div class="col-md-3 mb-4">
         <a href="{{ url_for('admin.queue') }}" class="text-decoration-none">
-            <div class="card text-white bg-warning shadow h-100">
-                <div class="card-body">
-                    <h6 class="card-title">รออนุมัติ (หอพัก)</h6>
-                    <p class="card-text fs-4 fw-bold">{{ stats.pending_properties }}</p>
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="p-3 bg-light text-warning rounded-3 me-3">
+                        <i data-feather="inbox" style="width: 28px; height: 28px;"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-title text-muted mb-1">รออนุมัติ (หอพัก)</h6>
+                        <p class="card-text fs-4 fw-bold mb-0 text-dark">{{ stats.pending_properties }}</p>
+                    </div>
                 </div>
             </div>
         </a>
     </div>
     <div class="col-md-3 mb-4">
         <a href="{{ url_for('admin.owner_queue') }}" class="text-decoration-none">
-            <div class="card text-white bg-info shadow h-100">
-                <div class="card-body">
-                    <h6 class="card-title">รออนุมัติ (Owner)</h6>
-                    <p class="card-text fs-4 fw-bold">{{ stats.pending_owners }}</p>
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                     <div class="p-3 bg-light text-info rounded-3 me-3">
+                        <i data-feather="user-check" style="width: 28px; height: 28px;"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-title text-muted mb-1">รออนุมัติ (Owner)</h6>
+                        <p class="card-text fs-4 fw-bold mb-0 text-dark">{{ stats.pending_owners }}</p>
+                    </div>
                 </div>
             </div>
         </a>
@@ -50,20 +70,20 @@
 <!-- Charts -->
 <div class="row">
     <div class="col-lg-5 mb-4">
-        <div class="card shadow-sm h-100">
+        <div class="card shadow-sm border-0 h-100">
             <div class="card-body">
-                <h6 class="card-title">สัดส่วนหอพักตามถนน (Top 5)</h6>
-                <div style="position: relative; height: 350px;">
+                <h6 class="card-title fw-semibold mb-3">สัดส่วนหอพักตามถนน (Top 5)</h6>
+                <div style="position: relative; height: 320px;">
                     <canvas id="locationPieChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-lg-7 mb-4">
-        <div class="card shadow-sm h-100">
+        <div class="card shadow-sm border-0 h-100">
             <div class="card-body">
-                <h6 class="card-title">การเติบโตของ Owner และ หอพัก (6 เดือนล่าสุด)</h6>
-                <div style="position: relative; height: 350px;">
+                <h6 class="card-title fw-semibold mb-3">การเติบโต (6 เดือนล่าสุด)</h6>
+                <div style="position: relative; height: 320px;">
                     <canvas id="growthLineChart"></canvas>
                 </div>
             </div>
@@ -87,17 +107,24 @@ document.addEventListener('DOMContentLoaded', function () {
                     label: 'จำนวนหอพัก',
                     data: {{ pie_chart.data|tojson }},
                     backgroundColor: [
-                        'rgba(255, 99, 132, 0.7)',
-                        'rgba(54, 162, 235, 0.7)',
-                        'rgba(255, 206, 86, 0.7)',
-                        'rgba(75, 192, 192, 0.7)',
-                        'rgba(153, 102, 255, 0.7)',
+                        '#4FAAFF',
+                        '#36A2EB',
+                        '#FFCE56',
+                        '#FF6384',
+                        '#9966FF',
                     ],
+                    borderColor: '#F4F7FC',
+                    borderWidth: 2,
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    }
+                }
             }
         });
     }
@@ -113,18 +140,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     {
                         label: 'Owners',
                         data: {{ line_chart.owners|tojson }},
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: '#4FAAFF',
+                        backgroundColor: 'rgba(79, 170, 255, 0.1)',
                         fill: true,
-                        tension: 0.1
+                        tension: 0.4
                     },
                     {
                         label: 'หอพัก',
                         data: {{ line_chart.properties|tojson }},
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: '#36A2EB',
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
                         fill: true,
-                        tension: 0.1
+                        tension: 0.4
                     }
                 ]
             },
@@ -135,6 +162,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     y: {
                         beginAtZero: true
                     }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
                 }
             }
         });
@@ -142,4 +174,3 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 {% endblock %}
-
