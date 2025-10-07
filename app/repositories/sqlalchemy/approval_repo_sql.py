@@ -21,9 +21,7 @@ class SqlApprovalRepo:
                 )
             )
             
-        # --- vvv ส่วนที่แก้ไข vvv ---
-        return query.order_by(Property.id.asc()).all() # เปลี่ยนเป็นเรียงตาม ID น้อยไปมาก
-        # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
+        return query.order_by(Property.id.asc()).all()
 
     def get_pending_request(self, property_id: int) -> ApprovalRequest | None:
         return ApprovalRequest.query.filter_by(
@@ -40,8 +38,12 @@ class SqlApprovalRepo:
         db.session.commit()
         
     def list_logs(self, page: int = 1, per_page: int = 20):
-        # สำหรับหน้า logs การเรียงตามล่าสุดยังคงเหมาะสมที่สุด
+        """
+        ดึง AuditLog ทั้งหมดพร้อมการแบ่งหน้า (Pagination) และเรียงตาม ID น้อยไปมาก
+        """
+        # --- vvv ส่วนที่แก้ไข vvv ---
         return db.paginate(
-            AuditLog.query.order_by(AuditLog.created_at.desc()), 
+            AuditLog.query.order_by(AuditLog.id.asc()), # เปลี่ยนเป็นเรียงตาม ID น้อยไปมาก
             page=page, per_page=per_page, error_out=False
         )
+        # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
