@@ -3,6 +3,7 @@
 {% block admin_content %}
 <h1 class="h3 mb-4 fw-bold">จัดการข้อมูลหอพัก</h1>
 
+<!-- Search Bar -->
 <div class="card mb-4 border-0">
     <div class="card-body">
         <form method="GET" action="{{ url_for('admin.properties') }}">
@@ -15,6 +16,7 @@
     </div>
 </div>
 
+<!-- Properties Table -->
 <div class="table-responsive">
     <table class="table align-middle">
         <thead>
@@ -44,9 +46,14 @@
                     {% endif %}
                 </td>
                 <td class="text-end">
-                    <a href="{{ url_for('admin.view_property', prop_id=prop.id) }}" class="btn btn-sm btn-outline-secondary">
-                        <i data-feather="eye" class="me-1" style="width:16px; height: 16px;"></i> ดูรายละเอียด
+                    <!-- --- vvv ส่วนที่แก้ไข/เพิ่มเข้ามา vvv --- -->
+                    <a href="{{ url_for('admin.view_property', prop_id=prop.id) }}" class="btn btn-sm btn-outline-info me-1" title="ดูรายละเอียด">
+                        <i data-feather="eye" style="width:16px;"></i>
                     </a>
+                    <a href="{{ url_for('admin.admin_edit_property', prop_id=prop.id) }}" class="btn btn-sm btn-outline-secondary" title="แก้ไข">
+                        <i data-feather="edit-2" style="width:16px;"></i>
+                    </a>
+                    <!-- --- ^^^ สิ้นสุดการแก้ไข ^^^ --- -->
                 </td>
             </tr>
             {% else %}
@@ -58,6 +65,7 @@
     </table>
 </div>
 
+<!-- Pagination -->
 {% if pagination.pages > 1 %}
 <nav aria-label="Page navigation" class="mt-4 d-flex justify-content-center">
     <ul class="pagination">
