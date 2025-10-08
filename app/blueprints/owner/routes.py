@@ -250,3 +250,30 @@ def delete_property(prop_id: int):
     db.session.commit()
     flash("ลบประกาศแล้ว", "success")
     return redirect(url_for("owner.dashboard"))
+
+# --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
+@bp.post("/property/<int:prop_id>/toggle_availability")
+@login_required
+@owner_required
+def toggle_availability(prop_id: int):
+    form = EmptyForm()
+    if not form.validate_on_submit():
+        flash("Invalid request.", "danger")
+        return redirect(url_for("owner.dashboard"))
+
+    prop = Property.query.get_or_404(prop_id)
+    if prop.owner_id != current_user.ref_id:
+        flash("Permission denied.", "danger")
+        return redirect(url_for("owner.dashboard"))
+
+    if prop.availability_status == 'vacant':
+        prop.availability_status = 'occupied'
+        new_status_th = "ห้องเต็ม"
+    else:
+        prop.availability_status = 'vacant'
+        new_status_th = "ห้องว่าง"
+
+    db.session.commit()
+    flash(f"เปลี่ยนสถานะของ '{prop.dorm_name}' เป็น '{new_status_th}' เรียบร้อยแล้ว", "success")
+    return redirect(url_for("owner.dashboard"))
+# --- ^^^ สิ้นสุดการแก้ไข ^^^ ---

@@ -17,7 +17,8 @@
     <div class="list-group-item d-flex justify-content-between align-items-center">
       <div class="flex-grow-1">
         <a href="{{ url_for('owner.edit_property', prop_id=p.id) }}" class="text-decoration-none text-dark fw-semibold">{{ p.dorm_name }}</a>
-        <div class="small text-muted">Status: 
+        <div class="small text-muted">
+          Workflow: 
             {% if p.workflow_status == 'approved' %}
                 <span class="badge bg-success-subtle text-success-emphasis rounded-pill">Approved</span>
             {% elif p.workflow_status == 'submitted' %}
@@ -27,10 +28,31 @@
             {% else %}
                 <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill">Draft</span>
             {% endif %}
+          
+          <span class="ms-2">สถานะห้อง: 
+            {% if p.availability_status == 'vacant' %}
+              <span class="badge bg-success-subtle text-success-emphasis rounded-pill">ห้องว่าง</span>
+            {% else %}
+              {# --- vvv ส่วนที่แก้ไข vvv --- #}
+              <span class="badge bg-danger text-white rounded-pill">ห้องเต็ม</span>
+              {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
+            {% endif %}
+          </span>
         </div>
       </div>
       
-      <div>
+      <div class="d-flex align-items-center">
+        <form method="post" action="{{ url_for('owner.toggle_availability', prop_id=p.id) }}" class="d-inline-block me-2" title="สลับสถานะห้องว่าง/เต็ม">
+          {{ submit_form.csrf_token }}
+          <button type="submit" class="btn btn-sm btn-outline-secondary">
+            {% if p.availability_status == 'vacant' %}
+              <i data-feather="moon" style="width:16px;"></i> ตั้งเป็น "ห้องเต็ม"
+            {% else %}
+              <i data-feather="sun" style="width:16px;"></i> ตั้งเป็น "ห้องว่าง"
+            {% endif %}
+          </button>
+        </form>
+      
         {% if p.workflow_status == 'draft' or p.workflow_status == 'rejected' %}
         <form method="post" action="{{ url_for('owner.submit_for_approval', prop_id=p.id) }}" class="d-inline-block me-2" onsubmit="return confirm('คุณต้องการส่งประกาศนี้เพื่อขออนุมัติใช่หรือไม่?');">
           {{ submit_form.csrf_token }} 
@@ -51,14 +73,12 @@
 </div>
 {% endblock %}
 
-{# --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv --- #}
 {% block page_scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, message in messages %}
       {% if category == 'script_command' and message == 'clear_form_storage' %}
-        // หากได้รับคำสั่ง 'clear_form_storage'
         const storageKey = `fileStore_/owner/property/new`;
         sessionStorage.removeItem(storageKey);
         console.log('Form image storage cleared.');
@@ -68,4 +88,3 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 {% endblock %}
-{# --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ --- #}
