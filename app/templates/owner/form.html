@@ -91,7 +91,17 @@
       <hr class="my-4">
       <h2 class="h5">สิ่งอำนวยความสะดวก</h2>
       <div class="row">
-        {% for amenity in all_amenities %}<div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}" {% if prop and amenity in prop.amenities %}checked{% endif %}><label class="form-check-label" for="amenity-{{ amenity.code }}">{{ amenity.label_th }}</label></div></div>{% endfor %}
+        {# --- vvv ส่วนที่แก้ไข vvv --- #}
+        {% for amenity in all_amenities %}
+        <div class="col-md-4">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}" 
+                   {% if amenity.code in selected_amenities %}checked{% endif %}>
+            <label class="form-check-label" for="amenity-{{ amenity.code }}">{{ amenity.label_th }}</label>
+          </div>
+        </div>
+        {% endfor %}
+        {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
       </div>
 
       {# --- ส่วนอัปโหลดรูปภาพใหม่ (สำหรับหน้าสร้างประกาศ) --- #}
@@ -186,8 +196,6 @@
 (function() {
     'use strict';
     
-    // --- vvv โค้ดส่วนแก้ไข vvv ---
-    // ส่วนนี้จะอ่าน URL parameter 'tab' แล้วสลับไปแท็บนั้นๆ
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
         const tabToShow = urlParams.get('tab');
@@ -199,9 +207,7 @@
             }
         }
     });
-    // --- ^^^ สิ้นสุดส่วนแก้ไข ^^^ ---
 
-    // === SCRIPT FOR LEAFLET MAP WITH SEARCH ===
     const mapContainer = document.getElementById('map');
     if (mapContainer) {
         const initialCoords = [13.7292, 100.7758]; // KMITL Default
@@ -238,8 +244,24 @@
         });
 
         try {
-            const existingDataStr = '{{ prop.location_pin | tojson | safe if prop and prop.location_pin else 'null' }}';
-            const existingData = JSON.parse(existingDataStr);
+            // --- vvv ส่วนที่แก้ไข vvv ---
+            // 1. ลองดึงข้อมูลจาก hidden input ของฟอร์มก่อน (สำหรับกรณี validation error)
+            const formJsonData = document.getElementById('location_pin_json_input').value;
+            let existingData = null;
+
+            if (formJsonData) {
+                try {
+                    existingData = JSON.parse(formJsonData);
+                } catch(e) { /* ignore parse error */ }
+            }
+            
+            // 2. ถ้าไม่มีข้อมูลในฟอร์ม, ให้ลองดึงจากข้อมูล property (สำหรับหน้า edit)
+            if (!existingData) {
+                const propDataStr = '{{ prop.location_pin | tojson | safe if prop and prop.location_pin else 'null' }}';
+                existingData = JSON.parse(propDataStr);
+            }
+            // --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+
             if (existingData && existingData.type === 'Point' && Array.isArray(existingData.coordinates)) {
                 const [lng, lat] = existingData.coordinates;
                 updateMarkerAndInput(lat, lng);
@@ -254,7 +276,6 @@
         });
     }
 
-    // === SCRIPT FOR CHARACTER COUNTING ===
     const additionalInfoTextarea = document.getElementById('additionalInfo');
     const charCountDisplay = document.getElementById('charCount');
     if (additionalInfoTextarea && charCountDisplay) {
@@ -274,7 +295,6 @@
         additionalInfoTextarea.addEventListener('input', updateCharCount);
     }
     
-    // === SCRIPT FOR "OTHER" ROOM TYPE INPUT ===
     const roomTypeSelect = document.getElementById('room_type_select');
     const otherRoomTypeContainer = document.getElementById('other_room_type_container');
     const otherRoomTypeInput = document.querySelector('[name="other_room_type"]');
@@ -299,7 +319,6 @@
         }
     });
 
-    // === SCRIPT FOR GALLERY DRAG & DROP (EDIT PAGE) ===
     const gallery = document.getElementById('gallery');
     if (gallery) {
         let dragEl = null;
@@ -344,7 +363,6 @@
         }
     }
     
-    // === SCRIPT FOR NEW PROPERTY IMAGE UPLOAD PREVIEW (NEW PAGE) ===
     const imageInput = document.getElementById('image-input');
     const addImageBtn = document.getElementById('add-image-btn');
     const previewContainer = document.getElementById('image-preview-container');
