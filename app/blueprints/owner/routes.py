@@ -129,6 +129,21 @@ def edit_property(prop_id: int):
         form_data = PropertyForm(request.form).data
         form_data.pop('csrf_token', None)
         form_data['amenities'] = request.form.getlist('amenities')
+        
+        # --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
+        # 1. จัดการการลบรูปภาพ
+        images_to_delete_str = request.form.get('images_to_delete', '')
+        if images_to_delete_str:
+            image_ids_to_delete = [int(id_) for id_ in images_to_delete_str.split(',') if id_.isdigit()]
+            if image_ids_to_delete:
+                # Query เพื่อความปลอดภัยว่ารูปที่ลบเป็นของ property นี้จริงๆ
+                images_to_delete = db.session.query(PropertyImage).filter(
+                    PropertyImage.property_id == prop_id,
+                    PropertyImage.id.in_(image_ids_to_delete)
+                ).all()
+                for img in images_to_delete:
+                    db.session.delete(img)
+        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
         prop_svc.update(current_user.ref_id, prop_id, form_data)
         flash("อัปเดตข้อมูลแล้ว", "success")
@@ -251,7 +266,6 @@ def delete_property(prop_id: int):
     flash("ลบประกาศแล้ว", "success")
     return redirect(url_for("owner.dashboard"))
 
-# --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
 @bp.post("/property/<int:prop_id>/toggle_availability")
 @login_required
 @owner_required
@@ -276,4 +290,3 @@ def toggle_availability(prop_id: int):
     db.session.commit()
     flash(f"เปลี่ยนสถานะของ '{prop.dorm_name}' เป็น '{new_status_th}' เรียบร้อยแล้ว", "success")
     return redirect(url_for("owner.dashboard"))
-# --- ^^^ สิ้นสุดการแก้ไข ^^^ ---

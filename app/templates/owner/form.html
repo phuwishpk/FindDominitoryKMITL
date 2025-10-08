@@ -15,30 +15,20 @@
 </div>
 {% endif %}
 
-{# --- Tabs for Edit Mode --- #}
-{% if prop %}
-<ul class="nav nav-tabs mt-4" id="formTab" role="tablist">
-  <li class="nav-item" role="presentation">
-    <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details-tab-pane" type="button" role="tab" aria-controls="details-tab-pane" aria-selected="true">ข้อมูลหลัก</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="images-tab" data-bs-toggle="tab" data-bs-target="#images-tab-pane" type="button" role="tab" aria-controls="images-tab-pane" aria-selected="false">จัดการรูปภาพ</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings-tab-pane" type="button" role="tab" aria-controls="settings-tab-pane" aria-selected="false">ตั้งค่า</button>
-  </li>
-</ul>
-{% endif %}
-
-<div class="card {% if prop %}border-top-0 rounded-bottom{% endif %}">
+{# --- vvv ส่วนที่แก้ไข: ลบ Tabs ทั้งหมดออก vvv --- #}
+<div class="card">
   <div class="card-body p-4">
-    <div class="{% if prop %}tab-content{% endif %}">
+    <div>
       
       {# --- Main Details Tab --- #}
-      <div class="{% if prop %}tab-pane fade show active{% endif %}" id="details-tab-pane" role="tabpanel" aria-labelledby="details-tab" tabindex="0">
+      <div>
         <form method="post" novalidate enctype="multipart/form-data">
           {{ form.csrf_token }}
           
+          {# --- vvv ส่วนที่เพิ่มเข้ามาใหม่: Hidden input สำหรับเก็บ ID รูปที่จะลบ vvv --- #}
+          <input type="hidden" name="images_to_delete" id="images-to-delete-input">
+          {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
+
           <p class="text-muted small">{% if not prop %}กรุณากรอกข้อมูลหลักและอัปโหลดรูปภาพให้ครบถ้วน จากนั้นกด "สร้างประกาศ"{% else %}คุณสามารถแก้ไขข้อมูลประกาศได้ที่นี่{% endif %}</p>
           
           <div class="mb-3"><label class="form-label">ชื่อหอ</label>{{ form.dorm_name(class_='form-control' + (' is-invalid' if form.dorm_name.errors else ''), placeholder='ชื่อหอ') }}</div>
@@ -131,34 +121,73 @@
             {% endfor %}
           </div>
     
-          {# --- ส่วนอัปโหลดรูปภาพใหม่ (สำหรับหน้าสร้างประกาศ) --- #}
-          {% if not prop %}
+          {# --- ส่วนอัปโหลดรูปภาพ (หน้าสร้าง vs หน้าแก้ไข) --- #}
           <hr class="my-4">
-          
-          <div id="image-upload-section">
-            <h2 class="h5">อัปโหลดรูปภาพ</h2>
-            <p class="text-muted small">คุณสามารถเพิ่มรูปภาพได้สูงสุด {{ PropertyPolicy.MAX_IMAGES }} รูป (ต้องมีอย่างน้อย 1 รูป)</p>
-            
-            <div class="input-group mb-3">
-                <input type="file" class="form-control {% if form.images.errors %}is-invalid{% endif %}" id="image-input" accept="image/jpeg,image/png,image/webp" multiple>
-                <button class="btn btn-outline-primary" type="button" id="add-image-btn">เพิ่มรูปภาพ</button>
+          {% if not prop %}
+            {# --- หน้าสร้าง --- #}
+            <div id="image-upload-section">
+              <h2 class="h5">อัปโหลดรูปภาพ</h2>
+              <p class="text-muted small">คุณสามารถเพิ่มรูปภาพได้สูงสุด {{ PropertyPolicy.MAX_IMAGES }} รูป (ต้องมีอย่างน้อย 1 รูป)</p>
+              <div class="input-group mb-3">
+                  <input type="file" class="form-control {% if form.images.errors %}is-invalid{% endif %}" id="image-input" accept="image/jpeg,image/png,image/webp" multiple>
+                  <button class="btn btn-outline-primary" type="button" id="add-image-btn">เพิ่มรูปภาพ</button>
+              </div>
+              {% if form.images.errors %}
+              <div class="invalid-feedback d-block mb-3">
+                  {% for error in form.images.errors %}
+                  <span>{{ error }}</span><br>
+                  {% endfor %}
+              </div>
+              {% endif %}
+              <div id="image-preview-container" class="row row-cols-2 row-cols-md-3 g-3 mb-3"></div>
+              {{ form.images(id="image-file-list", style="display:none;") }}
             </div>
-            
-            {% if form.images.errors %}
-            <div class="invalid-feedback d-block mb-3">
-                {% for error in form.images.errors %}
-                <span>{{ error }}</span><br>
-                {% endfor %}
-            </div>
-            {% endif %}
-      
-            <div id="image-preview-container" class="row row-cols-2 row-cols-md-3 g-3 mb-3">
+          {% else %}
+            {# --- vvv ส่วนที่แก้ไข: ย้ายส่วนจัดการรูปภาพมาไว้ที่นี่ vvv --- #}
+            <div id="image-management-section">
+              <h2 class="h5">จัดการรูปภาพ</h2>
+              <p class="text-muted small">คุณสามารถอัปโหลด, ลบ, และจัดเรียงลำดับรูปภาพได้ที่นี่ (สูงสุด {{ PropertyPolicy.MAX_IMAGES }} รูป)</p>
+              
+              <h6 class="mt-4">อัปโหลดรูปภาพใหม่</h6>
+              <form class="mb-3" method="post" action="{{ url_for('owner.upload_image', prop_id=prop.id) }}" enctype="multipart/form-data">
+                  {{ upload_form.csrf_token }}
+                  <div class="input-group">
+                    {{ upload_form.image(class_='form-control' + (' is-invalid' if upload_form.image.errors else '')) }}
+                    <button class="btn btn-outline-primary">อัปโหลด</button>
+                  </div>
+              </form>
+              
+              <h6 class="mt-4">รูปภาพปัจจุบัน</h6>
+              <p class="text-muted small">คลิกค้างแล้วลากเพื่อจัดเรียงลำดับ</p>
+              <div id="gallery" class="row row-cols-2 row-cols-md-3 g-3">
+                {% for img in prop.images|sort(attribute='position') %}
+                <div class="col image-card-col">
+                  <div class="card" draggable="true" data-image-id="{{ img.id }}">
+                    <img src="/{{ img.file_path }}" class="card-img-top" alt="#{{ img.id }}">
+                    <div class="card-body p-2 d-flex justify-content-between align-items-center">
+                      <span class="badge text-bg-light">ลำดับ {{ loop.index }}</span>
+                      
+                      <button type="button" class="btn btn-sm btn-outline-danger delete-image-btn" data-image-id="{{ img.id }}">ลบ</button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary undo-delete-btn" data-image-id="{{ img.id }}" style="display: none;">ยกเลิก</button>
+                      
+                    </div>
+                  </div>
                 </div>
-            
-            {{ form.images(id="image-file-list", style="display:none;") }}
-          </div>
+                {% else %}
+                <div class="col"><div class="alert alert-secondary w-100">ยังไม่มีรูป</div></div>
+                {% endfor %}
+              </div>
+          
+              <form id="reorder-form" method="post" action="{{ url_for('owner.reorder_images', prop_id=prop.id) }}">
+                {{ reorder_form.csrf_token }}
+                <div id="positions-container" class="d-none"></div>
+                <button type="submit" class="btn btn-outline-secondary mt-3">บันทึกการจัดเรียง</button>
+              </form>
+            </div>
+            {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
           {% endif %}
     
+          <hr class="my-4">
           <div class="mt-4">
             {% if prop %}
               <button class="btn btn-primary" name="save_and_exit" value="true">บันทึกข้อมูล</button>
@@ -170,51 +199,10 @@
         </form>
       </div>
       
-      {# --- Image Management Tab (สำหรับหน้าแก้ไข) --- #}
+      {# --- vvv ส่วนที่แก้ไข: ย้าย Danger Zone มาไว้ท้ายสุด และเอา Tab ออก --- #}
       {% if prop %}
-      <div class="tab-pane fade" id="images-tab-pane" role="tabpanel" aria-labelledby="images-tab" tabindex="0">
-        <h2 class="h5">อัปโหลดรูปภาพใหม่</h2>
-        <form class="mb-3" method="post" action="{{ url_for('owner.upload_image', prop_id=prop.id) }}" enctype="multipart/form-data">
-            {{ upload_form.csrf_token }}
-            <div class="input-group">
-              {{ upload_form.image(class_='form-control' + (' is-invalid' if upload_form.image.errors else '')) }}
-              <button class="btn btn-outline-primary">อัปโหลด</button>
-            </div>
-            <div class="form-text">คุณสามารถอัปโหลดรูปภาพได้สูงสุด {{ PropertyPolicy.MAX_IMAGES }} รูป (อัปโหลดทีละรูป)</div>
-        </form>
-        <hr>
-        <h2 class="h5">จัดเรียงรูปภาพ</h2>
-        <p class="text-muted small">คลิกค้างแล้วลากเพื่อจัดเรียงลำดับรูปภาพ</p>
-    
-        <div id="gallery" class="row row-cols-2 row-cols-md-3 g-3">
-          {% for img in prop.images|sort(attribute='position') %}
-          <div class="col">
-            <div class="card" draggable="true" data-image-id="{{ img.id }}">
-              <img src="/{{ img.file_path }}" class="card-img-top" alt="#{{ img.id }}">
-              <div class="card-body p-2 d-flex justify-content-between align-items-center">
-                <span class="badge text-bg-light">ลำดับ {{ loop.index }}</span>
-                <form method="post" action="{{ url_for('owner.delete_image', prop_id=prop.id, image_id=img.id) }}" onsubmit="return confirm('ต้องการลบรูปนี้ใช่หรือไม่?');">
-                  {{ form.csrf_token }}
-                  <button type="submit" class="btn btn-sm btn-outline-danger">ลบ</button>
-                </form>
-              </div>
-            </div>
-          </div>
-          {% else %}
-          <div class="col"><div class="alert alert-secondary w-100">ยังไม่มีรูป</div></div>
-          {% endfor %}
-        </div>
-    
-        <form id="reorder-form" method="post" action="{{ url_for('owner.reorder_images', prop_id=prop.id) }}">
-          {{ reorder_form.csrf_token }}
-          <div id="positions-container" class="d-none"></div>
-          <button type="submit" class="btn btn-outline-secondary mt-3">บันทึกการจัดเรียง</button>
-        </form>
-    
-      </div>
-    
-      {# --- Settings/Danger Zone Tab --- #}
-        <div class="tab-pane fade" id="settings-tab-pane" role="tabpanel" aria-labelledby="settings-tab" tabindex="0">
+        <hr class="my-4">
+        <div>
             <h2 class="h5 text-danger">โซนอันตราย</h2>
             <hr>
             <p>หากคุณต้องการลบประกาศนี้อย่างถาวร สามารถทำได้ที่นี่ การกระทำนี้ไม่สามารถย้อนกลับได้</p>
@@ -225,6 +213,7 @@
             </form>
         </div>
       {% endif %}
+      {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
     </div>
   </div>
 </div>
@@ -236,6 +225,7 @@
 (function() {
     'use strict';
     
+    // ... (โค้ดส่วนอื่นๆ ที่ไม่เปลี่ยนแปลง เช่น Map, Character Count, Other Room Type) ...
     // --- vvv Scroll to first error on page load vvv ---
     document.addEventListener('DOMContentLoaded', function() {
         // --- vvv ส่วนที่แก้ไข vvv ---
@@ -408,6 +398,46 @@
             });
         }
     }
+
+    {# --- vvv สคริปต์ใหม่สำหรับการจัดการรูปภาพในหน้าแก้ไข vvv --- #}
+    const imagesToDeleteInput = document.getElementById('images-to-delete-input');
+    const imageManagementSection = document.getElementById('image-management-section');
+    
+    if (imageManagementSection && imagesToDeleteInput) {
+        let imagesToDelete = new Set();
+
+        function updateHiddenInput() {
+            imagesToDeleteInput.value = Array.from(imagesToDelete).join(',');
+        }
+
+        imageManagementSection.addEventListener('click', function(e) {
+            const deleteBtn = e.target.closest('.delete-image-btn');
+            const undoBtn = e.target.closest('.undo-delete-btn');
+
+            if (deleteBtn) {
+                const imageId = deleteBtn.dataset.imageId;
+                const card = deleteBtn.closest('.card');
+                
+                imagesToDelete.add(imageId);
+                card.style.opacity = '0.4';
+                deleteBtn.style.display = 'none';
+                card.querySelector('.undo-delete-btn').style.display = 'inline-block';
+                updateHiddenInput();
+            }
+
+            if (undoBtn) {
+                const imageId = undoBtn.dataset.imageId;
+                const card = undoBtn.closest('.card');
+                
+                imagesToDelete.delete(imageId);
+                card.style.opacity = '1';
+                undoBtn.style.display = 'none';
+                card.querySelector('.delete-image-btn').style.display = 'inline-block';
+                updateHiddenInput();
+            }
+        });
+    }
+    {# --- ^^^ สิ้นสุดสคริปต์ใหม่ ^^^ --- #}
     
     // --- vvv ส่วนจัดการรูปภาพที่แก้ไขใหม่ vvv ---
     const imageInput = document.getElementById('image-input');
