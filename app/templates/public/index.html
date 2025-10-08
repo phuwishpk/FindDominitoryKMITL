@@ -2,18 +2,13 @@
 {% block content %}
 <h1 class="h4 mb-4">รายการประกาศ</h1>
 
-{# เปลี่ยนจาก Grid (row-cols-md-3) เป็น List (row-cols-1) #}
 <div class="row row-cols-1 g-4"> 
-  {% for p in items %}
-  <div class="col">
-    {# 💡 ทำให้ Card ทั้งใบเป็นลิงก์และยกเลิกการจัดเรียง 3 คอลัมน์ #}
+  {% for p in items %}
+  <div class="col">
     <a href="{{ url_for('public.property_detail', prop_id=p.id) }}" class="text-decoration-none text-dark d-block">
-      
-      {# ใช้ Card แบบ Horizontal (row g-0) เพื่อแบ่งรูปภาพและรายละเอียด #}
       <div class="card shadow-sm border-0">
         <div class="row g-0">
             
-            {# --- คอลัมน์รูปภาพ (4/12 ส่วน) --- #}
             <div class="col-md-4">
                 {% set first_image = p.images|sort(attribute='position')|first %}
                 {% if first_image %}
@@ -26,32 +21,38 @@
                 {% endif %}
             </div>
             
-            {# --- คอลัมน์รายละเอียด (8/12 ส่วน) --- #}
             <div class="col-md-8">
-                {# ใช้ d-flex flex-column h-100 เพื่อดันปุ่มลงด้านล่าง #}
                 <div class="card-body d-flex flex-column h-100">
-                    <h5 class="card-title text-truncate mb-1">{{ p.dorm_name }}</h5>
-                    <div class="small text-muted">{{ p.room_type }}</div>
+                    <div>
+                        <h5 class="card-title text-truncate mb-1 d-flex align-items-center">
+                            {{ p.dorm_name }}
+                            {% if p.availability_status == 'vacant' %}
+                                <span class="badge bg-success-subtle text-success-emphasis rounded-pill ms-2 small">ว่าง</span>
+                            {% else %}
+                                {# --- vvv ส่วนที่แก้ไข vvv --- #}
+                                <span class="badge bg-danger text-white rounded-pill ms-2 small">เต็ม</span>
+                                {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
+                            {% endif %}
+                        </h5>
+                        <div class="small text-muted">{{ p.room_type }}</div>
+                    </div>
                     
-                    {# ราคา #}
                     <p class="text-primary h5 mt-2 mb-2">
                         {{ "{:,.0f}".format(p.rent_price) if p.rent_price is not none else 'N/A' }} THB / เดือน
                     </p>
                     <small class="text-muted">{{ p.road or 'N/A' }} Area</small>
                     
-                    {# ปุ่ม - ใช้ mt-auto เพื่อดันลงไปอยู่ด้านล่าง #}
                     <div class="mt-auto pt-3">
                         <span class="btn btn-sm btn-outline-primary">ดูรายละเอียด</span>
                     </div>
                 </div>
             </div>
-            
         </div>
       </div>
     </a>
-  </div>
-  {% else %}
-  <div class="col"><div class="alert alert-secondary">ไม่มีข้อมูลประกาศที่ได้รับการอนุมัติในขณะนี้</div></div>
-  {% endfor %}
+  </div>
+  {% else %}
+  <div class="col"><div class="alert alert-secondary">ไม่มีข้อมูลประกาศที่ได้รับการอนุมัติในขณะนี้</div></div>
+  {% endfor %}
 </div>
 {% endblock %}

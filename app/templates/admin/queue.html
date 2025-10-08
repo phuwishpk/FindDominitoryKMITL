@@ -1,26 +1,76 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="d-flex align-items-center justify-content-between">
-  <h1 class="h4">Admin Queue</h1>
-  <a href="/" class="btn btn-link">กลับไปหน้า User</a>
+{% extends 'admin/base.html' %}
+
+{% block admin_content %}
+
+<style>
+    .queue-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+
+    .queue-card:hover {
+        transform: translateY(-5px); /* ทำให้การ์ดลอยขึ้นเล็กน้อย */
+        box-shadow: 0 12px 24px rgba(0,0,0,0.12); /* เพิ่มเงาให้เข้มและชัดขึ้น */
+    }
+</style>
+<h1 class="h3 mb-4 fw-bold">อนุมัติหอพัก (Queue)</h1>
+
+<div class="card mb-4 border-0">
+    <div class="card-body">
+         <form method="GET" action="{{ url_for('admin.queue') }}">
+            <div class="input-group">
+                <span class="input-group-text bg-light border-0"><i data-feather="search"></i></span>
+                <input type="text" name="q" class="form-control border-0" placeholder="ค้นหาตามชื่อหอพัก หรือ ID เจ้าของ..." value="{{ request.args.get('q', '') }}">
+                <button type="submit" class="btn btn-primary">ค้นหา</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 {% if properties %}
-<div class="list-group">
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
   {% for p in properties %}
-  {# 💡 แก้ไขลิงก์ให้ชี้ไปที่ review_property #}
-  <a href="{{ url_for('admin.review_property', prop_id=p.id) }}" class="list-group-item list-group-item-action">
-    <div class="d-flex w-100 justify-content-between">
-      <h5 class="mb-1">{{ p.dorm_name }}</h5>
-      <small class="text-muted">ส่งเมื่อ: {{ p.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+  <div class="col">
+    <div class="card h-100 queue-card">
+    {% set first_image = p.images|sort(attribute='position')|first %}
+      <a href="{{ url_for('admin.review_property', prop_id=p.id) }}">
+        {% if first_image %}
+          <img src="/{{ first_image.file_path }}" class="card-img-top" alt="{{ p.dorm_name }}" style="height: 200px; object-fit: cover;">
+        {% else %}
+          <div class="d-flex justify-content-center align-items-center bg-light text-muted" style="height: 200px;">
+              <i data-feather="image" class="text-muted" style="width: 48px; height: 48px;"></i>
+          </div>
+        {% endif %}
+      </a>
+      
+      <div class="card-body d-flex flex-column">
+        <h5 class="card-title text-truncate fw-semibold">{{ p.dorm_name }}</h5>
+        <p class="card-text small text-muted mb-3">
+            Owner ID: {{ p.owner_id }}
+        </p>
+        <div class="mt-auto">
+            <a href="{{ url_for('admin.review_property', prop_id=p.id) }}" class="btn btn-primary w-100">
+                <i data-feather="edit-3" class="me-1" style="width:16px; height:16px;"></i> ตรวจสอบ
+            </a>
+        </div>
+      </div>
+      <div class="card-footer text-muted small bg-light-subtle border-0">
+        <i data-feather="clock" style="width:14px; height:14px;" class="me-1"></i> ส่งเมื่อ: {{ p.created_at|to_bkk_time }}
+      </div>
     </div>
-    <p class="mb-1">Property ID: {{ p.id }}</p>
-    <small class="badge text-bg-warning">{{ p.workflow_status }}</small>
-  </a>
+  </div>
   {% endfor %}
 </div>
 {% else %}
-<div class="alert alert-info mt-3">ไม่มีรายการประกาศที่รอการอนุมัติในขณะนี้</div>
+<div class="text-center py-5 card">
+    <i data-feather="inbox" class="text-muted mb-3" style="width: 48px; height: 48px;"></i>
+    <h4>ไม่มีรายการรออนุมัติ</h4>
+    <p class="text-muted">
+        {% if request.args.get('q') %}
+            ไม่พบรายการที่ตรงกับเงื่อนไขการค้นหา
+        {% else %}
+            ไม่มีรายการประกาศที่รอการอนุมัติในขณะนี้
+        {% endif %}
+    </p>
+</div>
 {% endif %}
-
 {% endblock %}

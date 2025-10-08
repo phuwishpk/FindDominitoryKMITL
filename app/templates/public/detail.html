@@ -11,7 +11,16 @@
     <div class="row">
         
         <div class="col-lg-8">
-            <h1 class="mb-3">{{ prop.dorm_name }}</h1>
+            <div class="d-flex align-items-center mb-3">
+                <h1 class="mb-0">{{ prop.dorm_name }}</h1>
+                {% if prop.availability_status == 'vacant' %}
+                    <span class="badge bg-success fs-6 ms-3">ห้องว่าง</span>
+                {% else %}
+                    {# --- vvv ส่วนที่แก้ไข vvv --- #}
+                    <span class="badge bg-danger text-white fs-6 ms-3">ห้องเต็ม</span>
+                    {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
+                {% endif %}
+            </div>
 
             <div id="propertyCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
                 <div class="carousel-inner rounded shadow-sm">
@@ -76,7 +85,6 @@
                     <h5 class="mt-3">ตำแหน่งที่ตั้ง</h5>
                     <p class="card-text">{{ prop.soi or 'N/A' }} ถ. {{ prop.road or 'N/A' }}</p>
                     
-                    {# 💡 ส่วนแสดงแผนที่ #}
                     <div id="map" style="height: 250px; width: 100%;" class="border rounded mb-3"></div>
                     
                     <div class="mt-2 text-center">
@@ -98,7 +106,6 @@
 
 {% block page_scripts %}
 <script>
-    // 💡 โค้ด JavaScript สำหรับ LeafletJS Map
     {% if prop and prop.location_pin and prop.location_pin.coordinates %}
     const lng = {{ prop.location_pin.coordinates[0] }};
     const lat = {{ prop.location_pin.coordinates[1] }};

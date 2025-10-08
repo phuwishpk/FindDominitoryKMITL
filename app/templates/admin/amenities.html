@@ -1,0 +1,129 @@
+{% extends 'admin/base.html' %}
+
+{% block admin_content %}
+<h1 class="h3 mb-4 fw-bold">จัดการสิ่งอำนวยความสะดวก</h1>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header fw-semibold">
+                เพิ่มรายการใหม่
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('admin.add_amenity') }}" method="POST" novalidate>
+                    {{ form.csrf_token }}
+                    <div class="mb-3">
+                        {{ form.code.label(class="form-label") }}
+                        {{ form.code(class="form-control" + (" is-invalid" if form.code.errors else ""), placeholder="e.g., swimming_pool") }}
+                        {% for error in form.code.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.label_th.label(class="form-label") }}
+                        {{ form.label_th(class="form-control" + (" is-invalid" if form.label_th.errors else ""), placeholder="เช่น สระว่ายน้ำ") }}
+                        {% for error in form.label_th.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.label_en.label(class="form-label") }}
+                        {{ form.label_en(class="form-control", placeholder="e.g., Swimming Pool") }}
+                    </div>
+                    {{ form.submit(class="btn btn-primary w-100") }}
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>ชื่อ (ไทย)</th>
+                        <th>ชื่อ (อังกฤษ)</th>
+                        <th class="text-end">การกระทำ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in amenities %}
+                    <tr>
+                        <td><code>{{ item.code }}</code></td>
+                        <td>{{ item.label_th }}</td>
+                        <td>{{ item.label_en }}</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-secondary me-1" data-bs-toggle="modal" data-bs-target="#editModal-{{ item.id }}" title="แก้ไข">
+                                <i data-feather="edit-2" style="width:16px;"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ item.id }}" title="ลบ">
+                                <i data-feather="trash-2" style="width:16px;"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-5 card">ยังไม่มีข้อมูลสิ่งอำนวยความสะดวก</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% for item in amenities %}
+<div class="modal fade" id="editModal-{{ item.id }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">แก้ไข: {{ item.label_th }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form action="{{ url_for('admin.edit_amenity', amenity_id=item.id) }}" method="POST" id="editForm-{{ item.id }}">
+            {{ form.csrf_token }}
+            <p class="small text-muted">Code: <code>{{ item.code }}</code> (ไม่สามารถแก้ไขได้)</p>
+            <input type="hidden" name="code" value="{{ item.code }}">
+            <div class="mb-3">
+                <label class="form-label">ชื่อที่แสดง (ไทย)</label>
+                <input type="text" name="label_th" class="form-control" value="{{ item.label_th }}" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">ชื่อที่แสดง (อังกฤษ)</label>
+                <input type="text" name="label_en" class="form-control" value="{{ item.label_en or '' }}">
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+        <button type="submit" class="btn btn-primary" form="editForm-{{ item.id }}">บันทึกการเปลี่ยนแปลง</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="deleteModal-{{ item.id }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-danger">ยืนยันการลบ</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        คุณแน่ใจหรือไม่ว่าต้องการลบ <strong>"{{ item.label_th }}"</strong> ออกจากระบบ?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+        <form action="{{ url_for('admin.delete_amenity', amenity_id=item.id) }}" method="POST">
+            {{ delete_form.csrf_token }}
+            <button type="submit" class="btn btn-danger">ยืนยันการลบ</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}

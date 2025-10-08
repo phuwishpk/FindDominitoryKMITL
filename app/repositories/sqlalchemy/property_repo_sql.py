@@ -1,21 +1,30 @@
 from sqlalchemy import or_, func
 from app.models.property import Property, Amenity, PropertyAmenity
+from app.extensions import db
 
 class SqlPropertyRepo:
     def get(self, prop_id: int):
         return Property.query.get(prop_id)
 
     def add(self, prop: Property) -> Property:
-        from app.extensions import db
-        db.session.add(prop); db.session.commit()
+        db.session.add(prop)
+        db.session.commit()
         return prop
 
     def save(self, prop: Property):
-        from app.extensions import db
+        db.session.commit()
+
+    def delete(self, prop: Property):
+        """ลบ Property ออกจากฐานข้อมูลอย่างถาวร"""
+        db.session.delete(prop)
         db.session.commit()
 
     def list_approved(self, **filters):
-        q = Property.query.filter(Property.workflow_status == "approved")
+        # กรองรายการที่ถูกลบ (soft-deleted) ออก
+        q = Property.query.filter(
+            Property.workflow_status == "approved",
+            Property.deleted_at.is_(None)
+        )
         q_text = (filters or {}).get('q')
         if q_text:
             like = f"%{q_text.strip()}%"
@@ -38,3 +47,26 @@ class SqlPropertyRepo:
                        .group_by(Property.id)
                        .having(func.count(func.distinct(Amenity.code)) == len(codes_list)))
         return q
+
+    def list_all_paginated(self, search_query=None, page=1, per_page=15):
+        # กรองรายการที่ถูกลบ (soft-deleted) ออก
+        q = Property.query.filter(Property.deleted_at.is_(None))
+
+        if search_query:
+            like_filter = f"%{search_query}%"
+            q = q.filter(Property.dorm_name.ilike(like_filter))
+
+        return db.paginate(
+            q.order_by(Property.id.asc()),
+            page=page, per_page=per_page, error_out=False
+        )
+
+    # --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
+    def get_deleted_properties_paginated(self, page=1, per_page=15):
+        """ดึงรายการ Properties ที่ถูกลบ (soft-deleted)"""
+        q = Property.query.filter(Property.deleted_at.isnot(None))
+        return db.paginate(
+            q.order_by(Property.deleted_at.desc()),
+            page=page, per_page=per_page, error_out=False
+        )
+    # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---

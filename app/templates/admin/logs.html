@@ -1,0 +1,96 @@
+{% extends 'admin/base.html' %}
+
+{% block admin_content %}
+<h1 class="h3 mb-4 fw-bold">ประวัติการดำเนินการ (Audit Logs)</h1>
+
+<div class="table-responsive">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th scope="col" style="width: 5%;">Log ID</th>
+                <th scope="col">ผู้ดำเนินการ</th>
+                <th scope="col">การกระทำ</th>
+                <th scope="col">Property ID</th>
+                <th scope="col">รายละเอียดเพิ่มเติม</th>
+                <th scope="col">เวลา</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in pagination.items %}
+            <tr>
+                <th scope="row">{{ log.id }}</th>
+                <td>{{ log.actor_type.capitalize() }} #{{ log.actor_id }}</td>
+                <td>
+                    <span class="badge 
+                        {% if 'approve' in log.action %} bg-success-subtle text-success-emphasis
+                        {% elif 'reject' in log.action %} bg-danger-subtle text-danger-emphasis
+                        {% elif 'submit' in log.action %} bg-info-subtle text-info-emphasis
+                        {% elif 'delete' in log.action %} bg-danger-subtle text-danger-emphasis
+                        {% elif 'restore' in log.action %} bg-success-subtle text-success-emphasis
+                        {% elif 'update' in log.action or 'edit' in log.action %} bg-primary-subtle text-primary-emphasis
+                        {% else %} bg-secondary-subtle text-secondary-emphasis
+                        {% endif %} rounded-pill">
+                        {{ log.action }}
+                    </span>
+                </td>
+                <td>
+                    {% if log.property_id %}
+                        <a href="{{ url_for('admin.view_property', prop_id=log.property_id) }}">{{ log.property_id }}</a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td class="small text-muted">
+                    {% if log.meta and log.meta|fromjson %}
+                        {% set meta = log.meta|fromjson %}
+                        {% if meta.note %}
+                            Note: {{ meta.note|truncate(50) }}
+                        {% elif meta.owner_name %}
+                            Owner: {{ meta.owner_name }} (ID: {{ meta.owner_id }})
+                        {% elif meta.deleted_name %}
+                            Name: {{ meta.deleted_name }}
+                        {% elif meta.details %}
+                            {{ meta.details }}
+                        {% elif meta.code %}
+                            Amenity: {{ meta.label_th }} (<code>{{ meta.code }}</code>)
+                        {% endif %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ log.created_at|to_bkk_time }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center text-muted py-5 card">
+                    <i data-feather="activity" class="mb-3" style="width: 48px; height: 48px;"></i>
+                    <h5 class="mb-0">ไม่พบประวัติการดำเนินการ</h5>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if pagination.pages > 1 %}
+<nav aria-label="Page navigation" class="mt-4 d-flex justify-content-center">
+    <ul class="pagination">
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('admin.logs', page=pagination.prev_num) }}">‹</a>
+        </li>
+        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                <li class="page-item {% if pagination.page == page_num %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('admin.logs', page=page_num) }}">{{ page_num }}</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('admin.logs', page=pagination.next_num) }}">›</a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

@@ -1,4 +1,4 @@
-# phuwishpk/finddominitorykmitl/FindDominitoryKMITL-develop-owner/app/blueprints/owner/routes.py
+# phuwishpk/finddominitorykmitl/FindDominitoryKMITL-owner-improvements/app/blueprints/owner/routes.py
 
 from flask import render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
@@ -35,8 +35,15 @@ def dashboard():
 @owner_required
 def new_property():
     form = PropertyForm()
-    upload_form = UploadImageForm()
     all_amenities = Amenity.query.all()
+    
+    # --- vvv ส่วนที่แก้ไข vvv ---
+    # เตรียมตัวแปรสำหรับเก็บ amenities ที่เลือกไว้
+    selected_amenities = []
+    if request.method == "POST":
+        # ถ้าเป็นการส่งข้อมูลมา ให้ดึงค่าที่เลือกไว้จากฟอร์ม
+        selected_amenities = request.form.getlist('amenities')
+    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
     if form.validate_on_submit():
         prop_svc = current_app.extensions["container"]["property_service"]
@@ -62,9 +69,22 @@ def new_property():
             db.session.commit()
 
         flash("สร้างประกาศสำเร็จแล้ว", "success")
+        # --- vvv ส่วนที่แก้ไข vvv ---
+        # ส่ง flash message พิเศษเพื่อสั่งให้ JavaScript ล้าง sessionStorage
+        flash('clear_form_storage', 'script_command')
+        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
         return redirect(url_for("owner.dashboard"))
         
-    return render_template("owner/form.html", form=form, all_amenities=all_amenities, prop=None, upload_form=upload_form, PropertyPolicy=PropertyPolicy)
+    return render_template("owner/form.html", 
+        form=form, 
+        all_amenities=all_amenities, 
+        prop=None, 
+        upload_form=UploadImageForm(), # เพิ่ม upload_form ที่นี่
+        PropertyPolicy=PropertyPolicy,
+        # --- vvv ส่วนที่แก้ไข vvv ---
+        selected_amenities=selected_amenities
+        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+    )
 
 
 @bp.route("/property/<int:prop_id>/edit", methods=["GET","POST"])
@@ -77,6 +97,16 @@ def edit_property(prop_id: int):
     
     form = PropertyForm(obj=prop) 
     predefined_choices = [choice[0] for choice in form.room_type.choices]
+
+    # --- vvv ส่วนที่แก้ไข vvv ---
+    # จัดการค่า amenities ที่ถูกเลือก
+    if request.method == "POST":
+        # ถ้าฟอร์มถูกส่งมา (และอาจจะไม่ผ่าน validation) ให้ใช้ค่าจากฟอร์ม
+        selected_amenities = request.form.getlist('amenities')
+    else:
+        # ถ้าเป็นการโหลดหน้าครั้งแรก (GET) ให้ใช้ค่าจากฐานข้อมูล
+        selected_amenities = [amenity.code for amenity in prop.amenities]
+    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
     if request.method == "GET":
         if prop.room_type not in predefined_choices:
@@ -113,7 +143,11 @@ def edit_property(prop_id: int):
                            upload_form=upload_form, reorder_form=reorder_form,
                            all_amenities=all_amenities,
                            approval_note=approval_note,
-                           PropertyPolicy=PropertyPolicy)
+                           PropertyPolicy=PropertyPolicy,
+                           # --- vvv ส่วนที่แก้ไข vvv ---
+                           selected_amenities=selected_amenities
+                           # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+                           )
 
 @bp.post("/property/<int:prop_id>/image")
 @login_required
@@ -216,3 +250,30 @@ def delete_property(prop_id: int):
     db.session.commit()
     flash("ลบประกาศแล้ว", "success")
     return redirect(url_for("owner.dashboard"))
+
+# --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
+@bp.post("/property/<int:prop_id>/toggle_availability")
+@login_required
+@owner_required
+def toggle_availability(prop_id: int):
+    form = EmptyForm()
+    if not form.validate_on_submit():
+        flash("Invalid request.", "danger")
+        return redirect(url_for("owner.dashboard"))
+
+    prop = Property.query.get_or_404(prop_id)
+    if prop.owner_id != current_user.ref_id:
+        flash("Permission denied.", "danger")
+        return redirect(url_for("owner.dashboard"))
+
+    if prop.availability_status == 'vacant':
+        prop.availability_status = 'occupied'
+        new_status_th = "ห้องเต็ม"
+    else:
+        prop.availability_status = 'vacant'
+        new_status_th = "ห้องว่าง"
+
+    db.session.commit()
+    flash(f"เปลี่ยนสถานะของ '{prop.dorm_name}' เป็น '{new_status_th}' เรียบร้อยแล้ว", "success")
+    return redirect(url_for("owner.dashboard"))
+# --- ^^^ สิ้นสุดการแก้ไข ^^^ ---

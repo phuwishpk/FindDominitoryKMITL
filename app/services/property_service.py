@@ -1,7 +1,6 @@
-# phuwishpk/finddominitorykmitl/FindDominitoryKMITL-develop-owner/app/services/property_service.py
-
 import json
 from app.models.property import Property, Amenity
+from app.models.approval import AuditLog
 from app.extensions import db
 from .location_service import LocationDataHandler
 
@@ -28,10 +27,7 @@ class PropertyService:
 
     def create(self, owner_id: int, data: dict) -> Property:
         amenity_codes = data.pop('amenities', [])
-        # --- vvv ส่วนที่แก้ไข Error vvv ---
-        # นำข้อมูลรูปภาพออกจาก dict ก่อนส่งไปสร้าง Property
         data.pop('images', None)
-        # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
         
         prepared_data = self._prepare_data(data)
 
@@ -47,10 +43,7 @@ class PropertyService:
             return None
 
         amenity_codes = data.pop('amenities', [])
-        # --- vvv ส่วนที่แก้ไข Error vvv ---
-        # นำข้อมูลรูปภาพออกจาก dict ก่อนส่งไปอัปเดต
         data.pop('images', None)
-        # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
         prepared_data = self._prepare_data(data)
 
         for k, v in prepared_data.items():
@@ -61,5 +54,17 @@ class PropertyService:
             prop.amenities = amenities
         else:
             prop.amenities = []
-        self.repo.save(prop)
+        
+        # --- vvv ส่วนที่แก้ไข: เพิ่ม Log เข้าไปใน session ก่อน commit vvv ---
+        log_entry = AuditLog.log(
+            actor_type="owner",
+            actor_id=owner_id,
+            action="update_property",
+            property_id=prop_id,
+            meta={"details": "Owner updated property info."}
+        )
+        db.session.add(log_entry)
+        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+
+        self.repo.save(prop) # .save() จะทำการ commit ข้อมูลทั้งหมดใน session
         return prop
