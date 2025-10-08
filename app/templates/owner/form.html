@@ -15,19 +15,15 @@
 </div>
 {% endif %}
 
-{# --- vvv ส่วนที่แก้ไข: ลบ Tabs ทั้งหมดออก vvv --- #}
 <div class="card">
   <div class="card-body p-4">
     <div>
       
-      {# --- Main Details Tab --- #}
       <div>
         <form method="post" novalidate enctype="multipart/form-data">
           {{ form.csrf_token }}
           
-          {# --- vvv ส่วนที่เพิ่มเข้ามาใหม่: Hidden input สำหรับเก็บ ID รูปที่จะลบ vvv --- #}
           <input type="hidden" name="images_to_delete" id="images-to-delete-input">
-          {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
 
           <p class="text-muted small">{% if not prop %}กรุณากรอกข้อมูลหลักและอัปโหลดรูปภาพให้ครบถ้วน จากนั้นกด "สร้างประกาศ"{% else %}คุณสามารถแก้ไขข้อมูลประกาศได้ที่นี่{% endif %}</p>
           
@@ -121,10 +117,8 @@
             {% endfor %}
           </div>
     
-          {# --- ส่วนอัปโหลดรูปภาพ (หน้าสร้าง vs หน้าแก้ไข) --- #}
           <hr class="my-4">
           {% if not prop %}
-            {# --- หน้าสร้าง --- #}
             <div id="image-upload-section">
               <h2 class="h5">อัปโหลดรูปภาพ</h2>
               <p class="text-muted small">คุณสามารถเพิ่มรูปภาพได้สูงสุด {{ PropertyPolicy.MAX_IMAGES }} รูป (ต้องมีอย่างน้อย 1 รูป)</p>
@@ -143,7 +137,6 @@
               {{ form.images(id="image-file-list", style="display:none;") }}
             </div>
           {% else %}
-            {# --- vvv ส่วนที่แก้ไข: ย้ายส่วนจัดการรูปภาพมาไว้ที่นี่ vvv --- #}
             <div id="image-management-section">
               <h2 class="h5">จัดการรูปภาพ</h2>
               <p class="text-muted small">คุณสามารถอัปโหลด, ลบ, และจัดเรียงลำดับรูปภาพได้ที่นี่ (สูงสุด {{ PropertyPolicy.MAX_IMAGES }} รูป)</p>
@@ -184,7 +177,6 @@
                 <button type="submit" class="btn btn-outline-secondary mt-3">บันทึกการจัดเรียง</button>
               </form>
             </div>
-            {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
           {% endif %}
     
           <hr class="my-4">
@@ -199,7 +191,6 @@
         </form>
       </div>
       
-      {# --- vvv ส่วนที่แก้ไข: ย้าย Danger Zone มาไว้ท้ายสุด และเอา Tab ออก --- #}
       {% if prop %}
         <hr class="my-4">
         <div>
@@ -213,7 +204,6 @@
             </form>
         </div>
       {% endif %}
-      {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
     </div>
   </div>
 </div>
@@ -225,22 +215,17 @@
 (function() {
     'use strict';
     
-    // ... (โค้ดส่วนอื่นๆ ที่ไม่เปลี่ยนแปลง เช่น Map, Character Count, Other Room Type) ...
     // --- vvv Scroll to first error on page load vvv ---
     document.addEventListener('DOMContentLoaded', function() {
-        // --- vvv ส่วนที่แก้ไข vvv ---
-        // ตรวจสอบ error ของรูปภาพก่อน
         const imageError = document.querySelector('#image-upload-section .is-invalid, #image-upload-section .invalid-feedback.d-block');
         if (imageError) {
             const imageSection = document.getElementById('image-upload-section');
             if (imageSection) {
                 imageSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return; // หยุดทำงานส่วนนี้ถ้าเจอ error ที่รูปภาพแล้ว
+                return;
             }
         }
-        // --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
-        // ถ้าไม่เจอ error ที่รูปภาพ ให้หา error ทั่วไป
         const firstErrorElement = document.querySelector('.is-invalid, .invalid-feedback.d-block, .alert.alert-danger');
 
         if (firstErrorElement) {
@@ -253,10 +238,9 @@
         const urlParams = new URLSearchParams(window.location.search);
         const tabToShow = urlParams.get('tab');
         if (tabToShow === 'images') {
-            const imageTabButton = document.querySelector('#images-tab');
-            if (imageTabButton) {
-                const tab = new bootstrap.Tab(imageTabButton);
-                tab.show();
+            const imageSection = document.getElementById('image-management-section');
+            if (imageSection) {
+                imageSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
     });
@@ -399,7 +383,6 @@
         }
     }
 
-    {# --- vvv สคริปต์ใหม่สำหรับการจัดการรูปภาพในหน้าแก้ไข vvv --- #}
     const imagesToDeleteInput = document.getElementById('images-to-delete-input');
     const imageManagementSection = document.getElementById('image-management-section');
     
@@ -437,9 +420,7 @@
             }
         });
     }
-    {# --- ^^^ สิ้นสุดสคริปต์ใหม่ ^^^ --- #}
     
-    // --- vvv ส่วนจัดการรูปภาพที่แก้ไขใหม่ vvv ---
     const imageInput = document.getElementById('image-input');
     const addImageBtn = document.getElementById('add-image-btn');
     const previewContainer = document.getElementById('image-preview-container');
@@ -448,11 +429,9 @@
     const maxImages = {{ PropertyPolicy.MAX_IMAGES }};
 
     if (imageInput && addImageBtn && previewContainer && mainForm && fileCollector) {
-        // ใช้ Map เพื่อเก็บไฟล์ และใช้ sessionStorage เพื่อจำค่าไฟล์ข้ามหน้า
         let fileStore = new Map();
         const storageKey = `fileStore_${window.location.pathname}`;
 
-        // ฟังก์ชันสำหรับแปลง File เป็น Base64
         const fileToBase64 = (file) => new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -460,7 +439,6 @@
             reader.onerror = error => reject(error);
         });
 
-        // ฟังก์ชันสำหรับแปลง Base64 กลับเป็น File
         const base64ToFile = (dataUrl, filename) => {
             const arr = dataUrl.split(',');
             const mime = arr[0].match(/:(.*?);/)[1];
@@ -516,7 +494,6 @@
                 `;
                 previewContainer.appendChild(col);
             });
-            // บันทึกสถานะล่าสุดลง sessionStorage ทุกครั้งที่มีการ render ใหม่
             saveFileStore();
         };
 
@@ -531,7 +508,7 @@
                     fileStore.set(key, file);
                 }
                 renderPreviews();
-                imageInput.value = ''; // เคลียร์ค่า input
+                imageInput.value = '';
             } else {
                 alert('กรุณาเลือกไฟล์รูปภาพก่อน');
             }
@@ -550,19 +527,13 @@
             const dataTransfer = new DataTransfer();
             fileStore.forEach(file => dataTransfer.items.add(file));
             fileCollector.files = dataTransfer.files;
-            // --- vvv ส่วนที่แก้ไข vvv ---
-            // ไม่ต้องลบ sessionStorage ที่นี่
-            // --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
         });
 
-        // โหลดข้อมูลจาก sessionStorage เมื่อหน้าเว็บโหลด
-        // แก้ไขให้ทำงานหลัง DOMContentLoaded
         document.addEventListener('DOMContentLoaded', () => {
             loadFileStore();
             renderPreviews();
         });
     }
-    // --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 })();
 </script>
 {% endblock %}
