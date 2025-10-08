@@ -235,6 +235,7 @@ def review_owner(owner_id: int):
     owner = user_repo.get_owner_by_id(owner_id)
     return render_template("admin/review_owner.html", owner=owner)
 
+# --- vvv ส่วนที่แก้ไข vvv ---
 @bp.route("/owners/<int:owner_id>/approve", methods=["POST"])
 @login_required
 @admin_required
@@ -242,7 +243,10 @@ def approve_owner(owner_id: int):
     if not EmptyForm().validate_on_submit():
         flash("Invalid CSRF token.", "danger")
         return redirect(url_for("admin.owner_queue"))
-    user_repo, owner = current_app.extensions["container"]["user_repo"], user_repo.get_owner_by_id(owner_id)
+    
+    user_repo = current_app.extensions["container"]["user_repo"]
+    owner = user_repo.get_owner_by_id(owner_id)
+
     if owner and owner.approval_status == 'pending':
         owner.is_active, owner.approval_status = True, 'approved'
         db.session.add(AuditLog.log("admin", current_user.ref_id, "approve_owner", meta={"owner_id": owner_id, "owner_name": owner.full_name_th}))
@@ -259,7 +263,10 @@ def reject_owner(owner_id: int):
     if not EmptyForm().validate_on_submit():
         flash("Invalid CSRF token.", "danger")
         return redirect(url_for("admin.owner_queue"))
-    user_repo, owner = current_app.extensions["container"]["user_repo"], user_repo.get_owner_by_id(owner_id)
+        
+    user_repo = current_app.extensions["container"]["user_repo"]
+    owner = user_repo.get_owner_by_id(owner_id)
+
     if owner and owner.approval_status == 'pending':
         owner.is_active, owner.approval_status = False, 'rejected'
         db.session.add(AuditLog.log("admin", current_user.ref_id, "reject_owner", meta={"owner_id": owner_id, "owner_name": owner.full_name_th}))
@@ -268,6 +275,7 @@ def reject_owner(owner_id: int):
     else:
         flash("ไม่สามารถดำเนินการได้", "danger")
     return redirect(url_for("admin.owner_queue"))
+# --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
 @bp.route("/owners/<int:owner_id>/delete", methods=["POST"])
 @login_required
