@@ -3,9 +3,7 @@
 from flask import render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from sqlalchemy import func
-# --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
 from datetime import datetime
-# --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 from . import bp
 from app.forms.owner import PropertyForm
 from app.forms.upload import UploadImageForm, ReorderImagesForm, EmptyForm 
@@ -26,12 +24,40 @@ except Exception:
 @login_required
 @owner_required
 def dashboard():
-    # --- vvv ส่วนที่แก้ไข: กรองรายการที่ยังไม่ถูกลบ vvv ---
     props = Property.query.filter_by(owner_id=current_user.ref_id, deleted_at=None).all()
-    delete_form = EmptyForm() # 💡 เพิ่ม: สร้างฟอร์มสำหรับปุ่มลบ
+    
+    # --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
+    # ดึงเหตุผลการปฏิเสธล่าสุดของแต่ละประกาศ
+    rejected_notes = {}
+    rejected_prop_ids = [p.id for p in props if p.workflow_status == 'rejected']
+    if rejected_prop_ids:
+        # Query ซ้อนเพื่อหา ID ของ ApprovalRequest ล่าสุดของแต่ละ Property
+        latest_requests_sq = db.session.query(
+            ApprovalRequest.property_id,
+            func.max(ApprovalRequest.id).label('max_id')
+        ).filter(
+            ApprovalRequest.property_id.in_(rejected_prop_ids)
+        ).group_by(ApprovalRequest.property_id).subquery()
+
+        # Join กลับไปที่ตาราง ApprovalRequest เพื่อดึง 'note' จาก ID ที่ใหม่ที่สุด
+        notes_query = db.session.query(
+            ApprovalRequest.property_id,
+            ApprovalRequest.note
+        ).join(
+            latest_requests_sq,
+            ApprovalRequest.id == latest_requests_sq.c.max_id
+        ).filter(ApprovalRequest.note.isnot(None))
+        
+        rejected_notes = dict(notes_query.all())
     # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+
     submit_form = EmptyForm()
-    return render_template("owner/dashboard.html", props=props, submit_form=submit_form, delete_form=delete_form) # 💡 เพิ่ม: ส่ง delete_form
+    delete_form = EmptyForm() 
+    return render_template("owner/dashboard.html", 
+                           props=props, 
+                           submit_form=submit_form, 
+                           delete_form=delete_form,
+                           rejected_notes=rejected_notes) # ส่ง rejected_notes ไปยัง template
 
 
 @bp.route("/property/new", methods=["GET","POST"])
@@ -249,8 +275,6 @@ def toggle_availability(prop_id: int):
     flash(f"เปลี่ยนสถานะของ '{prop.dorm_name}' เป็น '{new_status_th}' เรียบร้อยแล้ว", "success")
     return redirect(url_for("owner.dashboard"))
 
-# --- vvv ส่วนที่เพิ่มเข้ามาใหม่: Trash System vvv ---
-
 @bp.post("/property/<int:prop_id>/delete")
 @login_required
 @owner_required
@@ -277,7 +301,6 @@ def trash():
     page = request.args.get("page", 1, type=int)
     per_page = 10 
     
-    # ดึงเฉพาะรายการที่ถูกลบของ owner คนปัจจุบัน
     pagination = db.paginate(
         Property.query.filter(
             Property.owner_id == current_user.ref_id,
@@ -329,5 +352,3 @@ def permanently_delete_property(prop_id: int):
     db.session.commit()
     flash(f"ลบประกาศ '{dorm_name}' ออกจากระบบอย่างถาวรแล้ว", "success")
     return redirect(url_for('owner.trash'))
-
-# --- ^^^ สิ้นสุดการแก้ไข ^^^ ---

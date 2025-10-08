@@ -117,7 +117,7 @@
             {% endfor %}
           </div>
           
-          {# --- The form for creating new property has different logic --- #}
+          {# --- vvv ส่วนที่แก้ไข: ย้ายส่วนอัปโหลดรูปของหน้า "สร้าง" กลับเข้ามาใน form vvv --- #}
           {% if not prop %}
             <hr class="my-4">
             <div id="image-upload-section">
@@ -138,6 +138,7 @@
               {{ form.images(id="image-file-list", style="display:none;") }}
             </div>
           {% endif %}
+          {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
 
           <hr class="my-4">
           <div class="mt-4">
@@ -160,7 +161,6 @@
               
               <h6 class="mt-4">อัปโหลดรูปภาพใหม่</h6>
               
-              {# This is now a separate form #}
               <form class="mb-3" method="post" action="{{ url_for('owner.upload_image', prop_id=prop.id) }}" enctype="multipart/form-data">
                   {{ upload_form.csrf_token }}
                   <div class="input-group">
@@ -190,7 +190,6 @@
                 {% endfor %}
               </div>
           
-              {# This is also a separate form #}
               <form id="reorder-form" method="post" action="{{ url_for('owner.reorder_images', prop_id=prop.id) }}">
                 {{ reorder_form.csrf_token }}
                 <div id="positions-container" class="d-none"></div>
@@ -229,7 +228,6 @@
         }
     });
 
-    // Map script
     const mapContainer = document.getElementById('map');
     if (mapContainer) {
         const initialCoords = [13.7292, 100.7758]; // KMITL Default
@@ -272,7 +270,6 @@
         map.on('click', function(e) { updateMarkerAndInput(e.latlng.lat, e.latlng.lng); });
     }
 
-    // Character counter script
     const additionalInfoTextarea = document.getElementById('additionalInfo');
     const charCountDisplay = document.getElementById('charCount');
     if (additionalInfoTextarea && charCountDisplay) {
@@ -286,7 +283,6 @@
         additionalInfoTextarea.addEventListener('input', updateCharCount);
     }
     
-    // "Other" room type script
     const roomTypeSelect = document.getElementById('room_type_select');
     const otherRoomTypeContainer = document.getElementById('other_room_type_container');
     const otherRoomTypeInput = document.querySelector('[name="other_room_type"]');
@@ -304,7 +300,6 @@
         }
     });
 
-    // Gallery drag & drop script
     const gallery = document.getElementById('gallery');
     if (gallery) {
         let dragEl = null;
@@ -339,7 +334,6 @@
         }
     }
 
-    // Soft delete/undo script for images
     const imagesToDeleteInput = document.getElementById('images-to-delete-input');
     const imageManagementSection = document.getElementById('image-management-section');
     if (imageManagementSection && imagesToDeleteInput) {
@@ -375,10 +369,10 @@
     const imageInput = document.getElementById('image-input');
     const addImageBtn = document.getElementById('add-image-btn');
     const previewContainer = document.getElementById('image-preview-container');
-    const createMainForm = document.getElementById('main-property-form'); // Use ID to be specific
+    const mainForm = document.getElementById('main-property-form');
     const fileCollector = document.getElementById('image-file-list');
-
-    if (imageInput && addImageBtn && previewContainer && createMainForm && fileCollector) {
+    
+    if (imageInput && addImageBtn && previewContainer && mainForm && fileCollector) {
         let fileStore = new Map();
         const storageKey = `fileStore_${window.location.pathname}`;
 
@@ -463,7 +457,7 @@
                 renderPreviews();
             }
         });
-        createMainForm.addEventListener('submit', (e) => {
+        mainForm.addEventListener('submit', (e) => {
             const dataTransfer = new DataTransfer();
             fileStore.forEach(file => dataTransfer.items.add(file));
             fileCollector.files = dataTransfer.files;

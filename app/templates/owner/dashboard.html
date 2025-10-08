@@ -4,11 +4,9 @@
 <div class="d-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 fw-bold mb-0">Owner Dashboard</h1>
   <div>
-    {# --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv --- #}
     <a class="btn btn-outline-secondary" href="{{ url_for('owner.trash') }}">
       <i data-feather="trash-2" class="me-1" style="width:16px;"></i> ถังขยะ
     </a>
-    {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
     <a class="btn btn-primary ms-2" href="{{ url_for('owner.new_property') }}">
       <i data-feather="plus" class="me-1" style="width:16px;"></i> สร้างประกาศใหม่
     </a>
@@ -24,19 +22,26 @@
     <div class="list-group-item d-flex justify-content-between align-items-center">
       <div class="flex-grow-1">
         <a href="{{ url_for('owner.edit_property', prop_id=p.id) }}" class="text-decoration-none text-dark fw-semibold">{{ p.dorm_name }}</a>
-        <div class="small text-muted">
-          Workflow: 
+        <div class="small text-muted d-flex align-items-center">
+          <span>Workflow:</span>
             {% if p.workflow_status == 'approved' %}
-                <span class="badge bg-success-subtle text-success-emphasis rounded-pill">Approved</span>
+                <span class="badge bg-success-subtle text-success-emphasis rounded-pill ms-2">Approved</span>
             {% elif p.workflow_status == 'submitted' %}
-                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">Submitted</span>
+                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill ms-2">Submitted</span>
             {% elif p.workflow_status == 'rejected' %}
-                <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill">Rejected</span>
+                {# --- vvv ส่วนที่แก้ไข vvv --- #}
+                <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill ms-2">Rejected</span>
+                {% if rejected_notes.get(p.id) %}
+                <button type="button" class="btn btn-link p-0 ms-1" data-bs-toggle="modal" data-bs-target="#rejectionNoteModal-{{ p.id }}" title="ดูเหตุผลการปฏิเสธ">
+                    <i data-feather="alert-circle" class="text-danger" style="width:16px; height:16px;"></i>
+                </button>
+                {% endif %}
+                {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
             {% else %}
-                <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill">Draft</span>
+                <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill ms-2">Draft</span>
             {% endif %}
           
-          <span class="ms-2">สถานะห้อง: 
+          <span class="ms-3">สถานะห้อง: 
             {% if p.availability_status == 'vacant' %}
               <span class="badge bg-success-subtle text-success-emphasis rounded-pill">ห้องว่าง</span>
             {% else %}
@@ -68,11 +73,9 @@
             <i data-feather="edit-2" style="width:16px;"></i> แก้ไข
         </a>
         
-        {# --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv --- #}
         <button type="button" class="btn btn-sm btn-outline-danger ms-2" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ p.id }}" title="ลบประกาศ">
             <i data-feather="trash" style="width:16px;"></i> ลบ
         </button>
-        {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
 
       </div>
     </div>
@@ -84,18 +87,13 @@
   </div>
 </div>
 
-{# --- vvv Modals สำหรับยืนยันการลบ vvv --- #}
+{# Modals for Deleting #}
 {% for p in props %}
-<div class="modal fade" id="deleteModal-{{ p.id }}" tabindex="-1" aria-labelledby="deleteModalLabel-{{ p.id }}" aria-hidden="true">
+<div class="modal fade" id="deleteModal-{{ p.id }}" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="deleteModalLabel-{{ p.id }}">ยืนยันการลบ</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        คุณต้องการย้ายประกาศ <strong>"{{ p.dorm_name }}"</strong> ไปยังถังขยะใช่หรือไม่?
-      </div>
+      <div class="modal-header"><h5 class="modal-title">ยืนยันการลบ</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">คุณต้องการย้ายประกาศ <strong>"{{ p.dorm_name }}"</strong> ไปยังถังขยะใช่หรือไม่?</div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
         <form action="{{ url_for('owner.delete_property', prop_id=p.id) }}" method="POST">
@@ -107,22 +105,29 @@
   </div>
 </div>
 {% endfor %}
+
+{# --- vvv Modals สำหรับแสดงเหตุผลการปฏิเสธ vvv --- #}
+{% for p in props %}
+  {% if p.workflow_status == 'rejected' and rejected_notes.get(p.id) %}
+  <div class="modal fade" id="rejectionNoteModal-{{ p.id }}" tabindex="-1" aria-labelledby="rejectionNoteModalLabel-{{ p.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="rejectionNoteModalLabel-{{ p.id }}">เหตุผลการปฏิเสธ: {{ p.dorm_name }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>{{ rejected_notes.get(p.id) }}</p>
+        </div>
+        <div class="modal-footer">
+          <a href="{{ url_for('owner.edit_property', prop_id=p.id) }}" class="btn btn-primary">ไปที่หน้าแก้ไข</a>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+{% endfor %}
 {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
 
-{% endblock %}
-
-{% block page_scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-      {% if category == 'script_command' and message == 'clear_form_storage' %}
-        const storageKey = `fileStore_/owner/property/new`;
-        sessionStorage.removeItem(storageKey);
-        console.log('Form image storage cleared.');
-      {% endif %}
-    {% endfor %}
-  {% endwith %}
-});
-</script>
 {% endblock %}
