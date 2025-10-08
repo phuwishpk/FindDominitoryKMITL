@@ -11,20 +11,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.11.0/dist/geosearch.css"/>
 
   <style>
     :root {
-      --bs-primary-rgb: 79, 170, 255; /* Accent color */
+      --bs-primary-rgb: 79, 170, 255;
       --bs-primary: #4FAAFF;
     }
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #f8f9fa; /* Light grey background for public pages */
-    }
-    .admin-body, .owner-body { /* <<< Added owner-body */
-      background-color: #F4F7FC; /* Special background for admin/owner section */
+      background-color: #f8f9fa;
     }
     .flash-messages .alert {
         border-radius: 0.5rem;
@@ -33,10 +30,10 @@
     }
   </style>
 </head>
-<body class="{% if request.path.startswith('/admin') %}admin-body{% elif request.path.startswith('/owner') %}owner-body{% endif %}">
+<body class="{% if request.path.startswith('/admin') %}admin-body{% else %}bg-light{% endif %}">
 
-{# <<< Hide navbar on both admin and owner pages --- #}
-{% if not request.path.startswith('/admin') and not request.path.startswith('/owner') %}
+{# Navbar จะไม่แสดงในหน้า admin เพราะ admin มี sidebar ของตัวเอง #}
+{% if not request.path.startswith('/admin') %}
 <nav class="navbar navbar-expand-lg bg-body-tertiary">
   <div class="container">
     <a class="navbar-brand fw-bold" href="/">Dorm Finder</a>
@@ -56,9 +53,9 @@
 </nav>
 {% endif %}
 
-<main class="{% if not request.path.startswith('/admin') and not request.path.startswith('/owner') %}container py-4{% else %}w-100{% endif %}">
-  {# <<< Adjust flash message logic as well --- #}
-  {% if not request.path.startswith('/admin') and not request.path.startswith('/owner') %}
+<main class="{% if not request.path.startswith('/admin') %}container py-4{% else %}w-100{% endif %}">
+  
+  {# --- vvv ส่วนที่แก้ไข: แก้ไขโครงสร้าง Flash Message ให้สมบูรณ์ vvv --- #}
   <div class="flash-messages">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -71,17 +68,17 @@
       {% endif %}
     {% endwith %}
   </div>
-  {% endif %}
+  {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
+
   {% block content %}{% endblock %}
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="https://unpkg.com/leaflet-geosearch@3.11.0/dist/geosearch.umd.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
@@ -89,21 +86,22 @@
   });
 </script>
 
-{% block page_scripts %}{% endblock %}
-
+{% block page_scripts %}
 <script>
   // Auto-hide ALL flash messages after 5 seconds
   document.addEventListener('DOMContentLoaded', function () {
       const alerts = document.querySelectorAll('.flash-messages .alert');
       alerts.forEach(function (alert) {
           setTimeout(function () {
-              // ใช้ Bootstrap's Alert component เพื่อปิด alert
-              const bsAlert = new bootstrap.Alert(alert);
-              bsAlert.close();
+              // ใช้ Bootstrap's Alert component เพื่อปิด alert อย่างนุ่มนวล
+              if (bootstrap.Alert.getInstance(alert)) {
+                bootstrap.Alert.getInstance(alert).close();
+              }
           }, 5000); // 5000 milliseconds = 5 seconds
       });
   });
 </script>
+{% endblock %}
 
 </body>
 </html>

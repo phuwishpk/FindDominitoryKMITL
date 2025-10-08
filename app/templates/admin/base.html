@@ -109,53 +109,65 @@
 </style>
 
 <div class="sidebar">
-    <div>
-        <h1 class="sidebar-header">
-            <a href="{{ url_for('admin.dashboard') }}">Admin</a>
-        </h1>
-        
-        <ul class="nav flex-column sidebar-nav">
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" href="{{ url_for('admin.dashboard') }}">
-                    <i data-feather="home"></i> หน้าหลัก
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint in ['admin.queue', 'admin.review_property'] %}active{% endif %}" href="{{ url_for('admin.queue') }}">
-                    <i data-feather="inbox"></i> อนุมัติหอพัก
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint in ['admin.owner_queue', 'admin.review_owner'] %}active{% endif %}" href="{{ url_for('admin.owner_queue') }}">
-                    <i data-feather="user-check"></i> อนุมัติ Owner
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint in ['admin.properties', 'admin.admin_edit_property'] %}active{% endif %}" href="{{ url_for('admin.properties') }}">
-                    <i data-feather="briefcase"></i> ข้อมูลหอพัก
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint in ['admin.owners', 'admin.edit_owner', 'admin.deleted_owners'] %}active{% endif %}" href="{{ url_for('admin.owners') }}">
-                    <i data-feather="users"></i> ข้อมูล Owner
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint == 'admin.amenities' %}active{% endif %}" href="{{ url_for('admin.amenities') }}">
-                   <i data-feather="list"></i> จัดการสิ่งอำนวยความสะดวก
-                </a>
-            </li>
-             <li class="nav-item">
-                <a class="nav-link {% if request.endpoint == 'admin.logs' %}active{% endif %}" href="{{ url_for('admin.logs') }}">
-                   <i data-feather="activity"></i> ประวัติการดำเนินการ
-                </a>
-            </li>
-        </ul>
-    </div>
-    <div class="sidebar-footer">
-        <a class="nav-link" href="{{ url_for('auth.logout') }}">
-            <i data-feather="log-out"></i> ออกจากระบบ
-        </a>
+    <div class="d-flex flex-column h-100">
+        <div>
+            <h1 class="sidebar-header">
+                <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+            </h1>
+            
+            <ul class="nav flex-column sidebar-nav">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" href="{{ url_for('admin.dashboard') }}">
+                        <i data-feather="home"></i> หน้าหลัก
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint in ['admin.queue', 'admin.review_property'] %}active{% endif %}" href="{{ url_for('admin.queue') }}">
+                        <i data-feather="inbox"></i> อนุมัติหอพัก
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint in ['admin.owner_queue', 'admin.review_owner'] %}active{% endif %}" href="{{ url_for('admin.owner_queue') }}">
+                        <i data-feather="user-check"></i> อนุมัติ Owner
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint in ['admin.properties', 'admin.admin_edit_property'] %}active{% endif %}" href="{{ url_for('admin.properties') }}">
+                        <i data-feather="briefcase"></i> ข้อมูลหอพัก
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint in ['admin.owners', 'admin.edit_owner', 'admin.deleted_owners'] %}active{% endif %}" href="{{ url_for('admin.owners') }}">
+                        <i data-feather="users"></i> ข้อมูล Owner
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'admin.amenities' %}active{% endif %}" href="{{ url_for('admin.amenities') }}">
+                       <i data-feather="list"></i> จัดการสิ่งอำนวยความสะดวก
+                    </a>
+                </li>
+                 <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'admin.logs' %}active{% endif %}" href="{{ url_for('admin.logs') }}">
+                       <i data-feather="activity"></i> ประวัติการดำเนินการ
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="mt-auto">
+             <ul class="nav flex-column sidebar-nav">
+                <li class="nav-item">
+                    <hr style="border-color: #4a5568;">
+                    <a class="nav-link" href="{{ url_for('public.index') }}">
+                        <i data-feather="external-link"></i> ดูหน้าเว็บไซต์
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                        <i data-feather="log-out"></i> ออกจากระบบ
+                    </a>
+                </li>
+             </ul>
+        </div>
     </div>
 </div>
 
