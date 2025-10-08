@@ -5,11 +5,15 @@ from wtforms import StringField, FloatField, IntegerField, HiddenField, TextArea
 from wtforms.validators import DataRequired, Length, NumberRange, Optional, URL
 from wtforms import ValidationError
 from app.utils.validation import validate_image_file
+from flask import request
 
 class PropertyForm(FlaskForm):
     dorm_name = StringField("ชื่อหอ", validators=[DataRequired("กรุณากรอกชื่อหอพัก"), Length(max=120)])
-    road = StringField("ถนน", validators=[Optional(), Length(max=255)])
-    soi = StringField("ซอย", validators=[Optional(), Length(max=255)])
+    
+    # --- vvv ส่วนที่แก้ไข vvv ---
+    road = StringField("ถนน", validators=[DataRequired("กรุณากรอกชื่อถนน"), Length(max=255)])
+    soi = StringField("ซอย", validators=[DataRequired("กรุณากรอกชื่อซอย"), Length(max=255)])
+    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
     
     room_type = SelectField(
         "ประเภทห้อง",
@@ -35,9 +39,14 @@ class PropertyForm(FlaskForm):
     water_rate = FloatField("ค่าน้ำ", validators=[DataRequired("กรุณากรอกค่าน้ำ"), NumberRange(min=0)])
     electric_rate = FloatField("ค่าไฟ", validators=[DataRequired("กรุณากรอกค่าไฟ"), NumberRange(min=0)])
     deposit_amount = IntegerField("เงินประกัน", validators=[DataRequired("กรุณากรอกเงินประกัน"), NumberRange(min=0)])
-    location_pin_json = HiddenField("Location Pin JSON")
+    
+    # --- vvv ส่วนที่แก้ไข vvv ---
+    location_pin_json = HiddenField("Location Pin JSON", validators=[DataRequired("กรุณาปักหมุดตำแหน่งบนแผนที่")])
     additional_info = TextAreaField("ข้อมูลเพิ่มเติม", validators=[Optional(), Length(max=5000, message="ข้อมูลเพิ่มเติมต้องมีความยาวไม่เกิน 5000 ตัวอักษร")])
     images = MultipleFileField('รูปภาพ', validators=[Optional()])
+    # เพิ่ม field จำลองสำหรับแสดง error ของ amenities
+    amenities = HiddenField() 
+    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
     def validate_images(self, field):
         if field.data and field.data[0].filename:
@@ -45,11 +54,19 @@ class PropertyForm(FlaskForm):
                 validate_image_file(file_storage, max_mb=3)
 
     def validate(self, **kwargs):
-        if not super().validate(**kwargs):
-            return False
+        # --- vvv ส่วนที่แก้ไข vvv ---
+        # ทำ validation ของ parent class ก่อน
+        is_valid = super().validate(**kwargs)
         
+        # 1. ตรวจสอบ 'ระบุประเภทห้อง' ถ้าเลือก 'อื่นๆ'
         if self.room_type.data == 'อื่นๆ' and not self.other_room_type.data:
             self.other_room_type.errors.append('กรุณาระบุประเภทห้อง เมื่อเลือก "อื่นๆ"')
-            return False
+            is_valid = False
             
-        return True
+        # 2. ตรวจสอบว่ามีการเลือก 'สิ่งอำนวยความสะดวก' อย่างน้อย 1 อย่าง
+        if not request.form.getlist('amenities'):
+            self.amenities.errors.append('กรุณาเลือกสิ่งอำนวยความสะดวกอย่างน้อย 1 อย่าง')
+            is_valid = False
+            
+        return is_valid
+        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---

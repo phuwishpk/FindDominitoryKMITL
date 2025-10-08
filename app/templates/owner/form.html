@@ -42,9 +42,16 @@
           <p class="text-muted small">{% if not prop %}กรุณากรอกข้อมูลหลักและอัปโหลดรูปภาพให้ครบถ้วน จากนั้นกด "สร้างประกาศ"{% else %}คุณสามารถแก้ไขข้อมูลประกาศได้ที่นี่{% endif %}</p>
           
           <div class="mb-3"><label class="form-label">ชื่อหอ</label>{{ form.dorm_name(class_='form-control' + (' is-invalid' if form.dorm_name.errors else ''), placeholder='ชื่อหอ') }}</div>
+          
           <div class="row g-3 mb-3">
-            <div class="col-md-6"><label class="form-label">ถนน</label>{{ form.road(class_='form-control' + (' is-invalid' if form.road.errors else ''), placeholder='เช่น ลาดกระบัง') }}</div>
-            <div class="col-md-6"><label class="form-label">ซอย</label>{{ form.soi(class_='form-control' + (' is-invalid' if form.soi.errors else ''), placeholder='เช่น ลาดกระบัง 1') }}</div>
+            <div class="col-md-6">
+                <label class="form-label">ถนน</label>
+                {{ form.road(class_='form-control' + (' is-invalid' if form.road.errors else ''), placeholder='เช่น ลาดกระบัง') }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">ซอย</label>
+                {{ form.soi(class_='form-control' + (' is-invalid' if form.soi.errors else ''), placeholder='เช่น ลาดกระบัง 1') }}
+            </div>
           </div>
           
           <div class="mb-3">
@@ -95,9 +102,23 @@
           <p class="text-muted small">ค้นหาสถานที่หรือคลิกบนแผนที่เพื่อกำหนดตำแหน่งหอพักของคุณ</p>
           <div id="map" style="height: 400px;" class="mb-3 border rounded"></div>
           {{ form.location_pin_json(id='location_pin_json_input') }}
+          {% if form.location_pin_json.errors %}
+            <div class="invalid-feedback d-block">
+              {% for error in form.location_pin_json.errors %}
+                <span>{{ error }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
     
           <hr class="my-4">
           <h2 class="h5">สิ่งอำนวยความสะดวก</h2>
+          {% if form.amenities.errors %}
+            <div class="alert alert-danger p-2 small">
+              {% for error in form.amenities.errors %}
+                <span>{{ error }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
           <div class="row">
             {% for amenity in all_amenities %}
             <div class="col-md-4">
@@ -204,6 +225,18 @@
 (function() {
     'use strict';
     
+    // --- vvv Scroll to first error on page load vvv ---
+    document.addEventListener('DOMContentLoaded', function() {
+        // Find the first element that indicates an error
+        const firstErrorElement = document.querySelector('.is-invalid, .invalid-feedback.d-block, .alert.alert-danger');
+
+        if (firstErrorElement) {
+            // Scroll that element into view
+            firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    });
+    // --- ^^^ End of scroll script ^^^ ---
+
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
         const tabToShow = urlParams.get('tab');
@@ -252,17 +285,13 @@
         });
 
         try {
-            // 1. Try to get data from the form's hidden input first (for validation error cases)
             const formJsonData = document.getElementById('location_pin_json_input').value;
             let existingData = null;
 
             if (formJsonData) {
-                try {
-                    existingData = JSON.parse(formJsonData);
-                } catch(e) { /* ignore parse error */ }
+                try { existingData = JSON.parse(formJsonData); } catch(e) {}
             }
             
-            // 2. If no form data, try to get from the property object (for edit page initial load)
             if (!existingData) {
                 const propDataStr = '{{ prop.location_pin | tojson | safe if prop and prop.location_pin else 'null' }}';
                 existingData = JSON.parse(propDataStr);
@@ -290,11 +319,7 @@
         function updateCharCount() {
             const currentLength = additionalInfoTextarea.value.length;
             charCountDisplay.textContent = `${currentLength} / ${maxLength}`;
-            if (currentLength > maxLength) {
-                charCountDisplay.classList.add('text-danger');
-            } else {
-                charCountDisplay.classList.remove('text-danger');
-            }
+            charCountDisplay.classList.toggle('text-danger', currentLength > maxLength);
         }
         
         updateCharCount();
@@ -307,13 +332,10 @@
 
     function toggleOtherRoomType() {
         if (roomTypeSelect && otherRoomTypeContainer) {
-            if (roomTypeSelect.value === 'อื่นๆ') {
-                otherRoomTypeContainer.style.display = 'block';
-            } else {
-                otherRoomTypeContainer.style.display = 'none';
-                if (otherRoomTypeInput) {
-                    otherRoomTypeInput.value = '';
-                }
+            const isOther = roomTypeSelect.value === 'อื่นๆ';
+            otherRoomTypeContainer.style.display = isOther ? 'block' : 'none';
+            if (!isOther && otherRoomTypeInput) {
+                otherRoomTypeInput.value = '';
             }
         }
     }
@@ -346,24 +368,20 @@
             }
         });
 
-        gallery.addEventListener('dragend', () => {
-            dragEl = null;
-        });
+        gallery.addEventListener('dragend', () => { dragEl = null; });
         
         const reorderForm = document.getElementById('reorder-form');
         if (reorderForm) {
             reorderForm.addEventListener('submit', () => {
                 const container = document.getElementById('positions-container');
                 container.innerHTML = '';
-                let pos = 1;
-                gallery.querySelectorAll('[draggable="true"]').forEach(card => {
+                gallery.querySelectorAll('[draggable="true"]').forEach((card, index) => {
                     const id = card.getAttribute('data-image-id');
                     const input = document.createElement('input');
                     input.type = 'hidden';
-                    input.name = 'positions-' + (pos - 1);
-                    input.value = id + ':' + pos;
+                    input.name = `positions-${index}`;
+                    input.value = `${id}:${index + 1}`;
                     container.appendChild(input);
-                    pos++;
                 });
             });
         }
@@ -409,7 +427,7 @@
                     alert(`สามารถอัปโหลดได้สูงสุด ${maxImages} รูปเท่านั้น`);
                     return;
                 }
-                const key = Date.now() + '-' + file.name;
+                const key = `${Date.now()}-${file.name}`;
                 fileStore.set(key, file);
                 renderPreviews();
                 imageInput.value = '';
