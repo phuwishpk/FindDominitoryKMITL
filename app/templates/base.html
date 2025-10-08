@@ -54,22 +54,6 @@
 {% endif %}
 
 <main class="{% if not request.path.startswith('/admin') %}container py-4{% else %}w-100{% endif %}">
-  
-  {# --- vvv ส่วนที่แก้ไข: แก้ไขโครงสร้าง Flash Message ให้สมบูรณ์ vvv --- #}
-  <div class="flash-messages">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category or 'info' }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-  </div>
-  {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
-
   {% block content %}{% endblock %}
 </main>
 
