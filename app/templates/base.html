@@ -23,6 +23,9 @@
       font-family: 'Inter', sans-serif;
       background-color: #f8f9fa;
     }
+    .admin-body, .owner-body {
+      background-color: #F4F7FC;
+    }
     .flash-messages .alert {
         border-radius: 0.5rem;
         border: none;
@@ -30,10 +33,10 @@
     }
   </style>
 </head>
-<body class="{% if request.path.startswith('/admin') %}admin-body{% else %}bg-light{% endif %}">
+<body class="{% if request.path.startswith('/admin') %}admin-body{% elif request.path.startswith('/owner') %}owner-body{% endif %}">
 
-{# Navbar จะไม่แสดงในหน้า admin เพราะ admin มี sidebar ของตัวเอง #}
-{% if not request.path.startswith('/admin') %}
+{# ซ่อน Navbar ทั้งในหน้า Admin และ Owner #}
+{% if not request.path.startswith('/admin') and not request.path.startswith('/owner') %}
 <nav class="navbar navbar-expand-lg bg-body-tertiary">
   <div class="container">
     <a class="navbar-brand fw-bold" href="/">Dorm Finder</a>
@@ -53,7 +56,23 @@
 </nav>
 {% endif %}
 
-<main class="{% if not request.path.startswith('/admin') %}container py-4{% else %}w-100{% endif %}">
+<main class="{% if not request.path.startswith('/admin') and not request.path.startswith('/owner') %}container py-4{% else %}w-100{% endif %}">
+  {# Flash messages สำหรับหน้า Public ทั่วไปจะถูกจัดการที่นี่ #}
+  {% if not request.path.startswith('/admin') and not request.path.startswith('/owner') %}
+  <div class="flash-messages">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category or 'info' }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+  {% endif %}
+
   {% block content %}{% endblock %}
 </main>
 
@@ -70,22 +89,23 @@
   });
 </script>
 
-{% block page_scripts %}
+{% block page_scripts %}{% endblock %}
+
 <script>
-  // Auto-hide ALL flash messages after 5 seconds
+  // ซ่อน Flash messages ทั้งหมดหลังจาก 5 วินาที
   document.addEventListener('DOMContentLoaded', function () {
       const alerts = document.querySelectorAll('.flash-messages .alert');
       alerts.forEach(function (alert) {
           setTimeout(function () {
-              // ใช้ Bootstrap's Alert component เพื่อปิด alert อย่างนุ่มนวล
-              if (bootstrap.Alert.getInstance(alert)) {
-                bootstrap.Alert.getInstance(alert).close();
+              // ใช้ Bootstrap's Alert component เพื่อปิด alert
+              const bsAlert = bootstrap.Alert.getInstance(alert);
+              if (bsAlert) {
+                bsAlert.close();
               }
           }, 5000); // 5000 milliseconds = 5 seconds
       });
   });
 </script>
-{% endblock %}
 
 </body>
 </html>
