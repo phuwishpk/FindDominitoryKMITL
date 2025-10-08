@@ -69,6 +69,10 @@ def new_property():
             db.session.commit()
 
         flash("สร้างประกาศสำเร็จแล้ว", "success")
+        # --- vvv ส่วนที่แก้ไข vvv ---
+        # ส่ง flash message พิเศษเพื่อสั่งให้ JavaScript ล้าง sessionStorage
+        flash('clear_form_storage', 'script_command')
+        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
         return redirect(url_for("owner.dashboard"))
         
     return render_template("owner/form.html", 

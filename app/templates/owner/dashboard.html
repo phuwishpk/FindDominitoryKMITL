@@ -50,3 +50,22 @@
   </div>
 </div>
 {% endblock %}
+
+{# --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv --- #}
+{% block page_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      {% if category == 'script_command' and message == 'clear_form_storage' %}
+        // หากได้รับคำสั่ง 'clear_form_storage'
+        const storageKey = `fileStore_/owner/property/new`;
+        sessionStorage.removeItem(storageKey);
+        console.log('Form image storage cleared.');
+      {% endif %}
+    {% endfor %}
+  {% endwith %}
+});
+</script>
+{% endblock %}
+{# --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ --- #}

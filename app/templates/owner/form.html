@@ -134,18 +134,29 @@
           {# --- ส่วนอัปโหลดรูปภาพใหม่ (สำหรับหน้าสร้างประกาศ) --- #}
           {% if not prop %}
           <hr class="my-4">
-          <h2 class="h5">อัปโหลดรูปภาพ</h2>
-          <p class="text-muted small">คุณสามารถเพิ่มรูปภาพได้สูงสุด {{ PropertyPolicy.MAX_IMAGES }} รูป (อัปโหลดทีละรูป)</p>
           
-          <div class="input-group mb-3">
-              <input type="file" class="form-control" id="image-input" accept="image/jpeg,image/png,image/webp">
-              <button class="btn btn-outline-primary" type="button" id="add-image-btn">อัปโหลด</button>
+          <div id="image-upload-section">
+            <h2 class="h5">อัปโหลดรูปภาพ</h2>
+            <p class="text-muted small">คุณสามารถเพิ่มรูปภาพได้สูงสุด {{ PropertyPolicy.MAX_IMAGES }} รูป (ต้องมีอย่างน้อย 1 รูป)</p>
+            
+            <div class="input-group mb-3">
+                <input type="file" class="form-control {% if form.images.errors %}is-invalid{% endif %}" id="image-input" accept="image/jpeg,image/png,image/webp" multiple>
+                <button class="btn btn-outline-primary" type="button" id="add-image-btn">เพิ่มรูปภาพ</button>
+            </div>
+            
+            {% if form.images.errors %}
+            <div class="invalid-feedback d-block mb-3">
+                {% for error in form.images.errors %}
+                <span>{{ error }}</span><br>
+                {% endfor %}
+            </div>
+            {% endif %}
+      
+            <div id="image-preview-container" class="row row-cols-2 row-cols-md-3 g-3 mb-3">
+                </div>
+            
+            {{ form.images(id="image-file-list", style="display:none;") }}
           </div>
-    
-          <div id="image-preview-container" class="row row-cols-2 row-cols-md-3 g-3 mb-3">
-              </div>
-          
-          {{ form.images(id="image-file-list", style="display:none;") }}
           {% endif %}
     
           <div class="mt-4">
@@ -227,11 +238,22 @@
     
     // --- vvv Scroll to first error on page load vvv ---
     document.addEventListener('DOMContentLoaded', function() {
-        // Find the first element that indicates an error
+        // --- vvv ส่วนที่แก้ไข vvv ---
+        // ตรวจสอบ error ของรูปภาพก่อน
+        const imageError = document.querySelector('#image-upload-section .is-invalid, #image-upload-section .invalid-feedback.d-block');
+        if (imageError) {
+            const imageSection = document.getElementById('image-upload-section');
+            if (imageSection) {
+                imageSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return; // หยุดทำงานส่วนนี้ถ้าเจอ error ที่รูปภาพแล้ว
+            }
+        }
+        // --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+
+        // ถ้าไม่เจอ error ที่รูปภาพ ให้หา error ทั่วไป
         const firstErrorElement = document.querySelector('.is-invalid, .invalid-feedback.d-block, .alert.alert-danger');
 
         if (firstErrorElement) {
-            // Scroll that element into view
             firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     });
@@ -387,6 +409,7 @@
         }
     }
     
+    // --- vvv ส่วนจัดการรูปภาพที่แก้ไขใหม่ vvv ---
     const imageInput = document.getElementById('image-input');
     const addImageBtn = document.getElementById('add-image-btn');
     const previewContainer = document.getElementById('image-preview-container');
@@ -395,42 +418,90 @@
     const maxImages = {{ PropertyPolicy.MAX_IMAGES }};
 
     if (imageInput && addImageBtn && previewContainer && mainForm && fileCollector) {
-        const fileStore = new Map();
+        // ใช้ Map เพื่อเก็บไฟล์ และใช้ sessionStorage เพื่อจำค่าไฟล์ข้ามหน้า
+        let fileStore = new Map();
+        const storageKey = `fileStore_${window.location.pathname}`;
+
+        // ฟังก์ชันสำหรับแปลง File เป็น Base64
+        const fileToBase64 = (file) => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+
+        // ฟังก์ชันสำหรับแปลง Base64 กลับเป็น File
+        const base64ToFile = (dataUrl, filename) => {
+            const arr = dataUrl.split(',');
+            const mime = arr[0].match(/:(.*?);/)[1];
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while(n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            return new File([u8arr], filename, {type:mime});
+        }
+        
+        const saveFileStore = async () => {
+            const serializable = [];
+            for (const [key, file] of fileStore.entries()) {
+                const base64 = await fileToBase64(file);
+                serializable.push([key, { name: file.name, data: base64 }]);
+            }
+            sessionStorage.setItem(storageKey, JSON.stringify(serializable));
+        };
+        
+        const loadFileStore = () => {
+            const stored = sessionStorage.getItem(storageKey);
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    fileStore.clear();
+                    for (const [key, fileData] of parsed) {
+                        const file = base64ToFile(fileData.data, fileData.name);
+                        fileStore.set(key, file);
+                    }
+                } catch(e) {
+                    console.error("Failed to parse file store from sessionStorage", e);
+                    sessionStorage.removeItem(storageKey);
+                }
+            }
+        };
 
         const renderPreviews = () => {
             previewContainer.innerHTML = '';
             let index = 1;
             fileStore.forEach((file, key) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const col = document.createElement('div');
-                    col.className = 'col';
-                    col.innerHTML = `
-                        <div class="card h-100">
-                            <img src="${e.target.result}" class="card-img-top" alt="Preview">
-                            <div class="card-body p-2 d-flex justify-content-between align-items-center">
-                                <span class="badge text-bg-light">ลำดับ ${index++}</span>
-                                <button type="button" class="btn btn-sm btn-outline-danger remove-img-btn" data-key="${key}">ลบ</button>
-                            </div>
+                const col = document.createElement('div');
+                col.className = 'col';
+                col.innerHTML = `
+                    <div class="card h-100">
+                        <img src="${URL.createObjectURL(file)}" class="card-img-top" style="height: 150px; object-fit: cover;" alt="Preview">
+                        <div class="card-body p-2 d-flex justify-content-between align-items-center">
+                            <span class="badge text-bg-light">ลำดับ ${index++}</span>
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-img-btn" data-key="${key}">ลบ</button>
                         </div>
-                    `;
-                    previewContainer.appendChild(col);
-                };
-                reader.readAsDataURL(file);
+                    </div>
+                `;
+                previewContainer.appendChild(col);
             });
+            // บันทึกสถานะล่าสุดลง sessionStorage ทุกครั้งที่มีการ render ใหม่
+            saveFileStore();
         };
 
         addImageBtn.addEventListener('click', () => {
             if (imageInput.files.length > 0) {
-                const file = imageInput.files[0];
-                if (fileStore.size >= maxImages) {
-                    alert(`สามารถอัปโหลดได้สูงสุด ${maxImages} รูปเท่านั้น`);
-                    return;
+                for(const file of imageInput.files){
+                    if (fileStore.size >= maxImages) {
+                        alert(`สามารถอัปโหลดได้สูงสุด ${maxImages} รูปเท่านั้น`);
+                        break;
+                    }
+                    const key = `${Date.now()}-${file.name}`;
+                    fileStore.set(key, file);
                 }
-                const key = `${Date.now()}-${file.name}`;
-                fileStore.set(key, file);
                 renderPreviews();
-                imageInput.value = '';
+                imageInput.value = ''; // เคลียร์ค่า input
             } else {
                 alert('กรุณาเลือกไฟล์รูปภาพก่อน');
             }
@@ -445,12 +516,23 @@
             }
         });
 
-        mainForm.addEventListener('submit', () => {
+        mainForm.addEventListener('submit', (e) => {
             const dataTransfer = new DataTransfer();
             fileStore.forEach(file => dataTransfer.items.add(file));
             fileCollector.files = dataTransfer.files;
+            // --- vvv ส่วนที่แก้ไข vvv ---
+            // ไม่ต้องลบ sessionStorage ที่นี่
+            // --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+        });
+
+        // โหลดข้อมูลจาก sessionStorage เมื่อหน้าเว็บโหลด
+        // แก้ไขให้ทำงานหลัง DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFileStore();
+            renderPreviews();
         });
     }
+    // --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 })();
 </script>
 {% endblock %}

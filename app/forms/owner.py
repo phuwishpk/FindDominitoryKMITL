@@ -1,4 +1,4 @@
-# phuwishpk/finddominitorykmitl/FindDominitoryKMITL-develop-owner/app/forms/owner.py
+# phuwishpk/finddominitorykmitl/FindDominitoryKMITL-owner-improvements/app/forms/owner.py
 
 from flask_wtf import FlaskForm
 from wtforms import StringField, FloatField, IntegerField, HiddenField, TextAreaField, SelectField, MultipleFileField
@@ -10,10 +10,8 @@ from flask import request
 class PropertyForm(FlaskForm):
     dorm_name = StringField("ชื่อหอ", validators=[DataRequired("กรุณากรอกชื่อหอพัก"), Length(max=120)])
     
-    # --- vvv ส่วนที่แก้ไข vvv ---
     road = StringField("ถนน", validators=[DataRequired("กรุณากรอกชื่อถนน"), Length(max=255)])
     soi = StringField("ซอย", validators=[DataRequired("กรุณากรอกชื่อซอย"), Length(max=255)])
-    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
     
     room_type = SelectField(
         "ประเภทห้อง",
@@ -40,22 +38,27 @@ class PropertyForm(FlaskForm):
     electric_rate = FloatField("ค่าไฟ", validators=[DataRequired("กรุณากรอกค่าไฟ"), NumberRange(min=0)])
     deposit_amount = IntegerField("เงินประกัน", validators=[DataRequired("กรุณากรอกเงินประกัน"), NumberRange(min=0)])
     
-    # --- vvv ส่วนที่แก้ไข vvv ---
     location_pin_json = HiddenField("Location Pin JSON", validators=[DataRequired("กรุณาปักหมุดตำแหน่งบนแผนที่")])
     additional_info = TextAreaField("ข้อมูลเพิ่มเติม", validators=[Optional(), Length(max=5000, message="ข้อมูลเพิ่มเติมต้องมีความยาวไม่เกิน 5000 ตัวอักษร")])
-    images = MultipleFileField('รูปภาพ', validators=[Optional()])
-    # เพิ่ม field จำลองสำหรับแสดง error ของ amenities
+    
+    # --- vvv ส่วนที่แก้ไข vvv ---
+    # เปลี่ยนจาก Optional() เป็น DataRequired() สำหรับหน้า "สร้าง"
+    images = MultipleFileField('รูปภาพ', validators=[]) 
+    # ^^^ สิ้นสุดการแก้ไข ^^^ ---
+    
     amenities = HiddenField() 
-    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
     def validate_images(self, field):
         if field.data and field.data[0].filename:
             for file_storage in field.data:
-                validate_image_file(file_storage, max_mb=3)
+                try:
+                    validate_image_file(file_storage, max_mb=3)
+                except ValidationError as e:
+                    # เพิ่ม error เข้าไปใน field `images` โดยตรง
+                    self.images.errors.append(str(e))
+
 
     def validate(self, **kwargs):
-        # --- vvv ส่วนที่แก้ไข vvv ---
-        # ทำ validation ของ parent class ก่อน
         is_valid = super().validate(**kwargs)
         
         # 1. ตรวจสอบ 'ระบุประเภทห้อง' ถ้าเลือก 'อื่นๆ'
@@ -67,6 +70,17 @@ class PropertyForm(FlaskForm):
         if not request.form.getlist('amenities'):
             self.amenities.errors.append('กรุณาเลือกสิ่งอำนวยความสะดวกอย่างน้อย 1 อย่าง')
             is_valid = False
+
+        # --- vvv ส่วนที่แก้ไข vvv ---
+        # 3. ตรวจสอบรูปภาพ (เฉพาะตอนสร้างใหม่)
+        # ตรวจสอบว่านี่เป็น "การสร้าง" (ไม่มี prop_id) หรือไม่
+        is_create_mode = 'prop_id' not in request.view_args
+        if is_create_mode:
+            # ใช้ `request.files.getlist(self.images.name)` เพื่อตรวจสอบไฟล์ที่ถูกส่งมาจริงๆ
+            uploaded_files = request.files.getlist(self.images.name)
+            if not uploaded_files or not uploaded_files[0].filename:
+                 self.images.errors.append('กรุณาอัปโหลดรูปภาพอย่างน้อย 1 รูป')
+                 is_valid = False
+        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
             
         return is_valid
-        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---

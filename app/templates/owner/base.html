@@ -118,14 +118,23 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
+          {# --- vvv นี่คือส่วนสำคัญที่แก้ไข --- vvv #}
+          {% if category != 'script_command' %} 
           <div class="alert alert-{{ category or 'info' }} alert-dismissible fade show" role="alert" style="box-shadow: var(--card-shadow);">
             {{ message }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
           </div>
+          {% endif %}
+          {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
         {% endfor %}
       {% endif %}
     {% endwith %}
     </div>
     {% block owner_content %}{% endblock %}
 </div>
+
+{% block page_scripts %}
+{# สคริปต์เฉพาะหน้าที่สืบทอดไปจะถูกแทรกที่นี่ #}
+{% endblock %}
+
 {% endblock %}
