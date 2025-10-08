@@ -3,9 +3,16 @@
 {% block owner_content %}
 <div class="d-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 fw-bold mb-0">Owner Dashboard</h1>
-  <a class="btn btn-primary" href="{{ url_for('owner.new_property') }}">
-    <i data-feather="plus" class="me-1" style="width:16px;"></i> สร้างประกาศใหม่
-  </a>
+  <div>
+    {# --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv --- #}
+    <a class="btn btn-outline-secondary" href="{{ url_for('owner.trash') }}">
+      <i data-feather="trash-2" class="me-1" style="width:16px;"></i> ถังขยะ
+    </a>
+    {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
+    <a class="btn btn-primary ms-2" href="{{ url_for('owner.new_property') }}">
+      <i data-feather="plus" class="me-1" style="width:16px;"></i> สร้างประกาศใหม่
+    </a>
+  </div>
 </div>
 
 <div class="card">
@@ -33,9 +40,7 @@
             {% if p.availability_status == 'vacant' %}
               <span class="badge bg-success-subtle text-success-emphasis rounded-pill">ห้องว่าง</span>
             {% else %}
-              {# --- vvv ส่วนที่แก้ไข vvv --- #}
               <span class="badge bg-danger text-white rounded-pill">ห้องเต็ม</span>
-              {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
             {% endif %}
           </span>
         </div>
@@ -62,6 +67,13 @@
         <a href="{{ url_for('owner.edit_property', prop_id=p.id) }}" class="btn btn-sm btn-outline-secondary">
             <i data-feather="edit-2" style="width:16px;"></i> แก้ไข
         </a>
+        
+        {# --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv --- #}
+        <button type="button" class="btn btn-sm btn-outline-danger ms-2" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ p.id }}" title="ลบประกาศ">
+            <i data-feather="trash" style="width:16px;"></i> ลบ
+        </button>
+        {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
+
       </div>
     </div>
     {% else %}
@@ -71,6 +83,32 @@
     {% endfor %}
   </div>
 </div>
+
+{# --- vvv Modals สำหรับยืนยันการลบ vvv --- #}
+{% for p in props %}
+<div class="modal fade" id="deleteModal-{{ p.id }}" tabindex="-1" aria-labelledby="deleteModalLabel-{{ p.id }}" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel-{{ p.id }}">ยืนยันการลบ</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        คุณต้องการย้ายประกาศ <strong>"{{ p.dorm_name }}"</strong> ไปยังถังขยะใช่หรือไม่?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+        <form action="{{ url_for('owner.delete_property', prop_id=p.id) }}" method="POST">
+            {{ delete_form.csrf_token }}
+            <button type="submit" class="btn btn-danger">ยืนยันการลบ</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
+
 {% endblock %}
 
 {% block page_scripts %}

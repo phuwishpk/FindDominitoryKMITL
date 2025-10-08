@@ -191,19 +191,8 @@
         </form>
       </div>
       
-      {% if prop %}
-        <hr class="my-4">
-        <div>
-            <h2 class="h5 text-danger">โซนอันตราย</h2>
-            <hr>
-            <p>หากคุณต้องการลบประกาศนี้อย่างถาวร สามารถทำได้ที่นี่ การกระทำนี้ไม่สามารถย้อนกลับได้</p>
-            <form method="post" action="{{ url_for('owner.delete_property', prop_id=prop.id) }}"
-                  onsubmit="return confirm('คุณต้องการลบประกาศนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้');">
-              {{ form.csrf_token }}
-              <button type="submit" class="btn btn-danger">ลบประกาศนี้</button>
-            </form>
-        </div>
-      {% endif %}
+      <!-- Danger Zone section has been removed -->
+
     </div>
   </div>
 </div>
@@ -215,7 +204,6 @@
 (function() {
     'use strict';
     
-    // --- vvv Scroll to first error on page load vvv ---
     document.addEventListener('DOMContentLoaded', function() {
         const imageError = document.querySelector('#image-upload-section .is-invalid, #image-upload-section .invalid-feedback.d-block');
         if (imageError) {
@@ -225,14 +213,11 @@
                 return;
             }
         }
-
         const firstErrorElement = document.querySelector('.is-invalid, .invalid-feedback.d-block, .alert.alert-danger');
-
         if (firstErrorElement) {
             firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     });
-    // --- ^^^ End of scroll script ^^^ ---
 
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);

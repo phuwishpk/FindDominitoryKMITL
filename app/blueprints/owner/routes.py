@@ -3,12 +3,14 @@
 from flask import render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from sqlalchemy import func
+# --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
+from datetime import datetime
+# --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 from . import bp
 from app.forms.owner import PropertyForm
-# 💡 แก้ไขการนำเข้า: นำเข้า EmptyForm ด้วย
 from app.forms.upload import UploadImageForm, ReorderImagesForm, EmptyForm 
 from app.models.property import Property, PropertyImage, Amenity
-from app.models.approval import ApprovalRequest
+from app.models.approval import ApprovalRequest, AuditLog # 💡 แก้ไข: นำเข้า AuditLog
 from app.extensions import owner_required, db
 
 try:
@@ -24,10 +26,12 @@ except Exception:
 @login_required
 @owner_required
 def dashboard():
-    props = Property.query.filter_by(owner_id=current_user.ref_id).all()
-    # 💡 เพิ่มการสร้าง EmptyForm และส่งไปยัง Template
+    # --- vvv ส่วนที่แก้ไข: กรองรายการที่ยังไม่ถูกลบ vvv ---
+    props = Property.query.filter_by(owner_id=current_user.ref_id, deleted_at=None).all()
+    delete_form = EmptyForm() # 💡 เพิ่ม: สร้างฟอร์มสำหรับปุ่มลบ
+    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
     submit_form = EmptyForm()
-    return render_template("owner/dashboard.html", props=props, submit_form=submit_form)
+    return render_template("owner/dashboard.html", props=props, submit_form=submit_form, delete_form=delete_form) # 💡 เพิ่ม: ส่ง delete_form
 
 
 @bp.route("/property/new", methods=["GET","POST"])
@@ -37,13 +41,9 @@ def new_property():
     form = PropertyForm()
     all_amenities = Amenity.query.all()
     
-    # --- vvv ส่วนที่แก้ไข vvv ---
-    # เตรียมตัวแปรสำหรับเก็บ amenities ที่เลือกไว้
     selected_amenities = []
     if request.method == "POST":
-        # ถ้าเป็นการส่งข้อมูลมา ให้ดึงค่าที่เลือกไว้จากฟอร์ม
         selected_amenities = request.form.getlist('amenities')
-    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
     if form.validate_on_submit():
         prop_svc = current_app.extensions["container"]["property_service"]
@@ -69,21 +69,16 @@ def new_property():
             db.session.commit()
 
         flash("สร้างประกาศสำเร็จแล้ว", "success")
-        # --- vvv ส่วนที่แก้ไข vvv ---
-        # ส่ง flash message พิเศษเพื่อสั่งให้ JavaScript ล้าง sessionStorage
         flash('clear_form_storage', 'script_command')
-        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
         return redirect(url_for("owner.dashboard"))
         
     return render_template("owner/form.html", 
         form=form, 
         all_amenities=all_amenities, 
         prop=None, 
-        upload_form=UploadImageForm(), # เพิ่ม upload_form ที่นี่
+        upload_form=UploadImageForm(),
         PropertyPolicy=PropertyPolicy,
-        # --- vvv ส่วนที่แก้ไข vvv ---
         selected_amenities=selected_amenities
-        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
     )
 
 
@@ -98,15 +93,10 @@ def edit_property(prop_id: int):
     form = PropertyForm(obj=prop) 
     predefined_choices = [choice[0] for choice in form.room_type.choices]
 
-    # --- vvv ส่วนที่แก้ไข vvv ---
-    # จัดการค่า amenities ที่ถูกเลือก
     if request.method == "POST":
-        # ถ้าฟอร์มถูกส่งมา (และอาจจะไม่ผ่าน validation) ให้ใช้ค่าจากฟอร์ม
         selected_amenities = request.form.getlist('amenities')
     else:
-        # ถ้าเป็นการโหลดหน้าครั้งแรก (GET) ให้ใช้ค่าจากฐานข้อมูล
         selected_amenities = [amenity.code for amenity in prop.amenities]
-    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
     if request.method == "GET":
         if prop.room_type not in predefined_choices:
@@ -130,20 +120,16 @@ def edit_property(prop_id: int):
         form_data.pop('csrf_token', None)
         form_data['amenities'] = request.form.getlist('amenities')
         
-        # --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
-        # 1. จัดการการลบรูปภาพ
         images_to_delete_str = request.form.get('images_to_delete', '')
         if images_to_delete_str:
             image_ids_to_delete = [int(id_) for id_ in images_to_delete_str.split(',') if id_.isdigit()]
             if image_ids_to_delete:
-                # Query เพื่อความปลอดภัยว่ารูปที่ลบเป็นของ property นี้จริงๆ
                 images_to_delete = db.session.query(PropertyImage).filter(
                     PropertyImage.property_id == prop_id,
                     PropertyImage.id.in_(image_ids_to_delete)
                 ).all()
                 for img in images_to_delete:
                     db.session.delete(img)
-        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
         prop_svc.update(current_user.ref_id, prop_id, form_data)
         flash("อัปเดตข้อมูลแล้ว", "success")
@@ -159,9 +145,7 @@ def edit_property(prop_id: int):
                            all_amenities=all_amenities,
                            approval_note=approval_note,
                            PropertyPolicy=PropertyPolicy,
-                           # --- vvv ส่วนที่แก้ไข vvv ---
                            selected_amenities=selected_amenities
-                           # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
                            )
 
 @bp.post("/property/<int:prop_id>/image")
@@ -192,19 +176,6 @@ def upload_image(prop_id: int):
         flash("อัปโหลดรูปสำเร็จ", "success")
     else:
         flash("กรุณาเลือกไฟล์รูปภาพ", "danger")
-    return redirect(url_for("owner.edit_property", prop_id=prop.id, tab="images"))
-
-@bp.post("/property/<int:prop_id>/image/<int:image_id>/delete")
-@login_required
-@owner_required
-def delete_image(prop_id: int, image_id: int):
-    prop = Property.query.get_or_404(prop_id)
-    img = PropertyImage.query.get_or_404(image_id)
-    if prop.owner_id != current_user.ref_id or img.property_id != prop.id:
-        return redirect(url_for("owner.dashboard"))
-    db.session.delete(img)
-    db.session.commit()
-    flash("ลบรูปแล้ว", "success")
     return redirect(url_for("owner.edit_property", prop_id=prop.id, tab="images"))
 
 @bp.post("/property/<int:prop_id>/images/reorder")
@@ -246,24 +217,11 @@ def submit_for_approval(prop_id: int):
     approval_svc = current_app.extensions["container"]["approval_service"]
     
     try:
-        # ใช้ submit_property ที่มีอยู่ใน ApprovalService
         approval_svc.submit_property(property_id=prop_id, owner_id=current_user.ref_id)
         flash("ส่งประกาศเพื่อขออนุมัติแล้ว", "success")
     except ValueError as e:
         flash(f"ไม่สามารถส่งประกาศได้: {str(e)}", "danger")
     
-    return redirect(url_for("owner.dashboard"))
-
-@bp.post("/property/<int:prop_id>/delete")
-@login_required
-@owner_required
-def delete_property(prop_id: int):
-    prop = Property.query.get_or_404(prop_id)
-    if prop.owner_id != current_user.ref_id:
-        return redirect(url_for("owner.dashboard"))
-    db.session.delete(prop)
-    db.session.commit()
-    flash("ลบประกาศแล้ว", "success")
     return redirect(url_for("owner.dashboard"))
 
 @bp.post("/property/<int:prop_id>/toggle_availability")
@@ -290,3 +248,86 @@ def toggle_availability(prop_id: int):
     db.session.commit()
     flash(f"เปลี่ยนสถานะของ '{prop.dorm_name}' เป็น '{new_status_th}' เรียบร้อยแล้ว", "success")
     return redirect(url_for("owner.dashboard"))
+
+# --- vvv ส่วนที่เพิ่มเข้ามาใหม่: Trash System vvv ---
+
+@bp.post("/property/<int:prop_id>/delete")
+@login_required
+@owner_required
+def delete_property(prop_id: int):
+    if not EmptyForm().validate_on_submit():
+        flash("Invalid CSRF token.", "danger")
+        return redirect(url_for('owner.dashboard'))
+    
+    prop = Property.query.get_or_404(prop_id)
+    if prop.owner_id != current_user.ref_id:
+        flash("Permission denied.", "danger")
+        return redirect(url_for("owner.dashboard"))
+
+    prop.deleted_at = datetime.utcnow()
+    db.session.add(AuditLog.log("owner", current_user.ref_id, "soft_delete_property", prop_id))
+    db.session.commit()
+    flash(f"ย้ายประกาศ '{prop.dorm_name}' ไปยังถังขยะแล้ว", "success")
+    return redirect(url_for('owner.dashboard'))
+
+@bp.route("/trash")
+@login_required
+@owner_required
+def trash():
+    page = request.args.get("page", 1, type=int)
+    per_page = 10 
+    
+    # ดึงเฉพาะรายการที่ถูกลบของ owner คนปัจจุบัน
+    pagination = db.paginate(
+        Property.query.filter(
+            Property.owner_id == current_user.ref_id,
+            Property.deleted_at.isnot(None)
+        ).order_by(Property.deleted_at.desc()),
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    restore_form = EmptyForm()
+    delete_form = EmptyForm()
+    
+    return render_template("owner/trash.html", pagination=pagination, restore_form=restore_form, delete_form=delete_form)
+
+@bp.post("/property/<int:prop_id>/restore")
+@login_required
+@owner_required
+def restore_property(prop_id: int):
+    if not EmptyForm().validate_on_submit():
+        flash("Invalid request.", "danger")
+        return redirect(url_for('owner.trash'))
+
+    prop = Property.query.get_or_404(prop_id)
+    if prop.owner_id != current_user.ref_id:
+        flash("Permission denied.", "danger")
+        return redirect(url_for("owner.trash"))
+        
+    prop.deleted_at = None
+    db.session.add(AuditLog.log("owner", current_user.ref_id, "restore_property", prop_id))
+    db.session.commit()
+    flash(f"กู้คืนประกาศ '{prop.dorm_name}' สำเร็จ", "success")
+    return redirect(url_for('owner.trash'))
+
+@bp.post("/property/<int:prop_id>/permanent_delete")
+@login_required
+@owner_required
+def permanently_delete_property(prop_id: int):
+    if not EmptyForm().validate_on_submit():
+        flash("Invalid request.", "danger")
+        return redirect(url_for('owner.trash'))
+
+    prop = Property.query.get_or_404(prop_id)
+    if prop.owner_id != current_user.ref_id:
+        flash("Permission denied.", "danger")
+        return redirect(url_for("owner.trash"))
+        
+    dorm_name = prop.dorm_name
+    db.session.add(AuditLog.log("owner", current_user.ref_id, "permanent_delete_property", meta={"deleted_name": dorm_name, "property_id": prop_id}))
+    db.session.delete(prop)
+    db.session.commit()
+    flash(f"ลบประกาศ '{dorm_name}' ออกจากระบบอย่างถาวรแล้ว", "success")
+    return redirect(url_for('owner.trash'))
+
+# --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
