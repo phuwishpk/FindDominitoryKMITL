@@ -3,6 +3,9 @@ from wtforms import StringField, PasswordField, FileField, SelectField, BooleanF
 from wtforms.validators import DataRequired, Email, Length, Optional
 from wtforms import ValidationError
 from app.utils.validation import is_valid_citizen_id, validate_pdf_file
+# --- vvv ส่วนที่เพิ่มเข้ามา vvv ---
+from app.models.user import Owner
+# --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
 
 class OwnerRegisterForm(FlaskForm):
     full_name_th = StringField('ชื่อ-สกุล (ไทย)', validators=[DataRequired(), Length(max=120)])
@@ -14,8 +17,21 @@ class OwnerRegisterForm(FlaskForm):
     occupancy_pdf = FileField('หนังสือแจ้งมีผู้เข้าพัก (PDF)', validators=[Optional()])
 
     def validate_citizen_id(self, field):
+        # --- vvv ส่วนที่แก้ไข vvv ---
+        # ตรวจสอบ format ของเลขบัตรประชาชน
         if not is_valid_citizen_id(field.data):
             raise ValidationError('เลขบัตรประชาชนไม่ถูกต้อง')
+        # ตรวจสอบว่าเลขบัตรนี้มีในระบบแล้วหรือยัง
+        if Owner.query.filter_by(citizen_id=field.data).first():
+            raise ValidationError('เลขบัตรประชาชนนี้มีผู้ใช้งานในระบบแล้ว')
+        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+
+    # --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
+    def validate_email(self, field):
+        # ตรวจสอบว่าอีเมลนี้มีในระบบแล้วหรือยัง
+        if Owner.query.filter_by(email=field.data).first():
+            raise ValidationError('อีเมลนี้มีผู้ใช้งานในระบบแล้ว')
+    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
     def validate_occupancy_pdf(self, field):
         if field.data:
