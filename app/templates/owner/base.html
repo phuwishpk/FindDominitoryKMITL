@@ -100,9 +100,11 @@
             </li>
             <li class="nav-item">
                 <hr style="border-color: #4a5568;">
-                <a class="nav-link" href="{{ url_for('public.index') }}" target="_blank">
+                {# --- vvv ส่วนที่แก้ไข: ลบ target="_blank" ออกไป --- vvv #}
+                <a class="nav-link" href="{{ url_for('public.index') }}">
                     <i data-feather="external-link"></i> ดูหน้าเว็บไซต์
                 </a>
+                {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
             </li>
         </ul>
     </div>
@@ -118,14 +120,12 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
-          {# --- vvv นี่คือส่วนสำคัญที่แก้ไข --- vvv #}
           {% if category != 'script_command' %} 
           <div class="alert alert-{{ category or 'info' }} alert-dismissible fade show" role="alert" style="box-shadow: var(--card-shadow);">
             {{ message }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
           </div>
           {% endif %}
-          {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
         {% endfor %}
       {% endif %}
     {% endwith %}
