@@ -29,19 +29,17 @@
             {% elif p.workflow_status == 'submitted' %}
                 <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill ms-2">Submitted</span>
             {% elif p.workflow_status == 'rejected' %}
-                {# --- vvv ส่วนที่แก้ไข vvv --- #}
                 <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill ms-2">Rejected</span>
                 {% if rejected_notes.get(p.id) %}
                 <button type="button" class="btn btn-link p-0 ms-1" data-bs-toggle="modal" data-bs-target="#rejectionNoteModal-{{ p.id }}" title="ดูเหตุผลการปฏิเสธ">
                     <i data-feather="alert-circle" class="text-danger" style="width:16px; height:16px;"></i>
                 </button>
                 {% endif %}
-                {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
             {% else %}
                 <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill ms-2">Draft</span>
             {% endif %}
-          
-          <span class="ms-3">สถานะห้อง: 
+
+          <span class="ms-3">สถานะห้อง:
             {% if p.availability_status == 'vacant' %}
               <span class="badge bg-success-subtle text-success-emphasis rounded-pill">ห้องว่าง</span>
             {% else %}
@@ -50,7 +48,7 @@
           </span>
         </div>
       </div>
-      
+
       <div class="d-flex align-items-center">
         <form method="post" action="{{ url_for('owner.toggle_availability', prop_id=p.id) }}" class="d-inline-block me-2" title="สลับสถานะห้องว่าง/เต็ม">
           {{ submit_form.csrf_token }}
@@ -62,17 +60,17 @@
             {% endif %}
           </button>
         </form>
-      
+
         {% if p.workflow_status == 'draft' or p.workflow_status == 'rejected' %}
         <form method="post" action="{{ url_for('owner.submit_for_approval', prop_id=p.id) }}" class="d-inline-block me-2" onsubmit="return confirm('คุณต้องการส่งประกาศนี้เพื่อขออนุมัติใช่หรือไม่?');">
-          {{ submit_form.csrf_token }} 
+          {{ submit_form.csrf_token }}
           <button class="btn btn-sm btn-outline-info">ส่งอนุมัติ</button>
         </form>
         {% endif %}
         <a href="{{ url_for('owner.edit_property', prop_id=p.id) }}" class="btn btn-sm btn-outline-secondary">
             <i data-feather="edit-2" style="width:16px;"></i> แก้ไข
         </a>
-        
+
         <button type="button" class="btn btn-sm btn-outline-danger ms-2" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ p.id }}" title="ลบประกาศ">
             <i data-feather="trash" style="width:16px;"></i> ลบ
         </button>

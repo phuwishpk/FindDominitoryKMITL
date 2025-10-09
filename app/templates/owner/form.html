@@ -18,17 +18,17 @@
 <div class="card">
   <div class="card-body p-4">
     <div>
-      
+
       <div>
         <form method="post" novalidate enctype="multipart/form-data" id="main-property-form">
           {{ form.csrf_token }}
-          
+
           <input type="hidden" name="images_to_delete" id="images-to-delete-input">
 
           <p class="text-muted small">{% if not prop %}กรุณากรอกข้อมูลหลักและอัปโหลดรูปภาพให้ครบถ้วน จากนั้นกด "สร้างประกาศ"{% else %}คุณสามารถแก้ไขข้อมูลประกาศได้ที่นี่{% endif %}</p>
-          
+
           <div class="mb-3"><label class="form-label">ชื่อหอ</label>{{ form.dorm_name(class_='form-control' + (' is-invalid' if form.dorm_name.errors else ''), placeholder='ชื่อหอ') }}</div>
-          
+
           <div class="row g-3 mb-3">
             <div class="col-md-6">
                 <label class="form-label">ถนน</label>
@@ -39,7 +39,7 @@
                 {{ form.soi(class_='form-control' + (' is-invalid' if form.soi.errors else ''), placeholder='เช่น ลาดกระบัง 1') }}
             </div>
           </div>
-          
+
           <div class="mb-3">
             <label class="form-label">ประเภทห้อง</label>
             {{ form.room_type(class_='form-select' + (' is-invalid' if form.room_type.errors else ''), id='room_type_select') }}
@@ -55,7 +55,7 @@
               </div>
             {% endif %}
           </div>
-    
+
           <div class="row g-3 mb-3">
             <div class="col-md-4"><label class="form-label">ค่าเช่า (บาท/เดือน)</label>{{ form.rent_price(class_='form-control' + (' is-invalid' if form.rent_price.errors else ''), placeholder='เช่น 6500') }}</div>
             <div class="col-md-4"><label class="form-label">ค่าน้ำ (บาท/หน่วย)</label>{{ form.water_rate(class_='form-control' + (' is-invalid' if form.water_rate.errors else ''), placeholder='ค่าน้ำ') }}</div>
@@ -69,7 +69,7 @@
             <div class="col-md-4"><label class="form-label">LINE ID</label>{{ form.line_id(class_='form-control' + (' is-invalid' if form.line_id.errors else ''), placeholder='LINE ID') }}</div>
             <div class="col-md-4"><label class="form-label">Facebook URL</label>{{ form.facebook_url(class_='form-control' + (' is-invalid' if form.facebook_url.errors else ''), placeholder='Facebook URL') }}</div>
           </div>
-    
+
           <div class="my-3">
               <label for="additionalInfo" class="form-label">ข้อมูลเพิ่มเติม</label>
               {{ form.additional_info(id='additionalInfo', class_='form-control' + (' is-invalid' if form.additional_info.errors else ''), rows=5, placeholder='รายละเอียดอื่นๆ เช่น โปรโมชัน, จุดสังเกต, หรือกฎระเบียบเพิ่มเติม') }}
@@ -82,7 +82,7 @@
                 </div>
               {% endif %}
           </div>
-    
+
           <hr class="my-4">
           <h2 class="h5">ปักหมุดบนแผนที่</h2>
           <p class="text-muted small">ค้นหาสถานที่หรือคลิกบนแผนที่เพื่อกำหนดตำแหน่งหอพักของคุณ</p>
@@ -95,7 +95,7 @@
               {% endfor %}
             </div>
           {% endif %}
-    
+
           <hr class="my-4">
           <h2 class="h5">สิ่งอำนวยความสะดวก</h2>
           {% if form.amenities.errors %}
@@ -109,15 +109,15 @@
             {% for amenity in all_amenities %}
             <div class="col-md-4">
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}" 
+                <input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}"
                        {% if amenity.code in selected_amenities %}checked{% endif %}>
                 <label class="form-check-label" for="amenity-{{ amenity.code }}">{{ amenity.label_th }}</label>
               </div>
             </div>
             {% endfor %}
           </div>
-          
-          {# --- vvv ส่วนที่แก้ไข: ย้ายส่วนอัปโหลดรูปของหน้า "สร้าง" กลับเข้ามาใน form vvv --- #}
+
+          {# --- ส่วนอัปโหลดรูปของหน้า "สร้าง" จะอยู่ในฟอร์มหลัก --- #}
           {% if not prop %}
             <hr class="my-4">
             <div id="image-upload-section">
@@ -138,7 +138,6 @@
               {{ form.images(id="image-file-list", style="display:none;") }}
             </div>
           {% endif %}
-          {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
 
           <hr class="my-4">
           <div class="mt-4">
@@ -146,21 +145,21 @@
               <button type="submit" class="btn btn-primary" name="save_and_exit" value="true">บันทึกข้อมูล</button>
             {% else %}
               <button type="submit" class="btn btn-primary" name="save_property" value="true">สร้างประกาศ</button>
-            {% endif %} 
+            {% endif %}
             <a href="{{ url_for('owner.dashboard') }}" class="btn btn-secondary">ยกเลิก</a>
           </div>
         </form>
-        {# --- Main form ends here --- #}
+        {# --- จบฟอร์มหลัก --- #}
 
-        {# --- Image management for EDITING is now outside the main form --- #}
+        {# --- ส่วนจัดการรูปภาพสำหรับหน้า "แก้ไข" จะอยู่นอกฟอร์มหลัก --- #}
         {% if prop %}
             <div id="image-management-section" class="mt-5">
               <hr>
               <h2 class="h5">จัดการรูปภาพ</h2>
               <p class="text-muted small">คุณสามารถอัปโหลด, ลบ, และจัดเรียงลำดับรูปภาพได้ที่นี่ (สูงสุด {{ PropertyPolicy.MAX_IMAGES }} รูป)</p>
-              
+
               <h6 class="mt-4">อัปโหลดรูปภาพใหม่</h6>
-              
+
               <form class="mb-3" method="post" action="{{ url_for('owner.upload_image', prop_id=prop.id) }}" enctype="multipart/form-data">
                   {{ upload_form.csrf_token }}
                   <div class="input-group">
@@ -168,7 +167,7 @@
                     <button type="submit" class="btn btn-outline-primary">อัปโหลด</button>
                   </div>
               </form>
-              
+
               <h6 class="mt-4">รูปภาพปัจจุบัน</h6>
               <p class="text-muted small">คลิกค้างแล้วลากเพื่อจัดเรียงลำดับ</p>
               <div id="gallery" class="row row-cols-2 row-cols-md-3 g-3">
@@ -178,10 +177,10 @@
                     <img src="/{{ img.file_path }}" class="card-img-top" alt="#{{ img.id }}">
                     <div class="card-body p-2 d-flex justify-content-between align-items-center">
                       <span class="badge text-bg-light">ลำดับ {{ loop.index }}</span>
-                      
+
                       <button type="button" class="btn btn-sm btn-outline-danger delete-image-btn" data-image-id="{{ img.id }}">ลบ</button>
                       <button type="button" class="btn btn-sm btn-outline-secondary undo-delete-btn" data-image-id="{{ img.id }}" style="display: none;">ยกเลิก</button>
-                      
+
                     </div>
                   </div>
                 </div>
@@ -189,7 +188,7 @@
                 <div class="col"><div class="alert alert-secondary w-100">ยังไม่มีรูป</div></div>
                 {% endfor %}
               </div>
-          
+
               <form id="reorder-form" method="post" action="{{ url_for('owner.reorder_images', prop_id=prop.id) }}">
                 {{ reorder_form.csrf_token }}
                 <div id="positions-container" class="d-none"></div>
@@ -208,7 +207,7 @@
 <script>
 (function() {
     'use strict';
-    
+
     // Scroll to first error on page load
     document.addEventListener('DOMContentLoaded', function() {
         const firstErrorElement = document.querySelector('.is-invalid, .invalid-feedback.d-block, .alert.alert-danger');
@@ -282,7 +281,7 @@
         updateCharCount();
         additionalInfoTextarea.addEventListener('input', updateCharCount);
     }
-    
+
     const roomTypeSelect = document.getElementById('room_type_select');
     const otherRoomTypeContainer = document.getElementById('other_room_type_container');
     const otherRoomTypeInput = document.querySelector('[name="other_room_type"]');
@@ -364,14 +363,14 @@
             }
         });
     }
-    
+
     // Image preview for CREATE page
     const imageInput = document.getElementById('image-input');
     const addImageBtn = document.getElementById('add-image-btn');
     const previewContainer = document.getElementById('image-preview-container');
     const mainForm = document.getElementById('main-property-form');
     const fileCollector = document.getElementById('image-file-list');
-    
+
     if (imageInput && addImageBtn && previewContainer && mainForm && fileCollector) {
         let fileStore = new Map();
         const storageKey = `fileStore_${window.location.pathname}`;
