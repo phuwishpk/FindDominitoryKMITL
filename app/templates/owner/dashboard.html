@@ -1,131 +1,352 @@
-{% extends 'owner/base.html' %}
+# phuwishpk/finddominitorykmitl/FindDominitoryKMITL-owner-improvements/app/blueprints/owner/routes.py
 
-{% block owner_content %}
-<div class="d-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 fw-bold mb-0">Owner Dashboard</h1>
-  <div>
-    <a class="btn btn-outline-secondary" href="{{ url_for('owner.trash') }}">
-      <i data-feather="trash-2" class="me-1" style="width:16px;"></i> ถังขยะ
-    </a>
-    <a class="btn btn-primary ms-2" href="{{ url_for('owner.new_property') }}">
-      <i data-feather="plus" class="me-1" style="width:16px;"></i> สร้างประกาศใหม่
-    </a>
-  </div>
-</div>
+from flask import render_template, request, redirect, url_for, flash, current_app
+from flask_login import login_required, current_user
+from sqlalchemy import func
+from datetime import datetime
+from . import bp
+from app.forms.owner import PropertyForm
+from app.forms.upload import UploadImageForm, ReorderImagesForm, EmptyForm
+from app.models.property import Property, PropertyImage, Amenity
+from app.models.approval import ApprovalRequest, AuditLog
+from app.extensions import owner_required, db
 
-<div class="card">
-  <div class="card-header">
-    รายการประกาศของคุณ
-  </div>
-  <div class="list-group list-group-flush">
-    {% for p in props %}
-    <div class="list-group-item d-flex justify-content-between align-items-center">
-      <div class="flex-grow-1">
-        <a href="{{ url_for('owner.edit_property', prop_id=p.id) }}" class="text-decoration-none text-dark fw-semibold">{{ p.dorm_name }}</a>
-        <div class="small text-muted d-flex align-items-center">
-          <span>Workflow:</span>
-            {% if p.workflow_status == 'approved' %}
-                <span class="badge bg-success-subtle text-success-emphasis rounded-pill ms-2">Approved</span>
-            {% elif p.workflow_status == 'submitted' %}
-                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill ms-2">Submitted</span>
-            {% elif p.workflow_status == 'rejected' %}
-                <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill ms-2">Rejected</span>
-                {% if rejected_notes.get(p.id) %}
-                <button type="button" class="btn btn-link p-0 ms-1" data-bs-toggle="modal" data-bs-target="#rejectionNoteModal-{{ p.id }}" title="ดูเหตุผลการปฏิเสธ">
-                    <i data-feather="alert-circle" class="text-danger" style="width:16px; height:16px;"></i>
-                </button>
-                {% endif %}
-            {% else %}
-                <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill ms-2">Draft</span>
-            {% endif %}
+try:
+    from app.services.policies.property_policy import PropertyPolicy
+except Exception:
+    class PropertyPolicy:
+        MAX_IMAGES = 6
+        @staticmethod
+        def can_upload_more(current_count: int) -> bool:
+            return current_count < 6
 
-          <span class="ms-3">สถานะห้อง:
-            {% if p.availability_status == 'vacant' %}
-              <span class="badge bg-success-subtle text-success-emphasis rounded-pill">ห้องว่าง</span>
-            {% else %}
-              <span class="badge bg-danger text-white rounded-pill">ห้องเต็ม</span>
-            {% endif %}
-          </span>
-        </div>
-      </div>
+@bp.get("/dashboard")
+@login_required
+@owner_required
+def dashboard():
+    props = Property.query.filter_by(owner_id=current_user.ref_id, deleted_at=None).all()
 
-      <div class="d-flex align-items-center">
-        <form method="post" action="{{ url_for('owner.toggle_availability', prop_id=p.id) }}" class="d-inline-block me-2" title="สลับสถานะห้องว่าง/เต็ม">
-          {{ submit_form.csrf_token }}
-          <button type="submit" class="btn btn-sm btn-outline-secondary">
-            {% if p.availability_status == 'vacant' %}
-              <i data-feather="moon" style="width:16px;"></i> ตั้งเป็น "ห้องเต็ม"
-            {% else %}
-              <i data-feather="sun" style="width:16px;"></i> ตั้งเป็น "ห้องว่าง"
-            {% endif %}
-          </button>
-        </form>
+    # ดึงเหตุผลการปฏิเสธล่าสุดของแต่ละประกาศ
+    rejected_notes = {}
+    rejected_prop_ids = [p.id for p in props if p.workflow_status == 'rejected']
+    if rejected_prop_ids:
+        # Query ซ้อนเพื่อหา ID ของ ApprovalRequest ล่าสุดของแต่ละ Property
+        latest_requests_sq = db.session.query(
+            ApprovalRequest.property_id,
+            func.max(ApprovalRequest.id).label('max_id')
+        ).filter(
+            ApprovalRequest.property_id.in_(rejected_prop_ids)
+        ).group_by(ApprovalRequest.property_id).subquery()
 
-        {% if p.workflow_status == 'draft' or p.workflow_status == 'rejected' %}
-        <form method="post" action="{{ url_for('owner.submit_for_approval', prop_id=p.id) }}" class="d-inline-block me-2" onsubmit="return confirm('คุณต้องการส่งประกาศนี้เพื่อขออนุมัติใช่หรือไม่?');">
-          {{ submit_form.csrf_token }}
-          <button class="btn btn-sm btn-outline-info">ส่งอนุมัติ</button>
-        </form>
-        {% endif %}
-        <a href="{{ url_for('owner.edit_property', prop_id=p.id) }}" class="btn btn-sm btn-outline-secondary">
-            <i data-feather="edit-2" style="width:16px;"></i> แก้ไข
-        </a>
+        # Join กลับไปที่ตาราง ApprovalRequest เพื่อดึง 'note' จาก ID ที่ใหม่ที่สุด
+        notes_query = db.session.query(
+            ApprovalRequest.property_id,
+            ApprovalRequest.note
+        ).join(
+            latest_requests_sq,
+            ApprovalRequest.id == latest_requests_sq.c.max_id
+        ).filter(ApprovalRequest.note.isnot(None))
 
-        <button type="button" class="btn btn-sm btn-outline-danger ms-2" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ p.id }}" title="ลบประกาศ">
-            <i data-feather="trash" style="width:16px;"></i> ลบ
-        </button>
+        rejected_notes = dict(notes_query.all())
 
-      </div>
-    </div>
-    {% else %}
-    <div class="list-group-item text-center text-muted p-5">
-      ยังไม่มีประกาศ
-    </div>
-    {% endfor %}
-  </div>
-</div>
+    submit_form = EmptyForm()
+    delete_form = EmptyForm()
+    return render_template("owner/dashboard.html",
+                           props=props,
+                           submit_form=submit_form,
+                           delete_form=delete_form,
+                           rejected_notes=rejected_notes) # ส่ง rejected_notes ไปยัง template
 
-{# Modals for Deleting #}
-{% for p in props %}
-<div class="modal fade" id="deleteModal-{{ p.id }}" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">ยืนยันการลบ</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">คุณต้องการย้ายประกาศ <strong>"{{ p.dorm_name }}"</strong> ไปยังถังขยะใช่หรือไม่?</div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-        <form action="{{ url_for('owner.delete_property', prop_id=p.id) }}" method="POST">
-            {{ delete_form.csrf_token }}
-            <button type="submit" class="btn btn-danger">ยืนยันการลบ</button>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-{% endfor %}
 
-{# --- vvv Modals สำหรับแสดงเหตุผลการปฏิเสธ vvv --- #}
-{% for p in props %}
-  {% if p.workflow_status == 'rejected' and rejected_notes.get(p.id) %}
-  <div class="modal fade" id="rejectionNoteModal-{{ p.id }}" tabindex="-1" aria-labelledby="rejectionNoteModalLabel-{{ p.id }}" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="rejectionNoteModalLabel-{{ p.id }}">เหตุผลการปฏิเสธ: {{ p.dorm_name }}</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <p>{{ rejected_notes.get(p.id) }}</p>
-        </div>
-        <div class="modal-footer">
-          <a href="{{ url_for('owner.edit_property', prop_id=p.id) }}" class="btn btn-primary">ไปที่หน้าแก้ไข</a>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
-        </div>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-{% endfor %}
-{# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
+@bp.route("/property/new", methods=["GET","POST"])
+@login_required
+@owner_required
+def new_property():
+    form = PropertyForm()
+    all_amenities = Amenity.query.all()
 
-{% endblock %}
+    selected_amenities = []
+    if request.method == "POST":
+        selected_amenities = request.form.getlist('amenities')
+
+    if form.validate_on_submit():
+        prop_svc = current_app.extensions["container"]["property_service"]
+        upload_svc = current_app.extensions["container"]["upload_service"]
+
+        form_data = form.data.copy()
+        form_data.pop('csrf_token', None)
+        form_data['amenities'] = request.form.getlist('amenities')
+
+        prop = prop_svc.create(current_user.ref_id, form_data)
+
+        images = form.images.data
+        if images and images[0].filename:
+            for i, file_storage in enumerate(images):
+                if i >= PropertyPolicy.MAX_IMAGES:
+                    flash(f"อัปโหลดได้สูงสุด {PropertyPolicy.MAX_IMAGES} รูปเท่านั้น", "warning")
+                    break
+
+                if file_storage:
+                    path = upload_svc.save_image(current_user.ref_id, file_storage)
+                    img = PropertyImage(property_id=prop.id, file_path=path, position=i + 1)
+                    db.session.add(img)
+            db.session.commit()
+
+        flash("สร้างประกาศสำเร็จแล้ว", "success")
+        flash('clear_form_storage', 'script_command')
+        return redirect(url_for("owner.dashboard"))
+
+    return render_template("owner/form.html",
+        form=form,
+        all_amenities=all_amenities,
+        prop=None,
+        upload_form=UploadImageForm(),
+        PropertyPolicy=PropertyPolicy,
+        selected_amenities=selected_amenities
+    )
+
+
+@bp.route("/property/<int:prop_id>/edit", methods=["GET","POST"])
+@login_required
+@owner_required
+def edit_property(prop_id: int):
+    prop = Property.query.get_or_404(prop_id)
+    if prop.owner_id != current_user.ref_id:
+        return redirect(url_for("owner.dashboard"))
+
+    form = PropertyForm(obj=prop)
+    predefined_choices = [choice[0] for choice in form.room_type.choices]
+
+    if request.method == "POST":
+        selected_amenities = request.form.getlist('amenities')
+    else:
+        selected_amenities = [amenity.code for amenity in prop.amenities]
+
+    if request.method == "GET":
+        if prop.room_type not in predefined_choices:
+            form.room_type.data = 'อื่นๆ'
+            form.other_room_type.data = prop.room_type
+
+    upload_form = UploadImageForm()
+    reorder_form = ReorderImagesForm()
+    all_amenities = Amenity.query.all()
+    approval_note = None
+
+    if prop.workflow_status == 'rejected':
+        last_request = ApprovalRequest.query.filter_by(property_id=prop.id).order_by(ApprovalRequest.created_at.desc()).first()
+        if last_request:
+            approval_note = last_request.note
+
+    if form.validate_on_submit() and ("save_property" in request.form or "save_and_exit" in request.form):
+        prop_svc = current_app.extensions["container"]["property_service"]
+
+        form_data = PropertyForm(request.form).data
+        form_data.pop('csrf_token', None)
+        form_data['amenities'] = request.form.getlist('amenities')
+
+        images_to_delete_str = request.form.get('images_to_delete', '')
+        if images_to_delete_str:
+            image_ids_to_delete = [int(id_) for id_ in images_to_delete_str.split(',') if id_.isdigit()]
+            if image_ids_to_delete:
+                images_to_delete = db.session.query(PropertyImage).filter(
+                    PropertyImage.property_id == prop_id,
+                    PropertyImage.id.in_(image_ids_to_delete)
+                ).all()
+                for img in images_to_delete:
+                    db.session.delete(img)
+
+        prop_svc.update(current_user.ref_id, prop_id, form_data)
+        flash("อัปเดตข้อมูลแล้ว", "success")
+
+        if "save_and_exit" in request.form:
+            return redirect(url_for("owner.dashboard"))
+        else:
+            return redirect(url_for("owner.edit_property", prop_id=prop.id))
+
+    return render_template("owner/form.html",
+                           form=form, prop=prop,
+                           upload_form=upload_form, reorder_form=reorder_form,
+                           all_amenities=all_amenities,
+                           approval_note=approval_note,
+                           PropertyPolicy=PropertyPolicy,
+                           selected_amenities=selected_amenities
+                           )
+
+@bp.post("/property/<int:prop_id>/image")
+@login_required
+@owner_required
+def upload_image(prop_id: int):
+    prop = Property.query.get_or_404(prop_id)
+    if prop.owner_id != current_user.ref_id:
+        return redirect(url_for("owner.dashboard"))
+    form = UploadImageForm()
+    if form.validate_on_submit() and form.image.data and form.image.data[0].filename:
+        upload_svc = current_app.extensions["container"]["upload_service"]
+
+        for i, file_storage in enumerate(form.image.data):
+            count = PropertyImage.query.filter_by(property_id=prop.id).count()
+            if count >= PropertyPolicy.MAX_IMAGES:
+                flash(f"อัปโหลดได้สูงสุด {PropertyPolicy.MAX_IMAGES} รูปเท่านั้น", "warning")
+                break
+
+            if file_storage:
+                path = upload_svc.save_image(current_user.ref_id, file_storage)
+                max_pos = (PropertyImage.query.with_entities(func.max(PropertyImage.position))
+                           .filter_by(property_id=prop.id).scalar()) or 0
+                img = PropertyImage(property_id=prop.id, file_path=path, position=max_pos + 1)
+                db.session.add(img)
+
+        db.session.commit()
+        flash("อัปโหลดรูปสำเร็จ", "success")
+    else:
+        flash("กรุณาเลือกไฟล์รูปภาพ", "danger")
+    return redirect(url_for("owner.edit_property", prop_id=prop.id, tab="images"))
+
+@bp.post("/property/<int:prop_id>/images/reorder")
+@login_required
+@owner_required
+def reorder_images(prop_id: int):
+    prop = Property.query.get_or_404(prop_id)
+    if prop.owner_id != current_user.ref_id:
+        return redirect(url_for("owner.dashboard"))
+    form = ReorderImagesForm()
+    if not form.validate_on_submit():
+        flash("รูปแบบข้อมูลจัดเรียงไม่ถูกต้อง", "danger")
+        return redirect(url_for("owner.edit_property", prop_id=prop.id, tab="images"))
+    mapping = {}
+    for field in form.positions:
+        try:
+            img_id, pos = field.data.split(":")
+            mapping[int(img_id)] = int(pos)
+        except Exception:
+            continue
+    imgs = PropertyImage.query.filter(
+        PropertyImage.id.in_(mapping.keys()),
+        PropertyImage.property_id == prop.id
+    ).all()
+    for im in imgs:
+        im.position = mapping.get(im.id, im.position)
+    db.session.commit()
+    flash("จัดเรียงรูปแล้ว", "success")
+    return redirect(url_for("owner.edit_property", prop_id=prop.id, tab="images"))
+
+@bp.post("/property/<int:prop_id>/submit")
+@login_required
+@owner_required
+def submit_for_approval(prop_id: int):
+    prop = Property.query.get_or_404(prop_id)
+    if prop.owner_id != current_user.ref_id:
+        return redirect(url_for("owner.dashboard"))
+
+    approval_svc = current_app.extensions["container"]["approval_service"]
+
+    try:
+        approval_svc.submit_property(property_id=prop_id, owner_id=current_user.ref_id)
+        flash("ส่งประกาศเพื่อขออนุมัติแล้ว", "success")
+    except ValueError as e:
+        flash(f"ไม่สามารถส่งประกาศได้: {str(e)}", "danger")
+
+    return redirect(url_for("owner.dashboard"))
+
+@bp.post("/property/<int:prop_id>/toggle_availability")
+@login_required
+@owner_required
+def toggle_availability(prop_id: int):
+    form = EmptyForm()
+    if not form.validate_on_submit():
+        flash("Invalid request.", "danger")
+        return redirect(url_for("owner.dashboard"))
+
+    prop = Property.query.get_or_404(prop_id)
+    if prop.owner_id != current_user.ref_id:
+        flash("Permission denied.", "danger")
+        return redirect(url_for("owner.dashboard"))
+
+    if prop.availability_status == 'vacant':
+        prop.availability_status = 'occupied'
+        new_status_th = "ห้องเต็ม"
+    else:
+        prop.availability_status = 'vacant'
+        new_status_th = "ห้องว่าง"
+
+    db.session.commit()
+    flash(f"เปลี่ยนสถานะของ '{prop.dorm_name}' เป็น '{new_status_th}' เรียบร้อยแล้ว", "success")
+    return redirect(url_for("owner.dashboard"))
+
+@bp.post("/property/<int:prop_id>/delete")
+@login_required
+@owner_required
+def delete_property(prop_id: int):
+    if not EmptyForm().validate_on_submit():
+        flash("Invalid CSRF token.", "danger")
+        return redirect(url_for('owner.dashboard'))
+
+    prop = Property.query.get_or_404(prop_id)
+    if prop.owner_id != current_user.ref_id:
+        flash("Permission denied.", "danger")
+        return redirect(url_for("owner.dashboard"))
+
+    prop.deleted_at = datetime.utcnow()
+    db.session.add(AuditLog.log("owner", current_user.ref_id, "soft_delete_property", prop_id))
+    db.session.commit()
+    flash(f"ย้ายประกาศ '{prop.dorm_name}' ไปยังถังขยะแล้ว", "success")
+    return redirect(url_for('owner.dashboard'))
+
+@bp.route("/trash")
+@login_required
+@owner_required
+def trash():
+    page = request.args.get("page", 1, type=int)
+    per_page = 10
+
+    pagination = db.paginate(
+        Property.query.filter(
+            Property.owner_id == current_user.ref_id,
+            Property.deleted_at.isnot(None)
+        ).order_by(Property.deleted_at.desc()),
+        page=page, per_page=per_page, error_out=False
+    )
+
+    restore_form = EmptyForm()
+    delete_form = EmptyForm()
+
+    return render_template("owner/trash.html", pagination=pagination, restore_form=restore_form, delete_form=delete_form)
+
+@bp.post("/property/<int:prop_id>/restore")
+@login_required
+@owner_required
+def restore_property(prop_id: int):
+    if not EmptyForm().validate_on_submit():
+        flash("Invalid request.", "danger")
+        return redirect(url_for('owner.trash'))
+
+    prop = Property.query.get_or_404(prop_id)
+    if prop.owner_id != current_user.ref_id:
+        flash("Permission denied.", "danger")
+        return redirect(url_for("owner.trash"))
+
+    prop.deleted_at = None
+    db.session.add(AuditLog.log("owner", current_user.ref_id, "restore_property", prop_id))
+    db.session.commit()
+    flash(f"กู้คืนประกาศ '{prop.dorm_name}' สำเร็จ", "success")
+    return redirect(url_for('owner.trash'))
+
+@bp.post("/property/<int:prop_id>/permanent_delete")
+@login_required
+@owner_required
+def permanently_delete_property(prop_id: int):
+    if not EmptyForm().validate_on_submit():
+        flash("Invalid request.", "danger")
+        return redirect(url_for('owner.trash'))
+
+    prop = Property.query.get_or_404(prop_id)
+    if prop.owner_id != current_user.ref_id:
+        flash("Permission denied.", "danger")
+        return redirect(url_for("owner.trash"))
+
+    dorm_name = prop.dorm_name
+    db.session.add(AuditLog.log("owner", current_user.ref_id, "permanent_delete_property", meta={"deleted_name": dorm_name, "property_id": prop_id}))
+    db.session.delete(prop)
+    db.session.commit()
+    flash(f"ลบประกาศ '{dorm_name}' ออกจากระบบอย่างถาวรแล้ว", "success")
+    return redirect(url_for('owner.trash'))

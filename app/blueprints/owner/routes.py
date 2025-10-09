@@ -245,8 +245,9 @@ def submit_for_approval(prop_id: int):
         flash("ส่งประกาศเพื่อขออนุมัติแล้ว", "success")
     except ValueError as e:
         flash(f"ไม่สามารถส่งประกาศได้: {str(e)}", "danger")
-
+    
     return redirect(url_for("owner.dashboard"))
+
 
 @bp.post("/property/<int:prop_id>/toggle_availability")
 @login_required
