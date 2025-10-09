@@ -18,17 +18,17 @@
 <div class="card">
   <div class="card-body p-4">
     <div>
-      
+
       <div>
-        <form method="post" novalidate enctype="multipart/form-data">
+        <form method="post" novalidate enctype="multipart/form-data" id="main-property-form">
           {{ form.csrf_token }}
-          
+
           <input type="hidden" name="images_to_delete" id="images-to-delete-input">
 
           <p class="text-muted small">{% if not prop %}กรุณากรอกข้อมูลหลักและอัปโหลดรูปภาพให้ครบถ้วน จากนั้นกด "สร้างประกาศ"{% else %}คุณสามารถแก้ไขข้อมูลประกาศได้ที่นี่{% endif %}</p>
-          
+
           <div class="mb-3"><label class="form-label">ชื่อหอ</label>{{ form.dorm_name(class_='form-control' + (' is-invalid' if form.dorm_name.errors else ''), placeholder='ชื่อหอ') }}</div>
-          
+
           <div class="row g-3 mb-3">
             <div class="col-md-6">
                 <label class="form-label">ถนน</label>
@@ -39,7 +39,7 @@
                 {{ form.soi(class_='form-control' + (' is-invalid' if form.soi.errors else ''), placeholder='เช่น ลาดกระบัง 1') }}
             </div>
           </div>
-          
+
           <div class="mb-3">
             <label class="form-label">ประเภทห้อง</label>
             {{ form.room_type(class_='form-select' + (' is-invalid' if form.room_type.errors else ''), id='room_type_select') }}
@@ -55,7 +55,7 @@
               </div>
             {% endif %}
           </div>
-    
+
           <div class="row g-3 mb-3">
             <div class="col-md-4"><label class="form-label">ค่าเช่า (บาท/เดือน)</label>{{ form.rent_price(class_='form-control' + (' is-invalid' if form.rent_price.errors else ''), placeholder='เช่น 6500') }}</div>
             <div class="col-md-4"><label class="form-label">ค่าน้ำ (บาท/หน่วย)</label>{{ form.water_rate(class_='form-control' + (' is-invalid' if form.water_rate.errors else ''), placeholder='ค่าน้ำ') }}</div>
@@ -69,7 +69,7 @@
             <div class="col-md-4"><label class="form-label">LINE ID</label>{{ form.line_id(class_='form-control' + (' is-invalid' if form.line_id.errors else ''), placeholder='LINE ID') }}</div>
             <div class="col-md-4"><label class="form-label">Facebook URL</label>{{ form.facebook_url(class_='form-control' + (' is-invalid' if form.facebook_url.errors else ''), placeholder='Facebook URL') }}</div>
           </div>
-    
+
           <div class="my-3">
               <label for="additionalInfo" class="form-label">ข้อมูลเพิ่มเติม</label>
               {{ form.additional_info(id='additionalInfo', class_='form-control' + (' is-invalid' if form.additional_info.errors else ''), rows=5, placeholder='รายละเอียดอื่นๆ เช่น โปรโมชัน, จุดสังเกต, หรือกฎระเบียบเพิ่มเติม') }}
@@ -82,7 +82,7 @@
                 </div>
               {% endif %}
           </div>
-    
+
           <hr class="my-4">
           <h2 class="h5">ปักหมุดบนแผนที่</h2>
           <p class="text-muted small">ค้นหาสถานที่หรือคลิกบนแผนที่เพื่อกำหนดตำแหน่งหอพักของคุณ</p>
@@ -95,7 +95,7 @@
               {% endfor %}
             </div>
           {% endif %}
-    
+
           <hr class="my-4">
           <h2 class="h5">สิ่งอำนวยความสะดวก</h2>
           {% if form.amenities.errors %}
@@ -109,16 +109,17 @@
             {% for amenity in all_amenities %}
             <div class="col-md-4">
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}" 
+                <input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}"
                        {% if amenity.code in selected_amenities %}checked{% endif %}>
                 <label class="form-check-label" for="amenity-{{ amenity.code }}">{{ amenity.label_th }}</label>
               </div>
             </div>
             {% endfor %}
           </div>
-    
-          <hr class="my-4">
+
+          {# --- ส่วนอัปโหลดรูปของหน้า "สร้าง" จะอยู่ในฟอร์มหลัก --- #}
           {% if not prop %}
+            <hr class="my-4">
             <div id="image-upload-section">
               <h2 class="h5">อัปโหลดรูปภาพ</h2>
               <p class="text-muted small">คุณสามารถเพิ่มรูปภาพได้สูงสุด {{ PropertyPolicy.MAX_IMAGES }} รูป (ต้องมีอย่างน้อย 1 รูป)</p>
@@ -136,20 +137,37 @@
               <div id="image-preview-container" class="row row-cols-2 row-cols-md-3 g-3 mb-3"></div>
               {{ form.images(id="image-file-list", style="display:none;") }}
             </div>
-          {% else %}
-            <div id="image-management-section">
+          {% endif %}
+
+          <hr class="my-4">
+          <div class="mt-4">
+            {% if prop %}
+              <button type="submit" class="btn btn-primary" name="save_and_exit" value="true">บันทึกข้อมูล</button>
+            {% else %}
+              <button type="submit" class="btn btn-primary" name="save_property" value="true">สร้างประกาศ</button>
+            {% endif %}
+            <a href="{{ url_for('owner.dashboard') }}" class="btn btn-secondary">ยกเลิก</a>
+          </div>
+        </form>
+        {# --- จบฟอร์มหลัก --- #}
+
+        {# --- ส่วนจัดการรูปภาพสำหรับหน้า "แก้ไข" จะอยู่นอกฟอร์มหลัก --- #}
+        {% if prop %}
+            <div id="image-management-section" class="mt-5">
+              <hr>
               <h2 class="h5">จัดการรูปภาพ</h2>
               <p class="text-muted small">คุณสามารถอัปโหลด, ลบ, และจัดเรียงลำดับรูปภาพได้ที่นี่ (สูงสุด {{ PropertyPolicy.MAX_IMAGES }} รูป)</p>
-              
+
               <h6 class="mt-4">อัปโหลดรูปภาพใหม่</h6>
+
               <form class="mb-3" method="post" action="{{ url_for('owner.upload_image', prop_id=prop.id) }}" enctype="multipart/form-data">
                   {{ upload_form.csrf_token }}
                   <div class="input-group">
                     {{ upload_form.image(class_='form-control' + (' is-invalid' if upload_form.image.errors else '')) }}
-                    <button class="btn btn-outline-primary">อัปโหลด</button>
+                    <button type="submit" class="btn btn-outline-primary">อัปโหลด</button>
                   </div>
               </form>
-              
+
               <h6 class="mt-4">รูปภาพปัจจุบัน</h6>
               <p class="text-muted small">คลิกค้างแล้วลากเพื่อจัดเรียงลำดับ</p>
               <div id="gallery" class="row row-cols-2 row-cols-md-3 g-3">
@@ -159,10 +177,10 @@
                     <img src="/{{ img.file_path }}" class="card-img-top" alt="#{{ img.id }}">
                     <div class="card-body p-2 d-flex justify-content-between align-items-center">
                       <span class="badge text-bg-light">ลำดับ {{ loop.index }}</span>
-                      
+
                       <button type="button" class="btn btn-sm btn-outline-danger delete-image-btn" data-image-id="{{ img.id }}">ลบ</button>
                       <button type="button" class="btn btn-sm btn-outline-secondary undo-delete-btn" data-image-id="{{ img.id }}" style="display: none;">ยกเลิก</button>
-                      
+
                     </div>
                   </div>
                 </div>
@@ -170,29 +188,15 @@
                 <div class="col"><div class="alert alert-secondary w-100">ยังไม่มีรูป</div></div>
                 {% endfor %}
               </div>
-          
+
               <form id="reorder-form" method="post" action="{{ url_for('owner.reorder_images', prop_id=prop.id) }}">
                 {{ reorder_form.csrf_token }}
                 <div id="positions-container" class="d-none"></div>
                 <button type="submit" class="btn btn-outline-secondary mt-3">บันทึกการจัดเรียง</button>
               </form>
             </div>
-          {% endif %}
-    
-          <hr class="my-4">
-          <div class="mt-4">
-            {% if prop %}
-              <button class="btn btn-primary" name="save_and_exit" value="true">บันทึกข้อมูล</button>
-            {% else %}
-              <button class="btn btn-primary" name="save_property" value="true">สร้างประกาศ</button>
-            {% endif %} 
-            <a href="{{ url_for('owner.dashboard') }}" class="btn btn-secondary">ยกเลิก</a>
-          </div>
-        </form>
+        {% endif %}
       </div>
-      
-      <!-- Danger Zone section has been removed -->
-
     </div>
   </div>
 </div>
@@ -203,26 +207,19 @@
 <script>
 (function() {
     'use strict';
-    
+
+    // Scroll to first error on page load
     document.addEventListener('DOMContentLoaded', function() {
-        const imageError = document.querySelector('#image-upload-section .is-invalid, #image-upload-section .invalid-feedback.d-block');
-        if (imageError) {
-            const imageSection = document.getElementById('image-upload-section');
-            if (imageSection) {
-                imageSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return;
-            }
-        }
         const firstErrorElement = document.querySelector('.is-invalid, .invalid-feedback.d-block, .alert.alert-danger');
         if (firstErrorElement) {
             firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     });
 
+    // Scroll to image section if 'tab=images' is in URL (for after upload redirect)
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
-        const tabToShow = urlParams.get('tab');
-        if (tabToShow === 'images') {
+        if (urlParams.get('tab') === 'images') {
             const imageSection = document.getElementById('image-management-section');
             if (imageSection) {
                 imageSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -234,93 +231,67 @@
     if (mapContainer) {
         const initialCoords = [13.7292, 100.7758]; // KMITL Default
         const map = L.map('map').setView(initialCoords, 15);
-
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
-
         let marker = null;
         const hiddenInput = document.getElementById('location_pin_json_input');
-        
         const searchProvider = new GeoSearch.OpenStreetMapProvider();
         const searchControl = new GeoSearch.GeoSearchControl({
-            provider: searchProvider,
-            style: 'bar',
-            showMarker: false,
-            autoClose: true,
-            searchLabel: 'ค้นหาสถานที่...',
+            provider: searchProvider, style: 'bar', showMarker: false, autoClose: true, searchLabel: 'ค้นหาสถานที่...',
         });
         map.addControl(searchControl);
-
         function updateMarkerAndInput(lat, lng) {
             if (marker) map.removeLayer(marker);
             marker = L.marker([lat, lng]).addTo(map);
             const geoJsonData = { "type": "Point", "coordinates": [lng, lat] };
             hiddenInput.value = JSON.stringify(geoJsonData);
         }
-
         map.on('geosearch/showlocation', function(result) {
             const { x, y } = result.location;
             map.setView([y, x], 16);
             updateMarkerAndInput(y, x);
         });
-
         try {
             const formJsonData = document.getElementById('location_pin_json_input').value;
             let existingData = null;
-
-            if (formJsonData) {
-                try { existingData = JSON.parse(formJsonData); } catch(e) {}
-            }
-            
+            if (formJsonData) { try { existingData = JSON.parse(formJsonData); } catch(e) {} }
             if (!existingData) {
                 const propDataStr = '{{ prop.location_pin | tojson | safe if prop and prop.location_pin else 'null' }}';
                 existingData = JSON.parse(propDataStr);
             }
-
             if (existingData && existingData.type === 'Point' && Array.isArray(existingData.coordinates)) {
                 const [lng, lat] = existingData.coordinates;
                 updateMarkerAndInput(lat, lng);
                 map.setView([lat, lng], 16);
             }
-        } catch (e) {
-            console.error("Could not parse existing location data:", e);
-        }
-
-        map.on('click', function(e) {
-            updateMarkerAndInput(e.latlng.lat, e.latlng.lng);
-        });
+        } catch (e) { console.error("Could not parse existing location data:", e); }
+        map.on('click', function(e) { updateMarkerAndInput(e.latlng.lat, e.latlng.lng); });
     }
 
     const additionalInfoTextarea = document.getElementById('additionalInfo');
     const charCountDisplay = document.getElementById('charCount');
     if (additionalInfoTextarea && charCountDisplay) {
         const maxLength = 5000;
-        
         function updateCharCount() {
             const currentLength = additionalInfoTextarea.value.length;
             charCountDisplay.textContent = `${currentLength} / ${maxLength}`;
             charCountDisplay.classList.toggle('text-danger', currentLength > maxLength);
         }
-        
         updateCharCount();
         additionalInfoTextarea.addEventListener('input', updateCharCount);
     }
-    
+
     const roomTypeSelect = document.getElementById('room_type_select');
     const otherRoomTypeContainer = document.getElementById('other_room_type_container');
     const otherRoomTypeInput = document.querySelector('[name="other_room_type"]');
-
     function toggleOtherRoomType() {
         if (roomTypeSelect && otherRoomTypeContainer) {
             const isOther = roomTypeSelect.value === 'อื่นๆ';
             otherRoomTypeContainer.style.display = isOther ? 'block' : 'none';
-            if (!isOther && otherRoomTypeInput) {
-                otherRoomTypeInput.value = '';
-            }
+            if (!isOther && otherRoomTypeInput) { otherRoomTypeInput.value = ''; }
         }
     }
-    
     document.addEventListener('DOMContentLoaded', function() {
         if (roomTypeSelect) {
             toggleOtherRoomType();
@@ -333,12 +304,8 @@
         let dragEl = null;
         gallery.addEventListener('dragstart', (e) => {
             const card = e.target.closest('[draggable="true"]');
-            if (card) {
-                dragEl = card;
-                e.dataTransfer.effectAllowed = 'move';
-            }
+            if (card) { dragEl = card; e.dataTransfer.effectAllowed = 'move'; }
         });
-
         gallery.addEventListener('dragover', (e) => {
             e.preventDefault();
             const card = e.target.closest('[draggable="true"]');
@@ -348,9 +315,7 @@
                 gallery.insertBefore(dragEl.parentElement, next ? card.parentElement.nextSibling : card.parentElement);
             }
         });
-
         gallery.addEventListener('dragend', () => { dragEl = null; });
-        
         const reorderForm = document.getElementById('reorder-form');
         if (reorderForm) {
             reorderForm.addEventListener('submit', () => {
@@ -370,33 +335,26 @@
 
     const imagesToDeleteInput = document.getElementById('images-to-delete-input');
     const imageManagementSection = document.getElementById('image-management-section');
-    
     if (imageManagementSection && imagesToDeleteInput) {
         let imagesToDelete = new Set();
-
         function updateHiddenInput() {
             imagesToDeleteInput.value = Array.from(imagesToDelete).join(',');
         }
-
         imageManagementSection.addEventListener('click', function(e) {
             const deleteBtn = e.target.closest('.delete-image-btn');
             const undoBtn = e.target.closest('.undo-delete-btn');
-
             if (deleteBtn) {
                 const imageId = deleteBtn.dataset.imageId;
                 const card = deleteBtn.closest('.card');
-                
                 imagesToDelete.add(imageId);
                 card.style.opacity = '0.4';
                 deleteBtn.style.display = 'none';
                 card.querySelector('.undo-delete-btn').style.display = 'inline-block';
                 updateHiddenInput();
             }
-
             if (undoBtn) {
                 const imageId = undoBtn.dataset.imageId;
                 const card = undoBtn.closest('.card');
-                
                 imagesToDelete.delete(imageId);
                 card.style.opacity = '1';
                 undoBtn.style.display = 'none';
@@ -405,13 +363,13 @@
             }
         });
     }
-    
+
+    // Image preview for CREATE page
     const imageInput = document.getElementById('image-input');
     const addImageBtn = document.getElementById('add-image-btn');
     const previewContainer = document.getElementById('image-preview-container');
-    const mainForm = document.querySelector('form');
+    const mainForm = document.getElementById('main-property-form');
     const fileCollector = document.getElementById('image-file-list');
-    const maxImages = {{ PropertyPolicy.MAX_IMAGES }};
 
     if (imageInput && addImageBtn && previewContainer && mainForm && fileCollector) {
         let fileStore = new Map();
@@ -423,19 +381,15 @@
             reader.onload = () => resolve(reader.result);
             reader.onerror = error => reject(error);
         });
-
         const base64ToFile = (dataUrl, filename) => {
             const arr = dataUrl.split(',');
             const mime = arr[0].match(/:(.*?);/)[1];
             const bstr = atob(arr[1]);
             let n = bstr.length;
             const u8arr = new Uint8Array(n);
-            while(n--) {
-                u8arr[n] = bstr.charCodeAt(n);
-            }
+            while(n--) { u8arr[n] = bstr.charCodeAt(n); }
             return new File([u8arr], filename, {type:mime});
-        }
-        
+        };
         const saveFileStore = async () => {
             const serializable = [];
             for (const [key, file] of fileStore.entries()) {
@@ -444,7 +398,6 @@
             }
             sessionStorage.setItem(storageKey, JSON.stringify(serializable));
         };
-        
         const loadFileStore = () => {
             const stored = sessionStorage.getItem(storageKey);
             if (stored) {
@@ -461,7 +414,6 @@
                 }
             }
         };
-
         const renderPreviews = () => {
             previewContainer.innerHTML = '';
             let index = 1;
@@ -475,18 +427,16 @@
                             <span class="badge text-bg-light">ลำดับ ${index++}</span>
                             <button type="button" class="btn btn-sm btn-outline-danger remove-img-btn" data-key="${key}">ลบ</button>
                         </div>
-                    </div>
-                `;
+                    </div>`;
                 previewContainer.appendChild(col);
             });
             saveFileStore();
         };
-
         addImageBtn.addEventListener('click', () => {
             if (imageInput.files.length > 0) {
                 for(const file of imageInput.files){
-                    if (fileStore.size >= maxImages) {
-                        alert(`สามารถอัปโหลดได้สูงสุด ${maxImages} รูปเท่านั้น`);
+                    if (fileStore.size >= {{ PropertyPolicy.MAX_IMAGES }}) {
+                        alert(`สามารถอัปโหลดได้สูงสุด {{ PropertyPolicy.MAX_IMAGES }} รูปเท่านั้น`);
                         break;
                     }
                     const key = `${Date.now()}-${file.name}`;
@@ -498,7 +448,6 @@
                 alert('กรุณาเลือกไฟล์รูปภาพก่อน');
             }
         });
-
         previewContainer.addEventListener('click', (e) => {
             const removeBtn = e.target.closest('.remove-img-btn');
             if (removeBtn) {
@@ -507,13 +456,11 @@
                 renderPreviews();
             }
         });
-
         mainForm.addEventListener('submit', (e) => {
             const dataTransfer = new DataTransfer();
             fileStore.forEach(file => dataTransfer.items.add(file));
             fileCollector.files = dataTransfer.files;
         });
-
         document.addEventListener('DOMContentLoaded', () => {
             loadFileStore();
             renderPreviews();
