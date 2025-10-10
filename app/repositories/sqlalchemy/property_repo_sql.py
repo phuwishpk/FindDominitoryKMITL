@@ -1,6 +1,7 @@
 from sqlalchemy import or_, func
 from app.models.property import Property, Amenity, PropertyAmenity
 from app.extensions import db
+from datetime import datetime
 
 class SqlPropertyRepo:
     def get(self, prop_id: int):
@@ -20,9 +21,8 @@ class SqlPropertyRepo:
         db.session.commit()
 
     def list_approved(self, **filters):
-        # กรองรายการที่ถูกลบ (soft-deleted) ออก
         q = Property.query.filter(
-            Property.workflow_status == "approved",
+            Property.workflow_status == Property.WORKFLOW_APPROVED,
             Property.deleted_at.is_(None)
         )
         q_text = (filters or {}).get('q')
@@ -36,7 +36,8 @@ class SqlPropertyRepo:
         room_type = (filters or {}).get('room_type')
         if room_type: q = q.filter(Property.room_type == room_type)
         availability = (filters or {}).get('availability')
-        if availability in {"vacant","occupied"}: q = q.filter(Property.availability_status == availability)
+        if availability in {Property.AVAILABILITY_VACANT, Property.AVAILABILITY_OCCUPIED}: 
+            q = q.filter(Property.availability_status == availability)
         codes = (filters or {}).get('amenities')
         if codes:
             codes_list = [c.strip() for c in codes.split(',') if c.strip()]
@@ -49,7 +50,6 @@ class SqlPropertyRepo:
         return q
 
     def list_all_paginated(self, search_query=None, page=1, per_page=15):
-        # กรองรายการที่ถูกลบ (soft-deleted) ออก
         q = Property.query.filter(Property.deleted_at.is_(None))
 
         if search_query:
@@ -61,7 +61,6 @@ class SqlPropertyRepo:
             page=page, per_page=per_page, error_out=False
         )
 
-    # --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
     def get_deleted_properties_paginated(self, page=1, per_page=15):
         """ดึงรายการ Properties ที่ถูกลบ (soft-deleted)"""
         q = Property.query.filter(Property.deleted_at.isnot(None))
@@ -69,4 +68,18 @@ class SqlPropertyRepo:
             q.order_by(Property.deleted_at.desc()),
             page=page, per_page=per_page, error_out=False
         )
-    # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
+
+    def count_active_properties(self) -> int:
+        return db.session.query(Property).filter(Property.deleted_at.is_(None)).count()
+
+    def count_properties_by_month(self, date_obj: datetime) -> int:
+        return db.session.query(Property).filter(
+            func.strftime('%Y-%m', Property.created_at) == date_obj.strftime("%Y-%m")
+        ).count()
+
+    def get_property_counts_by_road(self, limit: int = 5):
+        return db.session.query(
+            Property.road, func.count(Property.id).label('count')
+        ).filter(
+            Property.road.isnot(None), Property.road != ''
+        ).group_by(Property.road).order_by(func.count(Property.id).desc()).limit(limit).all()

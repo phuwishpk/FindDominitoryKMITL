@@ -2,9 +2,8 @@ from flask import Flask, send_from_directory
 from .extensions import db, migrate, login_manager, babel_ext, limiter, csrf 
 from .config import Config
 
-# --- vvv ส่วนที่แก้ไข vvv ---
 from .utils.helpers import format_as_bangkok_time, from_json_string
-# --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
+from .forms.upload import EmptyForm # <-- เพิ่ม
 
 from .blueprints.public import bp as public_bp
 from .blueprints.owner import bp as owner_bp
@@ -21,6 +20,7 @@ from .services.property_service import PropertyService
 from .services.search_service import SearchService
 from .services.approval_service import ApprovalService
 from .services.upload_service import UploadService
+from .services.dashboard_service import DashboardService # <-- เพิ่ม
 
 def register_dependencies(app: Flask):
     container = {}
@@ -35,6 +35,11 @@ def register_dependencies(app: Flask):
     container["property_service"] = PropertyService(container["property_repo"])
     container["search_service"] = SearchService(container["property_repo"])
     container["approval_service"] = ApprovalService(container["approval_repo"], container["property_repo"])
+    container["dashboard_service"] = DashboardService( # <-- เพิ่ม
+        user_repo=container["user_repo"],
+        property_repo=container["property_repo"],
+        approval_repo=container["approval_repo"]
+    )
     
     if not hasattr(app, "extensions"):
         app.extensions = {}
@@ -51,11 +56,12 @@ def create_app() -> Flask:
     limiter.init_app(app)
     csrf.init_app(app)
 
-    # --- vvv ส่วนที่แก้ไข vvv ---
-    # ลงทะเบียนฟิลเตอร์ที่เราสร้างขึ้นเพื่อให้ Template รู้จัก
     app.jinja_env.filters['to_bkk_time'] = format_as_bangkok_time
-    app.jinja_env.filters['fromjson'] = from_json_string # <--- เพิ่มบรรทัดนี้
-    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
+    app.jinja_env.filters['fromjson'] = from_json_string
+
+    @app.context_processor # <-- เพิ่ม
+    def inject_forms():
+        return dict(empty_form=EmptyForm())
 
     with app.app_context():
         register_dependencies(app)
@@ -74,7 +80,6 @@ def create_app() -> Flask:
             as_attachment=False
         )
 
-    # ... (โค้ดส่วน CLI Commands เหมือนเดิม) ...
     @app.get("/health")
     def health():
         return {"ok": True}
@@ -120,7 +125,7 @@ def create_app() -> Flask:
             p = Property(owner_id=o.id, dorm_name="ตัวอย่างหอพัก", room_type="studio",
                          rent_price=6500, 
                          location_pin=location_pin_data, 
-                         workflow_status="approved")
+                         workflow_status=Property.WORKFLOW_APPROVED)
             db.session.add(p); db.session.commit()
             
         if not Admin.query.filter_by(username="admin").first():

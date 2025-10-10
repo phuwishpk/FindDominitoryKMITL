@@ -1,11 +1,8 @@
 from flask import render_template, redirect, url_for, flash, current_app, request
 from flask_login import login_required, current_user
-
-# --- vvv ส่วนที่แก้ไข vvv ---
-from . import bp # เพิ่มบรรทัดนี้เพื่อ import 'bp' จาก __init__.py
-# --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
-
+from . import bp
 from app.forms.auth import OwnerRegisterForm, CombinedLoginForm
+from app.forms.upload import EmptyForm
 from app.models.user import Owner, Admin
 from werkzeug.security import generate_password_hash
 
@@ -53,8 +50,12 @@ def login():
             
     return render_template("auth/login.html", form=form)
 
-@bp.get("/logout")
+@bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
-    current_app.extensions["container"]["auth_service"].logout()
+    form = EmptyForm()
+    if form.validate_on_submit():
+        current_app.extensions["container"]["auth_service"].logout()
+    else:
+        flash("Invalid logout request.", "danger")
     return redirect(url_for("public.index"))

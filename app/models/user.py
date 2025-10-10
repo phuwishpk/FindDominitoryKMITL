@@ -4,6 +4,10 @@ from app.extensions import db
 class Owner(db.Model):
     __tablename__ = "owners"
 
+    APPROVAL_PENDING = "pending"
+    APPROVAL_APPROVED = "approved"
+    APPROVAL_REJECTED = "rejected"
+
     id = db.Column(db.Integer, primary_key=True)
     full_name_th = db.Column(db.String(120), nullable=False)
     full_name_en = db.Column(db.String(120))
@@ -14,14 +18,12 @@ class Owner(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     
     is_active = db.Column(db.Boolean, default=False, nullable=False)
-    approval_status = db.Column(db.String(16), default="pending", nullable=False)
+    approval_status = db.Column(db.String(16), default=APPROVAL_PENDING, nullable=False)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
     deleted_at = db.Column(db.DateTime, nullable=True) # สำหรับ Soft Delete
-    # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
 
     def __repr__(self) -> str:
         return f"<Owner id={self.id} email={self.email!r}>"
