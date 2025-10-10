@@ -8,8 +8,7 @@ from app.models.approval import AuditLog
 from app.forms.upload import EmptyForm
 from app.forms.admin import RejectForm, AdminEditOwnerForm, AmenityForm, AdminEditPropertyForm
 from sqlalchemy import func, or_
-from datetime import datetime, timedelta
-from collections import OrderedDict
+from datetime import datetime
 
 @bp.route("/")
 @login_required
@@ -21,29 +20,18 @@ def index():
 @login_required
 @admin_required
 def dashboard():
-    approval_repo = current_app.extensions["container"]["approval_repo"]
-    user_repo = current_app.extensions["container"]["user_repo"]
-
-    stats = {
-        "total_owners": Owner.query.filter(Owner.deleted_at.is_(None)).count(),
-        "total_properties": Property.query.filter(Property.deleted_at.is_(None)).count(),
-        "pending_properties": len(approval_repo.get_pending_properties()),
-        "pending_owners": len(user_repo.get_pending_owners())
-    }
-    pie_data_query = db.session.query(
-        Property.road, func.count(Property.id).label('count')
-    ).filter(Property.road != None, Property.road != '').group_by(Property.road).order_by(func.count(Property.id).desc()).limit(5).all()
-    pie_chart = { "labels": [item[0] for item in pie_data_query], "data": [item[1] for item in pie_data_query] }
-    line_chart_labels, owner_data, prop_data = [], OrderedDict(), OrderedDict()
-    today = datetime.utcnow()
-    for i in range(5, -1, -1):
-        month_date = today - timedelta(days=i * 30)
-        month_key, db_month_format = month_date.strftime("%b %Y"), month_date.strftime("%Y-%m")
-        line_chart_labels.append(month_key)
-        owner_data[month_key] = Owner.query.filter(func.strftime('%Y-%m', Owner.created_at) == db_month_format).count()
-        prop_data[month_key] = Property.query.filter(func.strftime('%Y-%m', Property.created_at) == db_month_format).count()
-    line_chart = { "labels": line_chart_labels, "owners": list(owner_data.values()), "properties": list(prop_data.values()) }
-    return render_template("admin/dashboard.html", stats=stats, pie_chart=pie_chart, line_chart=line_chart)
+    dashboard_svc = current_app.extensions["container"]["dashboard_service"]
+    
+    stats = dashboard_svc.get_stats()
+    pie_chart = dashboard_svc.get_pie_chart_data()
+    line_chart = dashboard_svc.get_line_chart_data()
+    
+    return render_template(
+        "admin/dashboard.html", 
+        stats=stats, 
+        pie_chart=pie_chart, 
+        line_chart=line_chart
+    )
 
 # --- Property Approval Workflow ---
 @bp.route("/queue")
@@ -60,7 +48,7 @@ def queue():
 @admin_required
 def review_property(prop_id: int):
     prop = Property.query.get_or_404(prop_id)
-    if prop.workflow_status not in ['submitted']:
+    if prop.workflow_status != Property.WORKFLOW_SUBMITTED:
         flash("This item is not in the approval queue.", "warning")
         return redirect(url_for("admin.queue"))
     owner = Owner.query.get(prop.owner_id)
@@ -235,7 +223,6 @@ def review_owner(owner_id: int):
     owner = user_repo.get_owner_by_id(owner_id)
     return render_template("admin/review_owner.html", owner=owner)
 
-# --- vvv ส่วนที่แก้ไข vvv ---
 @bp.route("/owners/<int:owner_id>/approve", methods=["POST"])
 @login_required
 @admin_required
@@ -247,8 +234,8 @@ def approve_owner(owner_id: int):
     user_repo = current_app.extensions["container"]["user_repo"]
     owner = user_repo.get_owner_by_id(owner_id)
 
-    if owner and owner.approval_status == 'pending':
-        owner.is_active, owner.approval_status = True, 'approved'
+    if owner and owner.approval_status == Owner.APPROVAL_PENDING:
+        owner.is_active, owner.approval_status = True, Owner.APPROVAL_APPROVED
         db.session.add(AuditLog.log("admin", current_user.ref_id, "approve_owner", meta={"owner_id": owner_id, "owner_name": owner.full_name_th}))
         user_repo.save_owner(owner)
         flash(f"อนุมัติบัญชีของ {owner.full_name_th} สำเร็จ", "success")
@@ -267,15 +254,14 @@ def reject_owner(owner_id: int):
     user_repo = current_app.extensions["container"]["user_repo"]
     owner = user_repo.get_owner_by_id(owner_id)
 
-    if owner and owner.approval_status == 'pending':
-        owner.is_active, owner.approval_status = False, 'rejected'
+    if owner and owner.approval_status == Owner.APPROVAL_PENDING:
+        owner.is_active, owner.approval_status = False, Owner.APPROVAL_REJECTED
         db.session.add(AuditLog.log("admin", current_user.ref_id, "reject_owner", meta={"owner_id": owner_id, "owner_name": owner.full_name_th}))
         user_repo.save_owner(owner)
         flash(f"ปฏิเสธบัญชีของ {owner.full_name_th} สำเร็จ", "success")
     else:
         flash("ไม่สามารถดำเนินการได้", "danger")
     return redirect(url_for("admin.owner_queue"))
-# --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
 @bp.route("/owners/<int:owner_id>/delete", methods=["POST"])
 @login_required

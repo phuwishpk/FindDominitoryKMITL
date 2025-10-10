@@ -1,6 +1,7 @@
 from app.extensions import db
 from app.models.user import Owner, Admin
-from sqlalchemy import or_
+from sqlalchemy import or_, func
+from datetime import datetime
 
 class SqlUserRepo:
     def add_owner(self, owner: Owner) -> Owner:
@@ -18,12 +19,11 @@ class SqlUserRepo:
         return Owner.query.get(owner_id)
         
     def get_pending_owners(self):
-        return Owner.query.filter_by(approval_status='pending').order_by(Owner.created_at.asc()).all()
+        return Owner.query.filter_by(approval_status=Owner.APPROVAL_PENDING).order_by(Owner.created_at.asc()).all()
 
     def save_owner(self, owner: Owner):
         db.session.commit()
 
-    # --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
     def get_deleted_owners_paginated(self, page=1, per_page=15):
         q = Owner.query.filter(Owner.deleted_at.isnot(None))
         return db.paginate(q.order_by(Owner.deleted_at.desc()), page=page, per_page=per_page, error_out=False)
@@ -31,10 +31,8 @@ class SqlUserRepo:
     def permanently_delete_owner(self, owner: Owner):
         db.session.delete(owner)
         db.session.commit()
-    # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
 
     def list_all_owners_paginated(self, search_query=None, page=1, per_page=15):
-        # กรองเอาเฉพาะ Owner ที่ยังไม่ถูกลบ
         q = Owner.query.filter(Owner.deleted_at.is_(None))
 
         if search_query:
@@ -50,3 +48,11 @@ class SqlUserRepo:
             q.order_by(Owner.id.asc()),
             page=page, per_page=per_page, error_out=False
         )
+
+    def count_active_owners(self) -> int:
+        return db.session.query(Owner).filter(Owner.deleted_at.is_(None)).count()
+
+    def count_owners_by_month(self, date_obj: datetime) -> int:
+        return db.session.query(Owner).filter(
+            func.strftime('%Y-%m', Owner.created_at) == date_obj.strftime("%Y-%m")
+        ).count()
