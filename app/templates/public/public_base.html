@@ -11,9 +11,30 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.11.0/dist/geosearch.css"/>
   
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="{{ url_for('static', filename='css/miranda_styles.css') }}">
 
   <style>
+    /* Apply 'Kanit' font to the body */
+    body {
+      font-family: 'Kanit', sans-serif;
+    }
+
+    /* --- เพิ่มส่วนนี้เพื่อบังคับใช้ Font Kanit กับส่วนที่ไม่ถูกเปลี่ยน --- */
+    .header__container h1, 
+    .section__header,
+    .feature-card h5,
+    .feature-card p,
+    .room-specs p,
+    .room-description h4,
+    .room-description p {
+      font-family: 'Kanit', sans-serif !important;
+    }
+    /* --- สิ้นสุดส่วนที่เพิ่ม --- */
+
     .navbar-custom {
         background-color: #004a99; 
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
@@ -45,7 +66,7 @@
     }
   </style>
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100">
 
 <nav class="navbar navbar-expand-lg navbar-custom sticky-top">
   <div class="container-fluid px-4">
@@ -86,9 +107,24 @@
   </div>
 </nav>
 
-<main>
+<main class="flex-grow-1">
   {% block content %}{% endblock %}
 </main>
+
+<footer class="py-4 mt-auto bg-light border-top">
+    <div class="container">
+        <div class="row align-items-center justify-content-between flex-column flex-sm-row">
+            <div class="col-auto"><div class="small m-0">Copyright &copy; FindDormitoryKMITL 2025</div></div>
+            <div class="col-auto">
+                <a class="link-dark small" href="#!">Privacy</a>
+                <span class="mx-1">&middot;</span>
+                <a class="link-dark small" href="#!">Terms</a>
+                <span class="mx-1">&middot;</span>
+                <a class="link-dark small" href="#!">Contact</a>
+            </div>
+        </div>
+    </div>
+</footer>
 
 <script src="https://unpkg.com/scrollreveal"></script>
 <script src="{{ url_for('static', filename='js/miranda_main.js') }}"></script>
