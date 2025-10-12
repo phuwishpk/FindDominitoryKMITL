@@ -162,9 +162,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('auth.logout') }}">
-                        <i data-feather="log-out"></i> ออกจากระบบ
-                    </a>
+                    <form action="{{ url_for('auth.logout') }}" method="POST" class="nav-link p-0 m-0">
+                        {{ empty_form.csrf_token }}
+                        <button type="submit" class="btn nav-link w-100 text-start">
+                            <i data-feather="log-out"></i> ออกจากระบบ
+                        </button>
+                    </form>
                 </li>
              </ul>
         </div>
