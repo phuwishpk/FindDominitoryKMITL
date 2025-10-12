@@ -4,6 +4,7 @@ from flask import render_template, request, redirect, url_for, flash, current_ap
 from flask_login import login_required, current_user
 from sqlalchemy import func
 from datetime import datetime
+import json # <--- เพิ่มการ import json
 from . import bp
 from app.forms.owner import PropertyForm
 from app.forms.upload import UploadImageForm, ReorderImagesForm, EmptyForm
@@ -126,6 +127,12 @@ def edit_property(prop_id: int):
         if prop.room_type not in predefined_choices:
             form.room_type.data = 'อื่นๆ'
             form.other_room_type.data = prop.room_type
+        # --- vvv ส่วนที่แก้ไข vvv ---
+        # เพิ่มเงื่อนไขนี้เพื่อส่งข้อมูล location_pin ที่เป็น JSON ไปยังฟอร์ม
+        if prop.location_pin:
+            form.location_pin_json.data = json.dumps(prop.location_pin)
+        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+
 
     upload_form = UploadImageForm()
     reorder_form = ReorderImagesForm()
