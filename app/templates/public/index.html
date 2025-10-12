@@ -1,9 +1,140 @@
 {% extends 'public/public_base.html' %}
 
-
 {% block content %}
 
-<header class="header" style="background-image: linear-gradient(rgba(15, 26, 44, 0.5), rgba(15, 26, 44, 0.5)), url({{ url_for('static', filename='images/header.jpg') }});">
+<style>
+  .header.fade-overlay {
+    position: relative;
+  }
+
+  .header.fade-overlay::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to top, #0f1a2c 5%, transparent 90%);
+    z-index: 1;
+  }
+
+  .header__container {
+    position: relative;
+    z-index: 2;
+  }
+
+  .feature-section {
+    background-color: #f8f9fa;
+    padding-top: 4rem;
+    padding-bottom: 5rem;
+  }
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2.5rem;
+  }
+  .feature-card {
+    background-color: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 0.75rem;
+    padding: 2rem;
+    text-align: left;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+  }
+  .feature-card .icon {
+    margin-bottom: 1rem;
+    color: #004a99;
+  }
+  .feature-card h5 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  .feature-card p {
+    color: #6c757d;
+    font-size: 0.95rem;
+  }
+
+  /* --- CSS สำหรับส่วน "ค้นหาห้องที่ใช่สำหรับคุณ" --- */
+  .room-finder-section {
+    padding: 5rem 0;
+    background-color: #ffffff;
+  }
+  .room-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 3rem;
+  }
+  .room-tab-btn {
+    background-color: #f1f5f9;
+    color: #0f1a2c;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 9999px; /* Pill shape */
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+  }
+  .room-tab-btn.active {
+    background-color: #004a99;
+    color: #ffffff;
+  }
+  .room-tab-content {
+    display: none; /* ซ่อนเนื้อหาทั้งหมดไว้ก่อน */
+  }
+  .room-tab-content.active {
+    display: block; /* แสดงเฉพาะ content ที่ active */
+  }
+  .room-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr 2fr;
+    align-items: center;
+    gap: 2rem;
+    max-width: 1000px;
+    margin: auto;
+  }
+  .room-specs {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    font-family: 'Poppins', sans-serif;
+  }
+  .room-specs p {
+    margin-bottom: 0.75rem;
+  }
+  .room-image-wrapper img {
+    width: 100%;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  }
+  .room-description h4 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  .room-description p {
+    color: #475569;
+    line-height: 1.6;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .room-details-grid {
+      grid-template-columns: 1fr;
+      text-align: center;
+    }
+  }
+
+</style>
+
+<header class="header fade-overlay" style="background-image: url({{ url_for('static', filename='images/header.jpg') }});">
   <div class="section__container header__container">
     <p class="section__subheader">FIND DORMITORY</p>
     <h1>หอพักที่สมบูรณ์แบบ<br />สำหรับคุณ</h1>
@@ -11,26 +142,99 @@
   </div>
 </header>
 
-<section class="booking">
-  <div class="section__container booking__container">
-    <form action="{{ url_for('public.index') }}">
-      <div class="input__group">
-        <label for="q">ชื่อหอพัก</label>
-        <input type="text" name="q" placeholder="ค้นหาตามชื่อ..." />
+<section class="feature-section">
+  <div class="container">
+    <div class="text-center">
+      <h2 class="section__header">สิ่งที่ทำให้เราแตกต่าง</h2>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="icon"><i data-feather="home" style="width: 28px; height: 28px;"></i></div>
+        <h5>ห้องหรู</h5>
+        <p>ตกแต่งทันสมัย พร้อมวิวเมือง</p>
       </div>
-      <div class="input__group">
-        <label for="min_price">ราคาต่ำสุด</label>
-        <input type="text" name="min_price" placeholder="เช่น 3000" />
+      <div class="feature-card">
+        <div class="icon"><i data-feather="shield" style="width: 28px; height: 28px;"></i></div>
+        <h5>ปลอดภัย</h5>
+        <p>ระบบรักษาความปลอดภัย 24 ชม.</p>
       </div>
-      <div class="input__group">
-        <label for="max_price">ราคาสูงสุด</label>
-        <input type="text" name="max_price" placeholder="เช่น 6000" />
+      <div class="feature-card">
+        <div class="icon"><i data-feather="star" style="width: 28px; height: 28px;"></i></div>
+        <h5>บริการระดับ 5 ดาว</h5>
+        <p>บริการตรวจเช็คจากทีมงานมืออาชีพ</p>
       </div>
-      <button class="btn">ค้นหา</button>
-    </form>
+      <div class="feature-card">
+        <div class="icon"><i data-feather="key" style="width: 28px; height: 28px;"></i></div>
+        <h5>เข้าอยู่ได้ทันที</h5>
+        <p>ห้องพร้อมอยู่ พร้อมเฟอร์นิเจอร์ครบ</p>
+      </div>
+    </div>
   </div>
 </section>
 
+<section class="room-finder-section">
+  <div class="container">
+    <div class="text-center">
+      <h2 class="section__header">ค้นหาห้องที่ใช่สำหรับคุณ</h2>
+    </div>
+    <div class="room-tabs">
+      <button class="room-tab-btn active" data-tab="tab-furnished">เฟอร์นิเจอร์ครบ</button>
+      <button class="room-tab-btn" data-tab="tab-partial">เฟอร์นิเจอร์บางส่วน</button>
+      <button class="room-tab-btn" data-tab="tab-empty">ห้องเปล่า</button>
+    </div>
+
+    <div>
+      <div id="tab-furnished" class="room-tab-content active">
+        <div class="room-details-grid">
+          <div class="room-specs">
+            <p><strong>พื้นที่:</strong> 32 ตร.ม.</p>
+            <p><strong>ชั้น:</strong> 5</p>
+            <p><strong>ห้อง:</strong> 1</p>
+          </div>
+          <div class="room-image-wrapper">
+            <img src="{{ url_for('static', filename='images/furnished.jpg') }}" alt="ห้องเฟอร์นิเจอร์ครบ">
+          </div>
+          <div class="room-description">
+            <h4>รายละเอียด เฟอร์นิเจอร์ครบ</h4>
+            <p>ห้องสวยพร้อมอยู่ มาพร้อมเฟอร์นิเจอร์ครบชุด เหมาะสำหรับคนที่ต้องการความสะดวกสบายในทุกๆวัน</p>
+          </div>
+        </div>
+      </div>
+      <div id="tab-partial" class="room-tab-content">
+        <div class="room-details-grid">
+          <div class="room-specs">
+            <p><strong>พื้นที่:</strong> 38 ตร.ม.</p>
+            <p><strong>ชั้น:</strong> 8</p>
+            <p><strong>ห้อง:</strong> 1</p>
+          </div>
+          <div class="room-image-wrapper">
+            <img src="{{ url_for('static', filename='images/partially-furnished.jpg') }}" alt="ห้องเฟอร์นิเจอร์บางส่วน">
+          </div>
+          <div class="room-description">
+            <h4>รายละเอียด เฟอร์นิเจอร์บางส่วน</h4>
+            <p>ห้องตกแต่งบางส่วนให้คุณได้เติมแต่งในสไตล์ของตัวเอง พร้อมวิวที่โปร่งโล่งและบรรยากาศเงียบสงบ</p>
+          </div>
+        </div>
+      </div>
+      <div id="tab-empty" class="room-tab-content">
+        <div class="room-details-grid">
+          <div class="room-specs">
+            <p><strong>พื้นที่:</strong> 28 ตร.ม.</p>
+            <p><strong>ชั้น:</strong> 3</p>
+            <p><strong>ห้อง:</strong> 1</p>
+          </div>
+          <div class="room-image-wrapper">
+            <img src="{{ url_for('static', filename='images/empty-room.jpg') }}" alt="ห้องเปล่า">
+          </div>
+          <div class="room-description">
+            <h4>รายละเอียด ห้องเปล่า</h4>
+            <p>เริ่มต้นชีวิตใหม่กับห้องเปล่ากว้าง ให้คุณออกแบบการใช้ชีวิตได้อย่างอิสระ</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 <section class="room__container" id="dorm-list">
   <p class="section__subheader">DORMITORIES</p>
   <h2 class="section__header">รายการประกาศหอพัก</h2>
@@ -64,4 +268,29 @@
   </div>
 </section>
 
+{% endblock %}
+
+{% block page_scripts %}
+{{ super() }}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const tabButtons = document.querySelectorAll('.room-tab-btn');
+    const tabContents = document.querySelectorAll('.room-tab-content');
+
+    tabButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        // นำ active class ออกจากปุ่มและเนื้อหาทั้งหมด
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        tabContents.forEach(content => content.classList.remove('active'));
+
+        // เพิ่ม active class ให้กับปุ่มที่ถูกคลิก
+        this.classList.add('active');
+        
+        // แสดงเนื้อหาที่สอดคล้องกับปุ่มที่ถูกคลิก
+        const tabId = this.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+      });
+    });
+  });
+</script>
 {% endblock %}
