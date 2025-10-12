@@ -14,6 +14,7 @@ from .blueprints.api import bp as api_bp
 from .repositories.sqlalchemy.user_repo_sql import SqlUserRepo
 from .repositories.sqlalchemy.property_repo_sql import SqlPropertyRepo
 from .repositories.sqlalchemy.approval_repo_sql import SqlApprovalRepo
+from .repositories.sqlalchemy.review_repo_sql import SqlReviewRepo
 
 from .services.auth_service import AuthService
 from .services.property_service import PropertyService
@@ -21,13 +22,16 @@ from .services.search_service import SearchService
 from .services.approval_service import ApprovalService
 from .services.upload_service import UploadService
 from .services.dashboard_service import DashboardService # <-- เพิ่ม
+from .services.review_service import ReviewService
 
 def register_dependencies(app: Flask):
     container = {}
     container["user_repo"] = SqlUserRepo()
     container["property_repo"] = SqlPropertyRepo()
     container["approval_repo"] = SqlApprovalRepo()
+    container["review_repo"] = SqlReviewRepo()
     container["upload_service"] = UploadService(app.config.get("UPLOAD_FOLDER", "uploads"))
+    container["review_service"] = ReviewService(container["review_repo"])
     container["auth_service"] = AuthService(
         user_repo=container["user_repo"],
         upload_service=container["upload_service"]
