@@ -124,6 +124,31 @@
     line-height: 1.6;
   }
 
+  /* --- CSS สำหรับ Carousel --- */
+  .carousel-control-prev,
+  .carousel-control-next {
+    width: 5%;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 50px;
+    width: 50px;
+  }
+  .carousel-control-prev {
+    left: -25px;
+  }
+  .carousel-control-next {
+    right: -25px;
+  }
+  .carousel-inner .card {
+    transition: transform 0.2s;
+  }
+  .carousel-inner .card:hover {
+    transform: scale(1.05);
+    z-index: 10;
+  }
+
   /* Responsive adjustments */
   @media (max-width: 768px) {
     .room-details-grid {
@@ -235,37 +260,63 @@
     </div>
   </div>
 </section>
-<section class="room__container" id="dorm-list">
-  <p class="section__subheader">DORMITORIES</p>
-  <h2 class="section__header">รายการประกาศหอพัก</h2>
-  
-  <div class="room__grid">
-    {% for p in items %}
-      <a href="{{ url_for('public.property_detail', prop_id=p.id) }}" class="room__card">
-        {% set first_image = p.images|sort(attribute='position')|first %}
-        {% if first_image %}
-          <img src="/{{ first_image.file_path }}" alt="{{ p.dorm_name }}">
-        {% else %}
-          <img src="https://via.placeholder.com/400x250?text=No+Image" alt="No Image">
-        {% endif %}
-        
-        <div class="room__card__details">
-          <div>
-            <h4>{{ p.dorm_name }}</h4>
-            <p>{{ p.room_type }}</p>
-            {% if p.availability_status == 'vacant' %}
-                <p style="color: green;">สถานะ: ว่าง</p>
-            {% else %}
-                <p style="color: red;">สถานะ: เต็ม</p>
-            {% endif %}
+
+<section class="container py-5" id="dorm-list">
+  <p class="section__subheader text-center">DORMITORIES</p>
+  <h2 class="section__header text-center">รายการประกาศหอพัก</h2>
+
+  {% if items %}
+  <div id="dormCarousel" class="carousel slide" data-bs-ride="false">
+    <div class="carousel-inner">
+      {% for chunk in items|batch(3) %}
+      <div class="carousel-item {% if loop.first %}active{% endif %}">
+        <div class="row g-3">
+          {% for p in chunk %}
+          <div class="col-md-4">
+            <a href="{{ url_for('public.property_detail', prop_id=p.id) }}" class="text-decoration-none">
+                <div class="card h-100">
+                    {% set first_image = p.images|sort(attribute='position')|first %}
+                    {% if first_image %}
+                      <img src="/{{ first_image.file_path }}" class="card-img-top" alt="{{ p.dorm_name }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                      <img src="https://via.placeholder.com/400x250?text=No+Image" class="card-img-top" alt="No Image" style="height: 200px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body">
+                      <h5 class="card-title text-dark">{{ p.dorm_name }}</h5>
+                      <p class="card-text text-muted">{{ p.room_type }}</p>
+                      {% if p.availability_status == 'vacant' %}
+                        <p class="card-text" style="color: green;">สถานะ: ว่าง</p>
+                      {% else %}
+                        <p class="card-text" style="color: red;">สถานะ: เต็ม</p>
+                      {% endif %}
+                    </div>
+                    <div class="card-footer bg-white border-0 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{{ "{:,.0f}".format(p.rent_price) if p.rent_price is not none else 'N/A' }}<span class="h6 text-muted">/เดือน</span></h5>
+                        <span class="btn btn-sm btn-outline-primary">ดูรายละเอียด</span>
+                    </div>
+                </div>
+            </a>
           </div>
-          <h3>{{ "{:,.0f}".format(p.rent_price) if p.rent_price is not none else 'N/A' }}<span>/เดือน</span></h3>
+          {% endfor %}
         </div>
-      </a>
-    {% else %}
-      <div class="alert alert-secondary w-100">ไม่พบข้อมูลประกาศในขณะนี้</div>
-    {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if items|length > 3 %}
+    <button class="carousel-control-prev" type="button" data-bs-target="#dormCarousel" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">Previous</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#dormCarousel" data-bs-slide="next">
+      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">Next</span>
+    </button>
+    {% endif %}
   </div>
+  {% else %}
+  <div class="alert alert-secondary w-100">ไม่พบข้อมูลประกาศในขณะนี้</div>
+  {% endif %}
 </section>
 
 {% endblock %}
