@@ -115,7 +115,11 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <p>{{ rejected_notes.get(p.id) }}</p>
+          {# --- vvv ส่วนที่แก้ไข vvv --- #}
+          <blockquote class="blockquote bg-light p-3 rounded" style="word-wrap: break-word; font-size: 0.95rem;">
+            <p class="mb-0">{{ rejected_notes.get(p.id) }}</p>
+          </blockquote>
+          {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
         </div>
         <div class="modal-footer">
           <a href="{{ url_for('owner.edit_property', prop_id=p.id) }}" class="btn btn-primary">ไปที่หน้าแก้ไข</a>
