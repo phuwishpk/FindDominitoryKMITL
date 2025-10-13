@@ -24,21 +24,45 @@ class SqlPropertyRepo:
         q = Property.query.filter(
             Property.workflow_status == Property.WORKFLOW_APPROVED,
             Property.deleted_at.is_(None)
-        ).order_by(Property.approved_at.desc(), Property.updated_at.desc()) # <--- เพิ่มการเรียงลำดับที่นี่
+        ).order_by(Property.approved_at.desc(), Property.updated_at.desc())
 
+        # --- vvv START: เพิ่มตรรกะการกรองข้อมูล vvv ---
+
+        # ค้นหาตามชื่อหอพัก
         q_text = (filters or {}).get('q')
         if q_text:
             like = f"%{q_text.strip()}%"
-            q = q.filter(or_(Property.dorm_name.ilike(like), Property.facebook_url.ilike(like)))
+            q = q.filter(Property.dorm_name.ilike(like))
+        
+        # ค้นหาตามถนน
+        road_filter = (filters or {}).get('road')
+        if road_filter:
+            q = q.filter(Property.road.ilike(f"%{road_filter.strip()}%"))
+
+        # ค้นหาตามซอย
+        soi_filter = (filters or {}).get('soi')
+        if soi_filter:
+            q = q.filter(Property.soi.ilike(f"%{soi_filter.strip()}%"))
+
+        # ค้นหาตามราคา
         min_price = (filters or {}).get('min_price')
         max_price = (filters or {}).get('max_price')
-        if min_price is not None: q = q.filter(Property.rent_price >= int(min_price))
-        if max_price is not None: q = q.filter(Property.rent_price <= int(max_price))
+        if min_price is not None and min_price.isdigit():
+            q = q.filter(Property.rent_price >= int(min_price))
+        if max_price is not None and max_price.isdigit():
+            q = q.filter(Property.rent_price <= int(max_price))
+        
+        # ค้นหาตามประเภทห้อง
         room_type = (filters or {}).get('room_type')
-        if room_type: q = q.filter(Property.room_type == room_type)
+        if room_type:
+            q = q.filter(Property.room_type == room_type)
+            
+        # ค้นหาตามสถานะห้อง (ว่าง/เต็ม)
         availability = (filters or {}).get('availability')
         if availability in {Property.AVAILABILITY_VACANT, Property.AVAILABILITY_OCCUPIED}: 
             q = q.filter(Property.availability_status == availability)
+            
+        # ค้นหาตามสิ่งอำนวยความสะดวก (แบบ AND)
         codes = (filters or {}).get('amenities')
         if codes:
             codes_list = [c.strip() for c in codes.split(',') if c.strip()]
@@ -48,6 +72,8 @@ class SqlPropertyRepo:
                        .filter(Amenity.code.in_(codes_list))
                        .group_by(Property.id)
                        .having(func.count(func.distinct(Amenity.code)) == len(codes_list)))
+        
+        # --- ^^^ END: สิ้นสุดการแก้ไข ^^^ ---
         return q
 
     def list_all_paginated(self, search_query=None, page=1, per_page=15):
@@ -63,7 +89,6 @@ class SqlPropertyRepo:
         )
 
     def get_deleted_properties_paginated(self, page=1, per_page=15):
-        """ดึงรายการ Properties ที่ถูกลบ (soft-deleted)"""
         q = Property.query.filter(Property.deleted_at.isnot(None))
         return db.paginate(
             q.order_by(Property.deleted_at.desc()),
