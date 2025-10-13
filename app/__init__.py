@@ -3,7 +3,8 @@ from .extensions import db, migrate, login_manager, babel_ext, limiter, csrf
 from .config import Config
 
 from .utils.helpers import format_as_bangkok_time, from_json_string
-from .forms.upload import EmptyForm # <-- เพิ่ม
+from .forms.upload import EmptyForm 
+from .forms.owner import ROOM_TYPE_CHOICES # <-- เพิ่มบรรทัดนี้
 
 from .blueprints.public import bp as public_bp
 from .blueprints.owner import bp as owner_bp
@@ -20,7 +21,7 @@ from .services.property_service import PropertyService
 from .services.search_service import SearchService
 from .services.approval_service import ApprovalService
 from .services.upload_service import UploadService
-from .services.dashboard_service import DashboardService # <-- เพิ่ม
+from .services.dashboard_service import DashboardService 
 
 def register_dependencies(app: Flask):
     container = {}
@@ -35,7 +36,7 @@ def register_dependencies(app: Flask):
     container["property_service"] = PropertyService(container["property_repo"])
     container["search_service"] = SearchService(container["property_repo"])
     container["approval_service"] = ApprovalService(container["approval_repo"], container["property_repo"])
-    container["dashboard_service"] = DashboardService( # <-- เพิ่ม
+    container["dashboard_service"] = DashboardService(
         user_repo=container["user_repo"],
         property_repo=container["property_repo"],
         approval_repo=container["approval_repo"]
@@ -59,9 +60,15 @@ def create_app() -> Flask:
     app.jinja_env.filters['to_bkk_time'] = format_as_bangkok_time
     app.jinja_env.filters['fromjson'] = from_json_string
 
-    @app.context_processor # <-- เพิ่ม
-    def inject_forms():
-        return dict(empty_form=EmptyForm())
+    # --- vvv ส่วนนี้จะส่งตัวแปลภาษาไปให้ทุกหน้าเว็บ vvv ---
+    @app.context_processor 
+    def inject_global_vars():
+        room_type_map = dict(ROOM_TYPE_CHOICES)
+        return dict(
+            empty_form=EmptyForm(),
+            ROOM_TYPES=room_type_map
+        )
+    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
 
     with app.app_context():
         register_dependencies(app)
@@ -89,18 +96,12 @@ def create_app() -> Flask:
         from app.models.property import Amenity
         from app.extensions import db
         data = [
-            ("pet","อนุญาตสัตว์เลี้ยง","Pets allowed"),
-            ("ac","เครื่องปรับอากาศ","Air conditioning"),
-            ("guard","รปภ.","Security guard"),
-            ("cctv","กล้อง CCTV","CCTV"),
-            ("fridge","ตู้เย็น","Refrigerator"),
-            ("bed","เตียง","Bed"),
-            ("heater","เครื่องทำน้ำอุ่น","Water heater"),
-            ("internet","อินเทอร์เน็ต","Internet"),
-            ("tv","ทีวี","TV"),
-            ("sofa","โซฟา","Sofa"),
-            ("wardrobe","ตู้เสื้อผ้า","Wardrobe"),
-            ("desk","โต๊ะทำงาน","Desk"),
+            ("pet","อนุญาตสัตว์เลี้ยง","Pets allowed"),("ac","เครื่องปรับอากาศ","Air conditioning"),
+            ("guard","รปภ.","Security guard"),("cctv","กล้อง CCTV","CCTV"),
+            ("fridge","ตู้เย็น","Refrigerator"),("bed","เตียง","Bed"),
+            ("heater","เครื่องทำน้ำอุ่น","Water heater"),("internet","อินเทอร์เน็ต","Internet"),
+            ("tv","ทีวี","TV"),("sofa","โซฟา","Sofa"),
+            ("wardrobe","ตู้เสื้อผ้า","Wardrobe"),("desk","โต๊ะทำงาน","Desk"),
         ]
         for code, th, en in data:
             if not Amenity.query.filter_by(code=code).first():
