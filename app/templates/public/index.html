@@ -3,6 +3,10 @@
 {% block content %}
 
 <style>
+  /* --- CSS สำหรับซ่อน element เริ่มต้นก่อน animation --- */
+  .header__container, .feature-section, .room-finder-section, .container.py-5 {
+    visibility: hidden;
+  }
   .header.fade-overlay {
     position: relative;
   }
@@ -163,7 +167,7 @@
   <div class="section__container header__container">
     <p class="section__subheader">FIND DORMITORY</p>
     <h1>หอพักที่สมบูรณ์แบบ<br />สำหรับคุณ</h1>
-    <a href="#dorm-list" class="btn">ดูหอพักทั้งหมด</a>
+    <a href="{{ url_for('public.search') }}" class="btn">ดูหอพักทั้งหมด</a>
   </div>
 </header>
 
@@ -342,6 +346,18 @@
         document.getElementById(tabId).classList.add('active');
       });
     });
+    const sr = ScrollReveal({
+      origin: 'bottom',
+      distance: '60px',
+      duration: 1200,
+      delay: 200,
+      reset: false // Animation will only run once
+    });
+
+    sr.reveal('.header__container');
+    sr.reveal('.feature-section', { delay: 300 });
+    sr.reveal('.room-finder-section', { delay: 300 });
+    sr.reveal('.container.py-5', { delay: 300 });
   });
 </script>
 {% endblock %}

@@ -1,5 +1,6 @@
 from flask import render_template, request, current_app
 from . import bp
+from app.models.property import Amenity # <-- เพิ่มการ import
 
 @bp.get("/")
 def index():
@@ -21,14 +22,19 @@ def index():
     result = svc.search(filters, page=page, per_page=per_page) 
     return render_template("public/index.html", **result)
 
+@bp.get("/search")
+def search():
+    """แสดงหน้าค้นหาพร้อมส่งข้อมูลสิ่งอำนวยความสะดวกสำหรับตัวกรอง"""
+    amenities = Amenity.query.order_by(Amenity.label_th).all()
+    # ในอนาคต ส่วนนี้จะรับค่าจากฟอร์มเพื่อไปค้นหาข้อมูลจริง
+    # ตอนนี้จะแสดงหน้าฟอร์มพร้อมตัวเลือกก่อน
+    return render_template("public/search.html", amenities=amenities)
+
 @bp.get("/property/<int:prop_id>")
 def property_detail(prop_id: int):
-    # 💡 ใช้ property_detail เป็นชื่อฟังก์ชัน Route (ตามโค้ดเดิม)
+    # ... (โค้ดส่วนนี้เหมือนเดิม)
     repo = current_app.extensions["container"]["property_repo"]
     prop = repo.get(prop_id)
-    if not prop or prop.workflow_status != 'approved': # 💡 ตรวจสอบสถานะ approved
+    if not prop or prop.workflow_status != 'approved':
         return render_template("public/detail.html", prop=None), 404
-    
-    # 💡 โค้ดเดิมที่ถูกลบไป (prop.images ถูกเรียกใช้ใน template/detail.html)
-    # เราสามารถส่ง prop ไปตรงๆ ได้ เพราะ prop มี .images อยู่แล้ว
     return render_template("public/detail.html", prop=prop)

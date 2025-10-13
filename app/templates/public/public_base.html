@@ -18,12 +18,10 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/miranda_styles.css') }}">
 
   <style>
-    /* Apply 'Kanit' font to the body */
     body {
       font-family: 'Kanit', sans-serif;
     }
 
-    /* ---บังคับใช้ Font Kanit กับส่วนที่ไม่ถูกเปลี่ยน --- */
     .header__container h1, 
     .section__header,
     .feature-card h5,
@@ -65,18 +63,16 @@
         border-color: #ffd700;
     }
 
-    /* --- CSS สำหรับ Footer --- */
     .footer-custom {
-      background-color: #0c6cacff; /* สีน้ำเงินอ่อน */
-      color: white; /* สีตัวอักษร */
+      background-color: #A8D8F8;
+      color: white;
     }
     .footer-custom a {
-      color: white; /* สีลิงก์ */
+      color: white;
     }
     .footer-custom a:hover {
-      color: #f0f0f0; /* สีลิงก์เมื่อเมาส์ชี้ */
+      color: #f0f0f0;
     }
-
   </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -95,7 +91,7 @@
           <a class="nav-link {% if request.endpoint == 'public.index' %}active{% endif %}" href="{{ url_for('public.index') }}">หน้าหลัก</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('public.index') }}">ค้นหาหอพัก</a>
+          <a class="nav-link {% if request.endpoint == 'public.search' %}active{% endif %}" href="{{ url_for('public.search') }}">ค้นหาหอพัก</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="#">ติดต่อเรา</a>
@@ -144,6 +140,13 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="https://unpkg.com/leaflet-geosearch@3.11.0/dist/geosearch.umd.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => feather.replace(), 50);
+  });
+</script>
 
 {% block page_scripts %}{% endblock %}
 
