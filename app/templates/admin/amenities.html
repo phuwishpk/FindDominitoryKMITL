@@ -37,42 +37,45 @@
     </div>
 
     <div class="col-lg-8">
-        <div class="table-responsive">
-            <table class="table align-middle">
-                <thead>
-                    <tr>
-                        <th>Code</th>
-                        <th>ชื่อ (ไทย)</th>
-                        <th>ชื่อ (อังกฤษ)</th>
-                        <th class="text-end">การกระทำ</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in amenities %}
-                    <tr>
-                        <td><code>{{ item.code }}</code></td>
-                        <td>{{ item.label_th }}</td>
-                        <td>{{ item.label_en }}</td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-secondary me-1" data-bs-toggle="modal" data-bs-target="#editModal-{{ item.id }}" title="แก้ไข">
-                                <i data-feather="edit-2" style="width:16px;"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ item.id }}" title="ลบ">
-                                <i data-feather="trash-2" style="width:16px;"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="4" class="text-center text-muted py-5 card">ยังไม่มีข้อมูลสิ่งอำนวยความสะดวก</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="card p-3">
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>ชื่อ (ไทย)</th>
+                            <th>ชื่อ (อังกฤษ)</th>
+                            <th class="text-end">การกระทำ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in amenities %}
+                        <tr>
+                            <td><code>{{ item.code }}</code></td>
+                            <td>{{ item.label_th }}</td>
+                            <td>{{ item.label_en or '-' }}</td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-secondary me-1" data-bs-toggle="modal" data-bs-target="#editModal-{{ item.id }}" title="แก้ไข">
+                                    <i data-feather="edit-2" style="width:16px;"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ item.id }}" title="ลบ">
+                                    <i data-feather="trash-2" style="width:16px;"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-5">ยังไม่มีข้อมูลสิ่งอำนวยความสะดวก</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
+{# Modals (No major change needed, translations were already done in the previous response) #}
 {% for item in amenities %}
 <div class="modal fade" id="editModal-{{ item.id }}" tabindex="-1">
   <div class="modal-dialog">
