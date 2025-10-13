@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from datetime import datetime, timedelta
 from sqlalchemy import func
-
+from app.models import Property, Owner
 
 class DashboardService:
     def __init__(self, user_repo, property_repo, approval_repo):

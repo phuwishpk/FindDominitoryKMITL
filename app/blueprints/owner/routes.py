@@ -1,3 +1,5 @@
+# phuwishpk/finddominitorykmitl/FindDominitoryKMITL-owner-improvements/app/blueprints/owner/routes.py
+
 from flask import render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from sqlalchemy import func
@@ -5,9 +7,8 @@ from datetime import datetime
 from . import bp
 from app.forms.owner import PropertyForm
 from app.forms.upload import UploadImageForm, ReorderImagesForm, EmptyForm
-# [FIXED] ลบการนำเข้าโมเดลทั้งหมดที่นี่ เพื่อแก้ Circular Import
-# from app.models.property import Property, PropertyImage, Amenity
-# from app.models.approval import ApprovalRequest, AuditLog
+from app.models.property import Property, PropertyImage, Amenity
+from app.models.approval import ApprovalRequest, AuditLog
 from app.extensions import owner_required, db
 
 try:
@@ -23,15 +24,11 @@ except Exception:
 @login_required
 @owner_required
 def dashboard():
-    # [FIXED] นำเข้าโมเดลภายในฟังก์ชัน
-    from app.models.property import Property
-    from app.models.approval import ApprovalRequest 
-    
     props = Property.query.filter_by(owner_id=current_user.ref_id, deleted_at=None).all()
 
     # ดึงเหตุผลการปฏิเสธล่าสุดของแต่ละประกาศ
     rejected_notes = {}
-    rejected_prop_ids = [p.id for p in props if p.workflow_status == Property.WORKFLOW_REJECTED]
+    rejected_prop_ids = [p.id for p in props if p.workflow_status == 'rejected']
     if rejected_prop_ids:
         # Query ซ้อนเพื่อหา ID ของ ApprovalRequest ล่าสุดของแต่ละ Property
         latest_requests_sq = db.session.query(
@@ -65,7 +62,6 @@ def dashboard():
 @login_required
 @owner_required
 def new_property():
-    from app.models.property import Amenity # [FIXED] นำเข้า Amenity ภายในฟังก์ชัน
     form = PropertyForm()
     all_amenities = Amenity.query.all()
 
@@ -83,11 +79,7 @@ def new_property():
 
         prop = prop_svc.create(current_user.ref_id, form_data)
 
-        # ... (โค้ดจัดการอัปโหลดรูป) ...
-        # NOTE: Images field needs to be defined in PropertyForm 
-        # and images logic needs to be fully implemented in the service layer 
-        # for images to work correctly.
-        images = form.images.data 
+        images = form.images.data
         if images and images[0].filename:
             for i, file_storage in enumerate(images):
                 if i >= PropertyPolicy.MAX_IMAGES:
@@ -96,11 +88,13 @@ def new_property():
 
                 if file_storage:
                     path = upload_svc.save_image(current_user.ref_id, file_storage)
-                    img = prop_svc.create_image_for_property(prop.id, path, i + 1) # Assumed new service method
+                    img = PropertyImage(property_id=prop.id, file_path=path, position=i + 1)
+                    db.session.add(img)
+            db.session.commit()
 
-            flash("สร้างประกาศสำเร็จแล้ว", "success")
-            flash('clear_form_storage', 'script_command')
-            return redirect(url_for("owner.dashboard"))
+        flash("สร้างประกาศสำเร็จแล้ว", "success")
+        flash('clear_form_storage', 'script_command')
+        return redirect(url_for("owner.dashboard"))
 
     return render_template("owner/form.html",
         form=form,
@@ -116,17 +110,12 @@ def new_property():
 @login_required
 @owner_required
 def edit_property(prop_id: int):
-    # [FIXED] นำเข้า Property ภายในฟังก์ชัน
-    from app.models.property import Property, Amenity
-    from app.models.approval import ApprovalRequest
-    
     prop = Property.query.get_or_404(prop_id)
     if prop.owner_id != current_user.ref_id:
         return redirect(url_for("owner.dashboard"))
 
     form = PropertyForm(obj=prop)
-    # NOTE: PropertyForm needs to include "other_room_type" field for this logic to work
-    predefined_choices = [choice[0] for choice in form.room_type.choices] 
+    predefined_choices = [choice[0] for choice in form.room_type.choices]
 
     if request.method == "POST":
         selected_amenities = request.form.getlist('amenities')
@@ -135,10 +124,8 @@ def edit_property(prop_id: int):
 
     if request.method == "GET":
         if prop.room_type not in predefined_choices:
-            # NOTE: Assuming 'other_room_type' field exists in PropertyForm
-            # form.room_type.data = 'อื่นๆ' 
-            # form.other_room_type.data = prop.room_type
-            pass 
+            form.room_type.data = 'อื่นๆ'
+            form.other_room_type.data = prop.room_type
 
     upload_form = UploadImageForm()
     reorder_form = ReorderImagesForm()
@@ -156,21 +143,19 @@ def edit_property(prop_id: int):
         form_data = PropertyForm(request.form).data
         form_data.pop('csrf_token', None)
         form_data['amenities'] = request.form.getlist('amenities')
-        
-        # NOTE: Images deletion logic moved here from original position
+
         images_to_delete_str = request.form.get('images_to_delete', '')
         if images_to_delete_str:
-             image_ids_to_delete = [int(id_) for id_ in images_to_delete_str.split(',') if id_.isdigit()]
-             if image_ids_to_delete:
-                 # NOTE: This assumes PropertyImage is accessible globally/imported elsewhere or inside the service
-                 # The service layer should handle deletion, but keeping direct DB access for now to match original style
-                 db.session.query(PropertyImage).filter(
-                     PropertyImage.property_id == prop_id,
-                     PropertyImage.id.in_(image_ids_to_delete)
-                 ).delete(synchronize_session=False)
+            image_ids_to_delete = [int(id_) for id_ in images_to_delete_str.split(',') if id_.isdigit()]
+            if image_ids_to_delete:
+                images_to_delete = db.session.query(PropertyImage).filter(
+                    PropertyImage.property_id == prop_id,
+                    PropertyImage.id.in_(image_ids_to_delete)
+                ).all()
+                for img in images_to_delete:
+                    db.session.delete(img)
 
         prop_svc.update(current_user.ref_id, prop_id, form_data)
-        db.session.commit() # Commit the image deletions and property update together
         flash("อัปเดตข้อมูลแล้ว", "success")
 
         if "save_and_exit" in request.form:
@@ -191,25 +176,20 @@ def edit_property(prop_id: int):
 @login_required
 @owner_required
 def upload_image(prop_id: int):
-    from app.models.property import Property, PropertyImage # [FIXED] นำเข้าโมเดลภายในฟังก์ชัน
     prop = Property.query.get_or_404(prop_id)
     if prop.owner_id != current_user.ref_id:
         return redirect(url_for("owner.dashboard"))
     form = UploadImageForm()
-    
-    # Check if form.image.data is a list of FileStorage objects and has at least one file
-    is_valid_upload = form.validate_on_submit() and form.image.data and isinstance(form.image.data, list) and form.image.data[0].filename
-
-    if is_valid_upload:
+    if form.validate_on_submit() and form.image.data and form.image.data[0].filename:
         upload_svc = current_app.extensions["container"]["upload_service"]
 
-        for file_storage in form.image.data:
+        for i, file_storage in enumerate(form.image.data):
             count = PropertyImage.query.filter_by(property_id=prop.id).count()
             if count >= PropertyPolicy.MAX_IMAGES:
                 flash(f"อัปโหลดได้สูงสุด {PropertyPolicy.MAX_IMAGES} รูปเท่านั้น", "warning")
                 break
 
-            if file_storage and file_storage.filename:
+            if file_storage:
                 path = upload_svc.save_image(current_user.ref_id, file_storage)
                 max_pos = (PropertyImage.query.with_entities(func.max(PropertyImage.position))
                            .filter_by(property_id=prop.id).scalar()) or 0
@@ -219,15 +199,13 @@ def upload_image(prop_id: int):
         db.session.commit()
         flash("อัปโหลดรูปสำเร็จ", "success")
     else:
-        flash("กรุณาเลือกไฟล์รูปภาพที่ถูกต้องและไม่เกินขนาดที่กำหนด", "danger")
+        flash("กรุณาเลือกไฟล์รูปภาพ", "danger")
     return redirect(url_for("owner.edit_property", prop_id=prop.id, tab="images"))
-
 
 @bp.post("/property/<int:prop_id>/images/reorder")
 @login_required
 @owner_required
 def reorder_images(prop_id: int):
-    from app.models.property import Property, PropertyImage # [FIXED] นำเข้าโมเดลภายในฟังก์ชัน
     prop = Property.query.get_or_404(prop_id)
     if prop.owner_id != current_user.ref_id:
         return redirect(url_for("owner.dashboard"))
@@ -256,10 +234,6 @@ def reorder_images(prop_id: int):
 @login_required
 @owner_required
 def submit_for_approval(prop_id: int):
-    # [FIXED] นำเข้าโมเดลภายในฟังก์ชัน
-    from app.models.property import Property
-    from app.models.approval import AuditLog 
-    
     prop = Property.query.get_or_404(prop_id)
     if prop.owner_id != current_user.ref_id:
         return redirect(url_for("owner.dashboard"))
@@ -268,10 +242,6 @@ def submit_for_approval(prop_id: int):
 
     try:
         approval_svc.submit_property(property_id=prop_id, owner_id=current_user.ref_id)
-        # Note: Original code used submit_property(prop_id, owner_id). 
-        # If your service requires 'prop' object, you might need to adjust the call here.
-        # Assuming the service method is simplified to accept IDs based on DI structure.
-        AuditLog.log("owner", current_user.ref_id, "submit_for_approval", prop_id)
         flash("ส่งประกาศเพื่อขออนุมัติแล้ว", "success")
     except ValueError as e:
         flash(f"ไม่สามารถส่งประกาศได้: {str(e)}", "danger")
@@ -283,9 +253,6 @@ def submit_for_approval(prop_id: int):
 @login_required
 @owner_required
 def toggle_availability(prop_id: int):
-    # [FIXED] นำเข้าโมเดลภายในฟังก์ชัน
-    from app.models.property import Property
-    
     form = EmptyForm()
     if not form.validate_on_submit():
         flash("Invalid request.", "danger")
@@ -296,11 +263,11 @@ def toggle_availability(prop_id: int):
         flash("Permission denied.", "danger")
         return redirect(url_for("owner.dashboard"))
 
-    if prop.availability_status == Property.AVAILABILITY_VACANT:
-        prop.availability_status = Property.AVAILABILITY_OCCUPIED
+    if prop.availability_status == 'vacant':
+        prop.availability_status = 'occupied'
         new_status_th = "ห้องเต็ม"
     else:
-        prop.availability_status = Property.AVAILABILITY_VACANT
+        prop.availability_status = 'vacant'
         new_status_th = "ห้องว่าง"
 
     db.session.commit()
@@ -311,10 +278,6 @@ def toggle_availability(prop_id: int):
 @login_required
 @owner_required
 def delete_property(prop_id: int):
-    # [FIXED] นำเข้าโมเดลภายในฟังก์ชัน
-    from app.models.property import Property
-    from app.models.approval import AuditLog 
-    
     if not EmptyForm().validate_on_submit():
         flash("Invalid CSRF token.", "danger")
         return redirect(url_for('owner.dashboard'))
@@ -325,7 +288,7 @@ def delete_property(prop_id: int):
         return redirect(url_for("owner.dashboard"))
 
     prop.deleted_at = datetime.utcnow()
-    AuditLog.log("owner", current_user.ref_id, "soft_delete_property", prop_id)
+    db.session.add(AuditLog.log("owner", current_user.ref_id, "soft_delete_property", prop_id))
     db.session.commit()
     flash(f"ย้ายประกาศ '{prop.dorm_name}' ไปยังถังขยะแล้ว", "success")
     return redirect(url_for('owner.dashboard'))
@@ -334,9 +297,6 @@ def delete_property(prop_id: int):
 @login_required
 @owner_required
 def trash():
-    # [FIXED] นำเข้าโมเดลภายในฟังก์ชัน
-    from app.models.property import Property
-    
     page = request.args.get("page", 1, type=int)
     per_page = 10
 
@@ -357,10 +317,6 @@ def trash():
 @login_required
 @owner_required
 def restore_property(prop_id: int):
-    # [FIXED] นำเข้าโมเดลภายในฟังก์ชัน
-    from app.models.property import Property
-    from app.models.approval import AuditLog
-    
     if not EmptyForm().validate_on_submit():
         flash("Invalid request.", "danger")
         return redirect(url_for('owner.trash'))
@@ -371,7 +327,7 @@ def restore_property(prop_id: int):
         return redirect(url_for("owner.trash"))
 
     prop.deleted_at = None
-    AuditLog.log("owner", current_user.ref_id, "restore_property", prop_id)
+    db.session.add(AuditLog.log("owner", current_user.ref_id, "restore_property", prop_id))
     db.session.commit()
     flash(f"กู้คืนประกาศ '{prop.dorm_name}' สำเร็จ", "success")
     return redirect(url_for('owner.trash'))
@@ -380,10 +336,6 @@ def restore_property(prop_id: int):
 @login_required
 @owner_required
 def permanently_delete_property(prop_id: int):
-    # [FIXED] นำเข้าโมเดลภายในฟังก์ชัน
-    from app.models.property import Property
-    from app.models.approval import AuditLog
-    
     if not EmptyForm().validate_on_submit():
         flash("Invalid request.", "danger")
         return redirect(url_for('owner.trash'))
@@ -394,10 +346,8 @@ def permanently_delete_property(prop_id: int):
         return redirect(url_for("owner.trash"))
 
     dorm_name = prop.dorm_name
-    AuditLog.log("owner", current_user.ref_id, "permanent_delete_property", meta={"deleted_name": dorm_name, "property_id": prop_id})
-    # NOTE: The owner should not permanently delete; the repo should handle deletion.
-    # We use direct SQLAlchemy delete here to match the logic intent.
-    db.session.delete(prop) 
+    db.session.add(AuditLog.log("owner", current_user.ref_id, "permanent_delete_property", meta={"deleted_name": dorm_name, "property_id": prop_id}))
+    db.session.delete(prop)
     db.session.commit()
     flash(f"ลบประกาศ '{dorm_name}' ออกจากระบบอย่างถาวรแล้ว", "success")
     return redirect(url_for('owner.trash'))
