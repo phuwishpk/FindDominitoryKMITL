@@ -24,7 +24,18 @@ class SqlPropertyRepo:
         q = Property.query.filter(
             Property.workflow_status == Property.WORKFLOW_APPROVED,
             Property.deleted_at.is_(None)
-        ).order_by(Property.approved_at.desc(), Property.updated_at.desc())
+        )
+
+        # --- vvv START: ส่วนที่แก้ไขเรื่องการจัดเรียงข้อมูล vvv ---
+        sort_option = (filters or {}).get('sort')
+        if sort_option == 'updated_at_desc':
+            # เรียงตามวันที่อัปเดตล่าสุด
+            q = q.order_by(Property.updated_at.desc())
+        else:
+            # การจัดเรียงแบบปกติ (ตามวันที่อนุมัติและอัปเดต)
+            q = q.order_by(Property.approved_at.desc(), Property.updated_at.desc())
+        # --- ^^^ END: สิ้นสุดส่วนที่แก้ไข ^^^ ---
+
 
         # --- vvv START: เพิ่มตรรกะการกรองข้อมูล vvv ---
 

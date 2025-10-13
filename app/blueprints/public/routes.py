@@ -1,16 +1,24 @@
 from flask import render_template, request, current_app
 from . import bp
-from app.models.property import Amenity # <-- เพิ่มการ import
+from app.models.property import Amenity, Property # <-- เพิ่มการ import Property
 
 @bp.get("/")
 def index():
-    # หน้านี้เหมือนเดิม แต่เราจะย้ายตรรกะส่วนใหญ่ไปที่ /search
+    """
+    (แก้ไข) แสดงหน้าหลักโดยดึงข้อมูลหอพักที่อัปเดตล่าสุด 4 รายการ
+    """
     svc = current_app.extensions["container"]["search_service"]
-    filters = { "q": request.args.get("q") or None }
-    page = request.args.get("page", default=1, type=int)
-    per_page = request.args.get("per_page", default=12, type=int)
     
-    result = svc.search(filters, page=page, per_page=per_page) 
+    # --- ส่วนที่แก้ไข ---
+    # เราจะส่ง filter 'sort' เพื่อบอกให้ repository เรียงข้อมูลตามวันที่อัปเดตล่าสุด
+    # และกำหนด per_page เป็น 4 เพื่อดึงแค่ 4 รายการ
+    filters = { 
+        "sort": "updated_at_desc" 
+    }
+    per_page = 4
+    # --- สิ้นสุดการแก้ไข ---
+    
+    result = svc.search(filters, page=1, per_page=per_page) 
     return render_template("public/index.html", **result)
 
 @bp.get("/search")
