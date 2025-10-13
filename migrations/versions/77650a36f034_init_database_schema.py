@@ -1,8 +1,8 @@
-"""init schema
+"""init database schema
 
-Revision ID: 67d7b01a0301
+Revision ID: 77650a36f034
 Revises: 
-Create Date: 2025-09-12 23:29:51.829524
+Create Date: 2025-10-14 00:24:30.904940
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '67d7b01a0301'
+revision = '77650a36f034'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -46,9 +46,11 @@ def upgrade():
     sa.Column('email', sa.String(length=120), nullable=False),
     sa.Column('phone', sa.String(length=20), nullable=True),
     sa.Column('password_hash', sa.String(length=255), nullable=False),
-    sa.Column('is_active', sa.Boolean(), nullable=True),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('approval_status', sa.String(length=16), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('deleted_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('citizen_id'),
     sa.UniqueConstraint('email')
@@ -57,21 +59,24 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('owner_id', sa.Integer(), nullable=False),
     sa.Column('dorm_name', sa.String(length=120), nullable=False),
+    sa.Column('road', sa.String(length=255), nullable=True),
+    sa.Column('soi', sa.String(length=255), nullable=True),
     sa.Column('room_type', sa.String(length=30), nullable=False),
     sa.Column('contact_phone', sa.String(length=20), nullable=True),
     sa.Column('line_id', sa.String(length=80), nullable=True),
     sa.Column('facebook_url', sa.String(length=255), nullable=True),
+    sa.Column('location_pin', sa.JSON(), nullable=True),
     sa.Column('rent_price', sa.Integer(), nullable=True),
     sa.Column('water_rate', sa.Float(), nullable=True),
     sa.Column('electric_rate', sa.Float(), nullable=True),
     sa.Column('deposit_amount', sa.Integer(), nullable=True),
-    sa.Column('lat', sa.Float(), nullable=True),
-    sa.Column('lng', sa.Float(), nullable=True),
+    sa.Column('additional_info', sa.Text(), nullable=True),
     sa.Column('availability_status', sa.String(length=16), nullable=True),
     sa.Column('workflow_status', sa.String(length=16), nullable=True),
     sa.Column('approved_at', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('deleted_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['owner_id'], ['owners.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
