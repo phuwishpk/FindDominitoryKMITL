@@ -42,6 +42,10 @@ class PropertyService:
         if not prop or prop.owner_id != owner_id:
             return None
 
+        # --- vvv ส่วนที่เพิ่มเข้ามา: ตรวจสอบสถานะก่อนแก้ไข ---
+        was_approved = prop.workflow_status == Property.WORKFLOW_APPROVED
+        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+
         amenity_codes = data.pop('amenities', [])
         data.pop('images', None)
         prepared_data = self._prepare_data(data)
@@ -55,7 +59,11 @@ class PropertyService:
         else:
             prop.amenities = []
         
-        # --- vvv ส่วนที่แก้ไข: เพิ่ม Log เข้าไปใน session ก่อน commit vvv ---
+        # --- vvv ส่วนที่เพิ่มเข้ามา: เปลี่ยนสถานะกลับเป็น draft ถ้าเคย approved แล้ว ---
+        if was_approved:
+            prop.workflow_status = Property.WORKFLOW_DRAFT
+        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+
         log_entry = AuditLog.log(
             actor_type="owner",
             actor_id=owner_id,
@@ -64,7 +72,6 @@ class PropertyService:
             meta={"details": "Owner updated property info."}
         )
         db.session.add(log_entry)
-        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
-        self.repo.save(prop) # .save() จะทำการ commit ข้อมูลทั้งหมดใน session
+        self.repo.save(prop)
         return prop
