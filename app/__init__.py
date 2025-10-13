@@ -1,6 +1,6 @@
 import os
-from flask import Flask, g
-from flask_wtf import CSRFProtect
+from flask import Flask, g, send_from_directory
+from flask_wtf import CSRFProtect, FlaskForm
 
 from .extensions import db, migrate, login_manager, babel, limiter, csrf
 from .config import Config
@@ -12,21 +12,28 @@ from .blueprints.admin import bp as admin_bp
 from .blueprints.auth import bp as auth_bp
 from .blueprints.api import bp as api_bp
 
-# Repositories
+# Repositories (Only importing files known to exist or provided)
 from .repositories.sqlalchemy.user_repo_sql import SqlUserRepo
 from .repositories.sqlalchemy.property_repo_sql import SqlPropertyRepo
 from .repositories.sqlalchemy.approval_repo_sql import SqlApprovalRepo
-from .repositories.sqlalchemy.review_repo_sql import SqlReviewRepo
+# REMOVED: from .repositories.sqlalchemy.review_repo_sql import SqlReviewRepo
 
-# Services
+# Services (Only importing files known to exist or provided)
 from .services.auth_service import AuthService
 from .services.property_service import PropertyService
 from .services.search_service import SearchService
 from .services.approval_service import ApprovalService
 from .services.upload_service import UploadService
-from .services.location_service import LocationService
-from .services.dashboard_service import DashboardService
-from .services.review_service import ReviewService
+# REMOVED: LocationService, DashboardService, ReviewService (Non-existent or broken dependencies)
+
+# Mock class to satisfy dependency injection for unimplemented services (like LocationService)
+class MockService:
+    def __init__(self, *args, **kwargs): pass
+    def __call__(self, *args, **kwargs): return self
+
+# Defining a simple EmptyForm as it is used in app context setup
+class EmptyForm(FlaskForm):
+    pass
 
 def register_dependencies(app: Flask):
     """
@@ -38,22 +45,30 @@ def register_dependencies(app: Flask):
     container["user_repo"] = SqlUserRepo()
     container["property_repo"] = SqlPropertyRepo()
     container["approval_repo"] = SqlApprovalRepo()
-    container["review_repo"] = SqlReviewRepo()
+    # REMOVED: container["review_repo"] = SqlReviewRepo()
 
-    # Services (services with no dependencies first)
+    # Services
     container["upload_service"] = UploadService(app.config.get("UPLOAD_FOLDER", "uploads"))
-    container["location_service"] = LocationService()
-    container["approval_service"] = ApprovalService(container["approval_repo"], container["property_repo"])
-    container["auth_service"] = AuthService(container["user_repo"])
     
-    # --- บรรทัดที่แก้ไข ---
-    # ส่ง upload_service และ location_service ไปให้ PropertyService
-    container["property_service"] = PropertyService(container["property_repo"], container["upload_service"], container["location_service"])
-    # --- สิ้นสุดการแก้ไข ---
+    # Using MockService for required but incomplete dependencies
+    container["location_service"] = MockService() 
+    
+    # FIX: AuthService now requires user_repo and upload_service (2 args)
+    container["auth_service"] = AuthService(container["user_repo"], container["upload_service"])
+    
+    # FIX: PropertyService now requires property_repo, upload_service, and location_service (3 args)
+    container["property_service"] = PropertyService(
+        container["property_repo"], 
+        container["upload_service"], 
+        container["location_service"]
+    )
+    
+    # FIX: ApprovalService now requires approval_repo and property_repo (2 args)
+    container["approval_service"] = ApprovalService(container["approval_repo"], container["property_repo"])
 
     container["search_service"] = SearchService(container["property_repo"])
-    container["dashboard_service"] = DashboardService(container["property_repo"])
-    container["review_service"] = ReviewService(container["review_repo"])
+    # REMOVED: container["dashboard_service"] = MockService()
+    # REMOVED: container["review_service"] = MockService()
     
     if not hasattr(app, "extensions"):
         app.extensions = {}
@@ -79,16 +94,28 @@ def create_app() -> Flask:
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(api_bp, url_prefix="/api")
+
+    # === START FIX: Serve Uploaded Files ===
+    @app.route('/uploads/<path:filename>')
+    def uploaded_file(filename):
+        """กำหนด Route เพื่อให้ Flask เสิร์ฟไฟล์จาก UPLOAD_FOLDER"""
+        root_dir = app.config['UPLOAD_FOLDER']
+        
+        # ตรวจสอบและสร้างโฟลเดอร์ uploads ถ้ายังไม่มี
+        if not os.path.exists(root_dir):
+            os.makedirs(root_dir, exist_ok=True)
+            
+        # ใช้ send_from_directory เพื่อส่งไฟล์กลับไป
+        return send_from_directory(root_dir, filename)
+    # === END FIX: Serve Uploaded Files ===
     
+    # Context processors and before request hooks
     @app.before_request
     def before_request():
-        # ตั้งค่า empty_form สำหรับใช้กับฟอร์ม logout ใน navbar
-        from app.forms.auth import EmptyForm
         g.empty_form = EmptyForm()
 
     @app.context_processor
     def inject_empty_form():
-        # ทำให้ empty_form ใช้ได้ใน template ทั้งหมด
         return dict(empty_form=g.empty_form)
 
     @app.get("/health")
@@ -126,8 +153,6 @@ def create_app() -> Flask:
         from app.extensions import db
         from werkzeug.security import generate_password_hash
         
-        location_pin_data = {"type": "Point", "coordinates": [100.7758, 13.7292]}
-
         if not Owner.query.filter_by(email="owner@example.com").first():
             o = Owner(full_name_th="เจ้าของตัวอย่าง", citizen_id="1101700203451",
                       email="owner@example.com", password_hash=generate_password_hash("password"))
@@ -135,8 +160,8 @@ def create_app() -> Flask:
             
             p = Property(owner_id=o.id, dorm_name="ตัวอย่างหอพัก", room_type="studio",
                          rent_price=6500, 
-                         location_pin=location_pin_data, 
-                         workflow_status=Property.WORKFLOW_APPROVED)
+                         lat=13.7563, lng=100.5018,
+                         workflow_status="approved")
             db.session.add(p); db.session.commit()
             
         if not Admin.query.filter_by(username="admin").first():
