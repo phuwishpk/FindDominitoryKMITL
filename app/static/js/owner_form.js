@@ -257,6 +257,18 @@
             fileStore.forEach(file => dataTransfer.items.add(file));
             fileCollector.files = dataTransfer.files;
         });
+
+        // --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
+        // เพิ่ม Event Listener ให้กับปุ่ม "ยกเลิก"
+        const cancelButton = document.getElementById('cancel-form-btn');
+        if (cancelButton) {
+            cancelButton.addEventListener('click', function() {
+                // สั่งลบข้อมูลรูปภาพออกจาก sessionStorage
+                sessionStorage.removeItem(storageKey);
+            });
+        }
+        // --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+        
         document.addEventListener('DOMContentLoaded', () => {
             loadFileStore();
             renderPreviews();

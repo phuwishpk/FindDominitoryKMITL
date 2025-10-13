@@ -28,6 +28,18 @@
       background-color: #6c757d;
       border-color: #6c757d;
     }
+<<<<<<< HEAD
+=======
+
+    /* --- CSS สำหรับการ์ดผลลัพธ์ --- */
+    .result-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .result-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    }
+>>>>>>> 16e90afeaa856cfea1c3d8c15f3168ae0a0553f7
 </style>
 
 <div class="search-hero text-center">
@@ -35,9 +47,17 @@
         <h1 class="display-5 fw-bold">ค้นหาหอพักที่คุณต้องการ</h1>
         <p class="lead mb-4">ค้นหาหอพักที่เหมาะสมกับคุณ พร้อมตัวกรองที่หลากหลาย เพื่อประสบการณ์การค้นหาที่ง่ายและตรงใจ</p>
         <div class="search-bar">
+<<<<<<< HEAD
             <form action="{{ url_for('public.search') }}" method="GET">
                 <div class="input-group input-group-lg">
                     <input type="text" class="form-control" name="q" placeholder="ค้นหาตามชื่อหอพัก..." aria-label="Search">
+=======
+            
+            {# --- vvv ฟอร์มที่แก้ไขแล้ว vvv --- #}
+            <form action="{{ url_for('public.search') }}" method="GET">
+                <div class="input-group input-group-lg">
+                    <input type="text" class="form-control" name="q" placeholder="ค้นหาตามชื่อหอพัก..." aria-label="Search" value="{{ filters.q or '' }}">
+>>>>>>> 16e90afeaa856cfea1c3d8c15f3168ae0a0553f7
                     <button class="btn btn-search-custom" type="submit">
                         <i data-feather="search" class="align-middle"></i>
                         <span class="align-middle">ค้นหา</span>
@@ -52,15 +72,24 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="road" class="form-label">ถนน</label>
+<<<<<<< HEAD
                                 <input type="text" class="form-control" id="road" name="road" placeholder="เช่น ถนนฉลองกรุง">
                             </div>
                             <div class="col-md-6">
                                 <label for="soi" class="form-label">ซอย</label>
                                 <input type="text" class="form-control" id="soi" name="soi" placeholder="เช่น ซอยเกกีงาม 1">
+=======
+                                <input type="text" class="form-control" id="road" name="road" placeholder="เช่น ถนนฉลองกรุง" value="{{ filters.road or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="soi" class="form-label">ซอย</label>
+                                <input type="text" class="form-control" id="soi" name="soi" placeholder="เช่น ซอยเกกีงาม 1" value="{{ filters.soi or '' }}">
+>>>>>>> 16e90afeaa856cfea1c3d8c15f3168ae0a0553f7
                             </div>
                             <div class="col-md-12">
                                 <label for="room_type" class="form-label">ประเภทห้อง</label>
                                 <select class="form-select" id="room_type" name="room_type">
+<<<<<<< HEAD
                                     <option value="" selected>ทั้งหมด</option>
                                     <option value="standard">ห้องธรรมดา</option>
                                     <option value="studio">ห้องสตูดิโอ</option>
@@ -79,6 +108,26 @@
                             <div class="col-md-6">
                                 <label for="max_price" class="form-label">ราคาสูงสุด (บาท/เดือน)</label>
                                 <input type="number" class="form-control" id="max_price" name="max_price" placeholder="เช่น 6500">
+=======
+                                    <option value="" {% if not filters.room_type_select %}selected{% endif %}>ทั้งหมด</option>
+                                    <option value="standard" {% if filters.room_type_select == 'standard' %}selected{% endif %}>ห้องธรรมดา</option>
+                                    <option value="studio" {% if filters.room_type_select == 'studio' %}selected{% endif %}>ห้องสตูดิโอ</option>
+                                    <option value="suite" {% if filters.room_type_select == 'suite' %}selected{% endif %}>ห้องชุด</option>
+                                    <option value="other" {% if filters.room_type_select == 'other' %}selected{% endif %}>อื่นๆ</option>
+                                </select>
+                            </div>
+                            <div class="col-md-12 {% if filters.room_type_select != 'other' %}d-none{% endif %}" id="other_room_type_wrapper">
+                                <label for="other_room_type" class="form-label">ระบุประเภทห้องอื่นๆ</label>
+                                <input type="text" class="form-control" id="other_room_type" name="other_room_type" value="{{ filters.other_room_type or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="min_price" class="form-label">ราคาต่ำสุด (บาท/เดือน)</label>
+                                <input type="number" class="form-control" id="min_price" name="min_price" placeholder="เช่น 3000" value="{{ filters.min_price or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="max_price" class="form-label">ราคาสูงสุด (บาท/เดือน)</label>
+                                <input type="number" class="form-control" id="max_price" name="max_price" placeholder="เช่น 6500" value="{{ filters.max_price or '' }}">
+>>>>>>> 16e90afeaa856cfea1c3d8c15f3168ae0a0553f7
                             </div>
                         </div>
                         <hr class="my-4">
@@ -86,7 +135,11 @@
                         <div class="amenities-grid mt-2">
                             {% for amenity in amenities %}
                             <div class="form-check">
+<<<<<<< HEAD
                                 <input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}">
+=======
+                                <input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}" {% if amenity.code in amenities_list %}checked{% endif %}>
+>>>>>>> 16e90afeaa856cfea1c3d8c15f3168ae0a0553f7
                                 <label class="form-check-label" for="amenity-{{ amenity.code }}">
                                     {{ amenity.label_th }}
                                 </label>
@@ -96,15 +149,108 @@
                     </div>
                 </div>
             </form>
+<<<<<<< HEAD
+=======
+            {# --- ^^^ สิ้นสุดฟอร์มที่แก้ไข ^^^ --- #}
+>>>>>>> 16e90afeaa856cfea1c3d8c15f3168ae0a0553f7
         </div>
     </div>
 </div>
 
 <div class="container my-5">
+<<<<<<< HEAD
     {# You can add search results or other content here later #}
     <div class="text-center p-5 border rounded bg-light">
         <p class="text-muted">ผลการค้นหาจะแสดงที่นี่</p>
     </div>
+=======
+    
+    {# --- vvv ส่วนแสดงผลการค้นหาที่เพิ่มเข้ามา vvv --- #}
+    
+    {% if filters.q or filters.road or filters.soi or filters.min_price or filters.max_price or filters.room_type or filters.amenities %}
+        <h3 class="mb-4">ผลการค้นหา ({{ total }} รายการ)</h3>
+    {% else %}
+        <h3 class="mb-4">หอพักทั้งหมด ({{ total }} รายการ)</h3>
+    {% endif %}
+
+    {% if items %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for prop in items %}
+        <div class="col">
+            <div class="card h-100 shadow-sm result-card">
+                {% set first_image = prop.images|sort(attribute='position')|first %}
+                <a href="{{ url_for('public.property_detail', prop_id=prop.id) }}">
+                    {% if first_image %}
+                    <img src="/{{ first_image.file_path }}" class="card-img-top" alt="{{ prop.dorm_name }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                    <div class="d-flex justify-content-center align-items-center bg-light text-muted" style="height: 200px;">
+                        <i data-feather="image" style="width: 48px; height: 48px;"></i>
+                    </div>
+                    {% endif %}
+                </a>
+                <div class="card-body">
+                    <h5 class="card-title text-truncate">
+                        <a href="{{ url_for('public.property_detail', prop_id=prop.id) }}" class="text-decoration-none text-dark">{{ prop.dorm_name }}</a>
+                    </h5>
+                    <p class="card-text text-muted small">
+                        {{ prop.soi or 'N/A' }}, ถ. {{ prop.road or 'N/A' }}
+                    </p>
+                    <h4 class="card-text text-primary fw-bold">
+                        {{ "{:,.0f}".format(prop.rent_price) if prop.rent_price is not none else 'N/A' }} <span class="small text-muted fw-normal">บาท/เดือน</span>
+                    </h4>
+                </div>
+                <div class="card-footer bg-white border-0 pb-3">
+                    {% if prop.availability_status == 'vacant' %}
+                        <span class="badge bg-success-subtle text-success-emphasis rounded-pill">ห้องว่าง</span>
+                    {% else %}
+                        <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill">ห้องเต็ม</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-5 d-flex justify-content-center">
+        <ul class="pagination">
+            
+            <li class="page-item {% if not (page > 1) %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('public.search', page=page-1, **filters) }}">‹</a>
+            </li>
+            
+            {% for page_num in range(1, pages + 1) %}
+                {% if page_num == page %}
+                    <li class="page-item active" aria-current="page">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                {% elif page_num > page - 3 and page_num < page + 3 %}
+                     <li class="page-item">
+                        <a class="page-link" href="{{ url_for('public.search', page=page_num, **filters) }}">{{ page_num }}</a>
+                    </li>
+                {% elif page_num == 1 or page_num == pages %}
+                     <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+            
+            <li class="page-item {% if not (page < pages) %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('public.search', page=page+1, **filters) }}">›</a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    {# หากค้นหาแล้วไม่เจออะไรเลย #}
+    <div class="text-center p-5 border rounded bg-light">
+        <i data-feather="search" class="mb-3 text-muted" style="width: 48px; height: 48px;"></i>
+        <h5 class="mb-0">ไม่พบหอพักที่ตรงเงื่อนไข</h5>
+        <p class="text-muted">กรุณาลองปรับเปลี่ยนตัวกรองของคุณ</p>
+    </div>
+    {% endif %}
+    {# --- ^^^ สิ้นสุดส่วนแสดงผลการค้นหา --- #}
+
+>>>>>>> 16e90afeaa856cfea1c3d8c15f3168ae0a0553f7
 </div>
 {% endblock %}
 
@@ -122,6 +268,15 @@ document.addEventListener('DOMContentLoaded', function() {
             otherRoomTypeWrapper.classList.add('d-none');
         }
     });
+<<<<<<< HEAD
+=======
+
+    // ทันทีที่โหลดหน้าเว็บเสร็จ ให้เรียกใช้ feather.replace()
+    // เพื่อให้ icon (เช่น <i data-feather="search"></i>) แสดงผลถูกต้อง
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+>>>>>>> 16e90afeaa856cfea1c3d8c15f3168ae0a0553f7
 });
 </script>
 {% endblock %}
