@@ -1,0 +1,127 @@
+{% extends 'public/public_base.html' %}
+
+{% block content %}
+<style>
+    .search-hero {
+        padding: 4rem 1rem;
+        background-color: #f8f9fa;
+    }
+    .search-bar {
+        max-width: 700px;
+        margin: auto;
+    }
+    .filter-section {
+        max-width: 700px;
+        margin: 1.5rem auto 0;
+    }
+    .amenities-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 0.75rem;
+    }
+    .btn-search-custom {
+      background-color: #0d6efd;
+      color: white;
+      border-color: #0d6efd;
+    }
+    .btn-search-custom:hover {
+      background-color: #6c757d;
+      border-color: #6c757d;
+    }
+</style>
+
+<div class="search-hero text-center">
+    <div class="container">
+        <h1 class="display-5 fw-bold">ค้นหาหอพักที่คุณต้องการ</h1>
+        <p class="lead mb-4">ค้นหาหอพักที่เหมาะสมกับคุณ พร้อมตัวกรองที่หลากหลาย เพื่อประสบการณ์การค้นหาที่ง่ายและตรงใจ</p>
+        <div class="search-bar">
+            <form action="{{ url_for('public.search') }}" method="GET">
+                <div class="input-group input-group-lg">
+                    <input type="text" class="form-control" name="q" placeholder="ค้นหาตามชื่อหอพัก..." aria-label="Search">
+                    <button class="btn btn-search-custom" type="submit">
+                        <i data-feather="search" class="align-middle"></i>
+                        <span class="align-middle">ค้นหา</span>
+                    </button>
+                    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+                        <i data-feather="filter" class="align-middle me-1"></i> ตัวกรอง
+                    </button>
+                </div>
+
+                <div class="collapse mt-3" id="filterCollapse">
+                    <div class="card card-body text-start">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="road" class="form-label">ถนน</label>
+                                <input type="text" class="form-control" id="road" name="road" placeholder="เช่น ถนนฉลองกรุง">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="soi" class="form-label">ซอย</label>
+                                <input type="text" class="form-control" id="soi" name="soi" placeholder="เช่น ซอยเกกีงาม 1">
+                            </div>
+                            <div class="col-md-12">
+                                <label for="room_type" class="form-label">ประเภทห้อง</label>
+                                <select class="form-select" id="room_type" name="room_type">
+                                    <option value="" selected>ทั้งหมด</option>
+                                    <option value="standard">ห้องธรรมดา</option>
+                                    <option value="studio">ห้องสตูดิโอ</option>
+                                    <option value="suite">ห้องชุด</option>
+                                    <option value="other">อื่นๆ</option>
+                                </select>
+                            </div>
+                            <div class="col-md-12 d-none" id="other_room_type_wrapper">
+                                <label for="other_room_type" class="form-label">ระบุประเภทห้องอื่นๆ</label>
+                                <input type="text" class="form-control" id="other_room_type" name="other_room_type">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="min_price" class="form-label">ราคาต่ำสุด (บาท/เดือน)</label>
+                                <input type="number" class="form-control" id="min_price" name="min_price" placeholder="เช่น 3000">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="max_price" class="form-label">ราคาสูงสุด (บาท/เดือน)</label>
+                                <input type="number" class="form-control" id="max_price" name="max_price" placeholder="เช่น 6500">
+                            </div>
+                        </div>
+                        <hr class="my-4">
+                        <h6><i data-feather="list" class="align-middle me-1"></i> สิ่งอำนวยความสะดวก</h6>
+                        <div class="amenities-grid mt-2">
+                            {% for amenity in amenities %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}">
+                                <label class="form-check-label" for="amenity-{{ amenity.code }}">
+                                    {{ amenity.label_th }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="container my-5">
+    {# You can add search results or other content here later #}
+    <div class="text-center p-5 border rounded bg-light">
+        <p class="text-muted">ผลการค้นหาจะแสดงที่นี่</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const roomTypeSelect = document.getElementById('room_type');
+    const otherRoomTypeWrapper = document.getElementById('other_room_type_wrapper');
+
+    roomTypeSelect.addEventListener('change', function() {
+        if (this.value === 'other') {
+            otherRoomTypeWrapper.classList.remove('d-none');
+        } else {
+            otherRoomTypeWrapper.classList.add('d-none');
+        }
+    });
+});
+</script>
+{% endblock %}

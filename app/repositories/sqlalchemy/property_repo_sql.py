@@ -24,7 +24,8 @@ class SqlPropertyRepo:
         q = Property.query.filter(
             Property.workflow_status == Property.WORKFLOW_APPROVED,
             Property.deleted_at.is_(None)
-        )
+        ).order_by(Property.approved_at.desc(), Property.updated_at.desc()) # <--- เพิ่มการเรียงลำดับที่นี่
+
         q_text = (filters or {}).get('q')
         if q_text:
             like = f"%{q_text.strip()}%"

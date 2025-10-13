@@ -3,6 +3,11 @@
 {% block content %}
 
 <style>
+  /* --- CSS สำหรับซ่อน element เริ่มต้นก่อน animation --- */
+  .header__container, .feature-section, .room-finder-section, .container.py-5 {
+    visibility: hidden;
+  }
+
   .header.fade-overlay {
     position: relative;
   }
@@ -76,7 +81,7 @@
     color: #0f1a2c;
     border: none;
     padding: 0.75rem 1.5rem;
-    border-radius: 9999px; /* Pill shape */
+    border-radius: 9999px;
     font-weight: 500;
     cursor: pointer;
     transition: background-color 0.3s, color 0.3s;
@@ -86,10 +91,10 @@
     color: #ffffff;
   }
   .room-tab-content {
-    display: none; /* ซ่อนเนื้อหาทั้งหมดไว้ก่อน */
+    display: none;
   }
   .room-tab-content.active {
-    display: block; /* แสดงเฉพาะ content ที่ active */
+    display: block;
   }
   .room-details-grid {
     display: grid;
@@ -149,174 +154,32 @@
     z-index: 10;
   }
 
-  /* Responsive adjustments */
   @media (max-width: 768px) {
     .room-details-grid {
       grid-template-columns: 1fr;
       text-align: center;
     }
   }
-
 </style>
 
 <header class="header fade-overlay" style="background-image: url({{ url_for('static', filename='images/header.jpg') }});">
   <div class="section__container header__container">
     <p class="section__subheader">FIND DORMITORY</p>
     <h1>หอพักที่สมบูรณ์แบบ<br />สำหรับคุณ</h1>
-    <a href="#dorm-list" class="btn">ดูหอพักทั้งหมด</a>
+    <a href="{{ url_for('public.search') }}" class="btn">ดูหอพักทั้งหมด</a>
   </div>
 </header>
 
 <section class="feature-section">
-  <div class="container">
-    <div class="text-center">
-      <h2 class="section__header">สิ่งที่ทำให้เราแตกต่าง</h2>
-    </div>
-    <div class="feature-grid">
-      <div class="feature-card">
-        <div class="icon"><i data-feather="home" style="width: 28px; height: 28px;"></i></div>
-        <h5>ห้องหรู</h5>
-        <p>ตกแต่งทันสมัย พร้อมวิวเมือง</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon"><i data-feather="shield" style="width: 28px; height: 28px;"></i></div>
-        <h5>ปลอดภัย</h5>
-        <p>ระบบรักษาความปลอดภัย 24 ชม.</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon"><i data-feather="star" style="width: 28px; height: 28px;"></i></div>
-        <h5>บริการระดับ 5 ดาว</h5>
-        <p>บริการตรวจเช็คจากทีมงานมืออาชีพ</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon"><i data-feather="key" style="width: 28px; height: 28px;"></i></div>
-        <h5>เข้าอยู่ได้ทันที</h5>
-        <p>ห้องพร้อมอยู่ พร้อมเฟอร์นิเจอร์ครบ</p>
-      </div>
-    </div>
-  </div>
+  ...
 </section>
 
 <section class="room-finder-section">
-  <div class="container">
-    <div class="text-center">
-      <h2 class="section__header">ค้นหาห้องที่ใช่สำหรับคุณ</h2>
-    </div>
-    <div class="room-tabs">
-      <button class="room-tab-btn active" data-tab="tab-furnished">เฟอร์นิเจอร์ครบ</button>
-      <button class="room-tab-btn" data-tab="tab-partial">เฟอร์นิเจอร์บางส่วน</button>
-      <button class="room-tab-btn" data-tab="tab-empty">ห้องเปล่า</button>
-    </div>
-
-    <div>
-      <div id="tab-furnished" class="room-tab-content active">
-        <div class="room-details-grid">
-          <div class="room-specs">
-            <p><strong>พื้นที่:</strong> 32 ตร.ม.</p>
-            <p><strong>ชั้น:</strong> 5</p>
-            <p><strong>ห้อง:</strong> 1</p>
-          </div>
-          <div class="room-image-wrapper">
-            <img src="{{ url_for('static', filename='images/furnished.jpg') }}" alt="ห้องเฟอร์นิเจอร์ครบ">
-          </div>
-          <div class="room-description">
-            <h4>รายละเอียด เฟอร์นิเจอร์ครบ</h4>
-            <p>ห้องสวยพร้อมอยู่ มาพร้อมเฟอร์นิเจอร์ครบชุด เหมาะสำหรับคนที่ต้องการความสะดวกสบายในทุกๆวัน</p>
-          </div>
-        </div>
-      </div>
-      <div id="tab-partial" class="room-tab-content">
-        <div class="room-details-grid">
-          <div class="room-specs">
-            <p><strong>พื้นที่:</strong> 38 ตร.ม.</p>
-            <p><strong>ชั้น:</strong> 8</p>
-            <p><strong>ห้อง:</strong> 1</p>
-          </div>
-          <div class="room-image-wrapper">
-            <img src="{{ url_for('static', filename='images/partially-furnished.jpg') }}" alt="ห้องเฟอร์นิเจอร์บางส่วน">
-          </div>
-          <div class="room-description">
-            <h4>รายละเอียด เฟอร์นิเจอร์บางส่วน</h4>
-            <p>ห้องตกแต่งบางส่วนให้คุณได้เติมแต่งในสไตล์ของตัวเอง พร้อมวิวที่โปร่งโล่งและบรรยากาศเงียบสงบ</p>
-          </div>
-        </div>
-      </div>
-      <div id="tab-empty" class="room-tab-content">
-        <div class="room-details-grid">
-          <div class="room-specs">
-            <p><strong>พื้นที่:</strong> 28 ตร.ม.</p>
-            <p><strong>ชั้น:</strong> 3</p>
-            <p><strong>ห้อง:</strong> 1</p>
-          </div>
-          <div class="room-image-wrapper">
-            <img src="{{ url_for('static', filename='images/empty-room.jpg') }}" alt="ห้องเปล่า">
-          </div>
-          <div class="room-description">
-            <h4>รายละเอียด ห้องเปล่า</h4>
-            <p>เริ่มต้นชีวิตใหม่กับห้องเปล่ากว้าง ให้คุณออกแบบการใช้ชีวิตได้อย่างอิสระ</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  ...
 </section>
 
 <section class="container py-5" id="dorm-list">
-  <p class="section__subheader text-center">DORMITORIES</p>
-  <h2 class="section__header text-center">รายการประกาศหอพัก</h2>
-
-  {% if items %}
-  <div id="dormCarousel" class="carousel slide" data-bs-ride="false">
-    <div class="carousel-inner">
-      {% for chunk in items|batch(3) %}
-      <div class="carousel-item {% if loop.first %}active{% endif %}">
-        <div class="row g-3">
-          {% for p in chunk %}
-          <div class="col-md-4">
-            <a href="{{ url_for('public.property_detail', prop_id=p.id) }}" class="text-decoration-none">
-                <div class="card h-100">
-                    {% set first_image = p.images|sort(attribute='position')|first %}
-                    {% if first_image %}
-                      <img src="/{{ first_image.file_path }}" class="card-img-top" alt="{{ p.dorm_name }}" style="height: 200px; object-fit: cover;">
-                    {% else %}
-                      <img src="https://via.placeholder.com/400x250?text=No+Image" class="card-img-top" alt="No Image" style="height: 200px; object-fit: cover;">
-                    {% endif %}
-                    <div class="card-body">
-                      <h5 class="card-title text-dark">{{ p.dorm_name }}</h5>
-                      <p class="card-text text-muted">{{ p.room_type }}</p>
-                      {% if p.availability_status == 'vacant' %}
-                        <p class="card-text" style="color: green;">สถานะ: ว่าง</p>
-                      {% else %}
-                        <p class="card-text" style="color: red;">สถานะ: เต็ม</p>
-                      {% endif %}
-                    </div>
-                    <div class="card-footer bg-white border-0 d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">{{ "{:,.0f}".format(p.rent_price) if p.rent_price is not none else 'N/A' }}<span class="h6 text-muted">/เดือน</span></h5>
-                        <span class="btn btn-sm btn-outline-primary">ดูรายละเอียด</span>
-                    </div>
-                </div>
-            </a>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-
-    {% if items|length > 3 %}
-    <button class="carousel-control-prev" type="button" data-bs-target="#dormCarousel" data-bs-slide="prev">
-      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-      <span class="visually-hidden">Previous</span>
-    </button>
-    <button class="carousel-control-next" type="button" data-bs-target="#dormCarousel" data-bs-slide="next">
-      <span class="carousel-control-next-icon" aria-hidden="true"></span>
-      <span class="visually-hidden">Next</span>
-    </button>
-    {% endif %}
-  </div>
-  {% else %}
-  <div class="alert alert-secondary w-100">ไม่พบข้อมูลประกาศในขณะนี้</div>
-  {% endif %}
+  ...
 </section>
 
 {% endblock %}
@@ -330,18 +193,26 @@
 
     tabButtons.forEach(button => {
       button.addEventListener('click', function() {
-        // นำ active class ออกจากปุ่มและเนื้อหาทั้งหมด
         tabButtons.forEach(btn => btn.classList.remove('active'));
         tabContents.forEach(content => content.classList.remove('active'));
-
-        // เพิ่ม active class ให้กับปุ่มที่ถูกคลิก
         this.classList.add('active');
-        
-        // แสดงเนื้อหาที่สอดคล้องกับปุ่มที่ถูกคลิก
         const tabId = this.getAttribute('data-tab');
         document.getElementById(tabId).classList.add('active');
       });
     });
+
+    // ScrollReveal Animation
+    const sr = ScrollReveal({
+      origin: 'bottom',
+      distance: '60px',
+      duration: 1200,
+      delay: 200,
+      reset: false
+    });
+    sr.reveal('.header__container');
+    sr.reveal('.feature-section', { delay: 300 });
+    sr.reveal('.room-finder-section', { delay: 300 });
+    sr.reveal('.container.py-5', { delay: 300 });
   });
 </script>
 {% endblock %}
