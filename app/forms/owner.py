@@ -1,13 +1,10 @@
-# phuwishpk/finddominitorykmitl/FindDominitoryKMITL-owner-improvements/app/forms/owner.py
-
 from flask_wtf import FlaskForm
 from wtforms import StringField, FloatField, IntegerField, HiddenField, TextAreaField, SelectField, MultipleFileField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional, URL, ValidationError
 from app.utils.validation import validate_image_file
 from flask import request
 
-# --- vvv ส่วนที่ 1: สร้างตัวแปรกลาง vvv ---
-# ตัวแปรนี้จะถูกใช้ทั้งในฟอร์มนี้ และส่งต่อไปยังหน้าเว็บ
+# ย้าย choices ออกมาเพื่อให้สามารถ import ไปใช้ที่อื่นได้
 ROOM_TYPE_CHOICES = [
     ('', '--- กรุณาเลือกประเภทห้อง ---'),
     ('standard', 'ห้องธรรมดา (Standard Room)'),
@@ -15,21 +12,17 @@ ROOM_TYPE_CHOICES = [
     ('suite', 'ห้องชุด (Suite Room)'),
     ('other', 'อื่นๆ (โปรดระบุ)')
 ]
-# --- ^^^ จบส่วนที่ 1 ^^^ ---
 
 class PropertyForm(FlaskForm):
     dorm_name = StringField("ชื่อหอ", validators=[DataRequired("กรุณากรอกชื่อหอพัก"), Length(max=120)])
-    
     road = StringField("ถนน", validators=[DataRequired("กรุณากรอกชื่อถนน"), Length(max=255)])
     soi = StringField("ซอย", validators=[DataRequired("กรุณากรอกชื่อซอย"), Length(max=255)])
     
-    # --- vvv ส่วนที่ 2: อัปเดตฟอร์มให้ใช้ตัวแปรกลาง vvv ---
     room_type = SelectField(
         "ประเภทห้อง",
-        choices=ROOM_TYPE_CHOICES, # <--- ทำให้ฟอร์มนี้ใช้ตัวแปรที่เราสร้าง
+        choices=ROOM_TYPE_CHOICES,
         validators=[DataRequired("กรุณาเลือกประเภทห้อง")]
     )
-    # --- ^^^ จบส่วนที่ 2 ^^^ ---
     
     other_room_type = StringField(
         "ระบุประเภทห้อง",
@@ -50,7 +43,6 @@ class PropertyForm(FlaskForm):
     additional_info = TextAreaField("ข้อมูลเพิ่มเติม", validators=[Optional(), Length(max=5000, message="ข้อมูลเพิ่มเติมต้องมีความยาวไม่เกิน 5000 ตัวอักษร")])
     
     images = MultipleFileField('รูปภาพ', validators=[]) 
-    
     amenities = HiddenField() 
 
     def validate_line_id(self, field):
