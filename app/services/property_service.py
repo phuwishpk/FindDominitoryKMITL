@@ -11,18 +11,25 @@ class PropertyService:
 
     def _prepare_data(self, data: dict) -> dict:
         """
-        ฟังก์ชัน Helper เพื่อจัดการข้อมูล room_type และ location_pin ก่อนบันทึก
+        ฟังก์ชัน Helper เพื่อจัดการข้อมูลก่อนบันทึก
         """
-        if data.get('room_type') == 'อื่นๆ':
+        # --- vvv ส่วนที่แก้ไข vvv ---
+        # เปลี่ยนจากการตรวจสอบ "อื่นๆ" เป็น "other"
+        if data.get('room_type') == 'other':
             other_type = data.get('other_room_type', '').strip()
             if other_type:
                 data['room_type'] = other_type
-        
+        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
         data.pop('other_room_type', None)
 
         location_json_str = data.pop('location_pin_json', None)
         data['location_pin'] = self.location_handler.parse_geojson_string(location_json_str)
-        
+
+        if data.get('line_id', '').strip() == '-':
+            data['line_id'] = None
+        if data.get('facebook_url', '').strip() == '-':
+            data['facebook_url'] = None
+
         return data
 
     def create(self, owner_id: int, data: dict) -> Property:
@@ -42,9 +49,7 @@ class PropertyService:
         if not prop or prop.owner_id != owner_id:
             return None
 
-        # --- vvv ส่วนที่เพิ่มเข้ามา: ตรวจสอบสถานะก่อนแก้ไข ---
         was_approved = prop.workflow_status == Property.WORKFLOW_APPROVED
-        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
         amenity_codes = data.pop('amenities', [])
         data.pop('images', None)
@@ -59,10 +64,8 @@ class PropertyService:
         else:
             prop.amenities = []
         
-        # --- vvv ส่วนที่เพิ่มเข้ามา: เปลี่ยนสถานะกลับเป็น draft ถ้าเคย approved แล้ว ---
         if was_approved:
             prop.workflow_status = Property.WORKFLOW_DRAFT
-        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
         log_entry = AuditLog.log(
             actor_type="owner",
