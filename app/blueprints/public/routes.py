@@ -15,13 +15,6 @@ def index():
 
 @bp.get("/search")
 def search():
-<<<<<<< HEAD
-    """แสดงหน้าค้นหาพร้อมส่งข้อมูลสิ่งอำนวยความสะดวกสำหรับตัวกรอง"""
-    amenities = Amenity.query.order_by(Amenity.label_th).all()
-    # ในอนาคต ส่วนนี้จะรับค่าจากฟอร์มเพื่อไปค้นหาข้อมูลจริง
-    # ตอนนี้จะแสดงหน้าฟอร์มพร้อมตัวเลือกก่อน
-    return render_template("public/search.html", amenities=amenities)
-=======
     """
     (แก้ไข) แสดงหน้าค้นหาพร้อมส่งข้อมูลสิ่งอำนวยความสะดวกสำหรับตัวกรอง
     และแสดงผลการค้นหาหากมี query parameters
@@ -75,8 +68,6 @@ def search():
         amenities_list=amenities_list, # สำหรับ pre-check checkboxes
         **result_data                 # ส่งผลการค้นหา (items, page, total, etc.)
     )
-
->>>>>>> 16e90afeaa856cfea1c3d8c15f3168ae0a0553f7
 
 @bp.get("/property/<int:prop_id>")
 def property_detail(prop_id: int):

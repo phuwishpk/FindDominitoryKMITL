@@ -28,9 +28,6 @@
       background-color: #6c757d;
       border-color: #6c757d;
     }
-<<<<<<< HEAD
-=======
-
     /* --- CSS สำหรับการ์ดผลลัพธ์ --- */
     .result-card {
         transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -39,7 +36,6 @@
         transform: translateY(-5px);
         box-shadow: 0 8px 25px rgba(0,0,0,0.08);
     }
->>>>>>> 16e90afeaa856cfea1c3d8c15f3168ae0a0553f7
 </style>
 
 <div class="search-hero text-center">
@@ -47,17 +43,11 @@
         <h1 class="display-5 fw-bold">ค้นหาหอพักที่คุณต้องการ</h1>
         <p class="lead mb-4">ค้นหาหอพักที่เหมาะสมกับคุณ พร้อมตัวกรองที่หลากหลาย เพื่อประสบการณ์การค้นหาที่ง่ายและตรงใจ</p>
         <div class="search-bar">
-<<<<<<< HEAD
-            <form action="{{ url_for('public.search') }}" method="GET">
-                <div class="input-group input-group-lg">
-                    <input type="text" class="form-control" name="q" placeholder="ค้นหาตามชื่อหอพัก..." aria-label="Search">
-=======
             
             {# --- vvv ฟอร์มที่แก้ไขแล้ว vvv --- #}
             <form action="{{ url_for('public.search') }}" method="GET">
                 <div class="input-group input-group-lg">
                     <input type="text" class="form-control" name="q" placeholder="ค้นหาตามชื่อหอพัก..." aria-label="Search" value="{{ filters.q or '' }}">
->>>>>>> 16e90afeaa856cfea1c3d8c15f3168ae0a0553f7
                     <button class="btn btn-search-custom" type="submit">
                         <i data-feather="search" class="align-middle"></i>
                         <span class="align-middle">ค้นหา</span>
@@ -72,43 +62,15 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="road" class="form-label">ถนน</label>
-<<<<<<< HEAD
-                                <input type="text" class="form-control" id="road" name="road" placeholder="เช่น ถนนฉลองกรุง">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="soi" class="form-label">ซอย</label>
-                                <input type="text" class="form-control" id="soi" name="soi" placeholder="เช่น ซอยเกกีงาม 1">
-=======
                                 <input type="text" class="form-control" id="road" name="road" placeholder="เช่น ถนนฉลองกรุง" value="{{ filters.road or '' }}">
                             </div>
                             <div class="col-md-6">
                                 <label for="soi" class="form-label">ซอย</label>
                                 <input type="text" class="form-control" id="soi" name="soi" placeholder="เช่น ซอยเกกีงาม 1" value="{{ filters.soi or '' }}">
->>>>>>> 16e90afeaa856cfea1c3d8c15f3168ae0a0553f7
                             </div>
                             <div class="col-md-12">
                                 <label for="room_type" class="form-label">ประเภทห้อง</label>
                                 <select class="form-select" id="room_type" name="room_type">
-<<<<<<< HEAD
-                                    <option value="" selected>ทั้งหมด</option>
-                                    <option value="standard">ห้องธรรมดา</option>
-                                    <option value="studio">ห้องสตูดิโอ</option>
-                                    <option value="suite">ห้องชุด</option>
-                                    <option value="other">อื่นๆ</option>
-                                </select>
-                            </div>
-                            <div class="col-md-12 d-none" id="other_room_type_wrapper">
-                                <label for="other_room_type" class="form-label">ระบุประเภทห้องอื่นๆ</label>
-                                <input type="text" class="form-control" id="other_room_type" name="other_room_type">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="min_price" class="form-label">ราคาต่ำสุด (บาท/เดือน)</label>
-                                <input type="number" class="form-control" id="min_price" name="min_price" placeholder="เช่น 3000">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="max_price" class="form-label">ราคาสูงสุด (บาท/เดือน)</label>
-                                <input type="number" class="form-control" id="max_price" name="max_price" placeholder="เช่น 6500">
-=======
                                     <option value="" {% if not filters.room_type_select %}selected{% endif %}>ทั้งหมด</option>
                                     <option value="standard" {% if filters.room_type_select == 'standard' %}selected{% endif %}>ห้องธรรมดา</option>
                                     <option value="studio" {% if filters.room_type_select == 'studio' %}selected{% endif %}>ห้องสตูดิโอ</option>
@@ -127,7 +89,6 @@
                             <div class="col-md-6">
                                 <label for="max_price" class="form-label">ราคาสูงสุด (บาท/เดือน)</label>
                                 <input type="number" class="form-control" id="max_price" name="max_price" placeholder="เช่น 6500" value="{{ filters.max_price or '' }}">
->>>>>>> 16e90afeaa856cfea1c3d8c15f3168ae0a0553f7
                             </div>
                         </div>
                         <hr class="my-4">
@@ -135,11 +96,7 @@
                         <div class="amenities-grid mt-2">
                             {% for amenity in amenities %}
                             <div class="form-check">
-<<<<<<< HEAD
-                                <input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}">
-=======
                                 <input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.code }}" id="amenity-{{ amenity.code }}" {% if amenity.code in amenities_list %}checked{% endif %}>
->>>>>>> 16e90afeaa856cfea1c3d8c15f3168ae0a0553f7
                                 <label class="form-check-label" for="amenity-{{ amenity.code }}">
                                     {{ amenity.label_th }}
                                 </label>
@@ -149,21 +106,12 @@
                     </div>
                 </div>
             </form>
-<<<<<<< HEAD
-=======
             {# --- ^^^ สิ้นสุดฟอร์มที่แก้ไข ^^^ --- #}
->>>>>>> 16e90afeaa856cfea1c3d8c15f3168ae0a0553f7
         </div>
     </div>
 </div>
 
 <div class="container my-5">
-<<<<<<< HEAD
-    {# You can add search results or other content here later #}
-    <div class="text-center p-5 border rounded bg-light">
-        <p class="text-muted">ผลการค้นหาจะแสดงที่นี่</p>
-    </div>
-=======
     
     {# --- vvv ส่วนแสดงผลการค้นหาที่เพิ่มเข้ามา vvv --- #}
     
@@ -250,7 +198,6 @@
     {% endif %}
     {# --- ^^^ สิ้นสุดส่วนแสดงผลการค้นหา --- #}
 
->>>>>>> 16e90afeaa856cfea1c3d8c15f3168ae0a0553f7
 </div>
 {% endblock %}
 
@@ -268,15 +215,12 @@ document.addEventListener('DOMContentLoaded', function() {
             otherRoomTypeWrapper.classList.add('d-none');
         }
     });
-<<<<<<< HEAD
-=======
 
     // ทันทีที่โหลดหน้าเว็บเสร็จ ให้เรียกใช้ feather.replace()
     // เพื่อให้ icon (เช่น <i data-feather="search"></i>) แสดงผลถูกต้อง
     if (typeof feather !== 'undefined') {
         feather.replace();
     }
->>>>>>> 16e90afeaa856cfea1c3d8c15f3168ae0a0553f7
 });
 </script>
 {% endblock %}
