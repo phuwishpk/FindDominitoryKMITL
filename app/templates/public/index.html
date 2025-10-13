@@ -131,11 +131,11 @@
   }
 
   /* --- vvv CSS ที่แก้ไขสำหรับปุ่ม Slider vvv --- */
-  .slider-container {
+  .slider-wrapper {
     position: relative;
   }
 
-  .tns-controls button {
+  .slider-controls button {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
@@ -152,23 +152,22 @@
     z-index: 10;
     transition: all 0.2s ease;
   }
-  .tns-controls button:hover {
+  .slider-controls button:hover {
       transform: translateY(-50%) scale(1.1);
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   }
-
-  .tns-controls button[data-controls="prev"] {
-    left: -20px;
+  .slider-controls button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
   }
 
-  .tns-controls button[data-controls="next"] {
-    right: -20px;
-  }
+  #tns-prev { left: -20px; }
+  #tns-next { right: -20px; }
   /* --- ^^^ สิ้นสุดการแก้ไข CSS ^^^ --- */
   
   @media (max-width: 1200px) {
-    .tns-controls button[data-controls="prev"] { left: 0; }
-    .tns-controls button[data-controls="next"] { right: 0; }
+    #tns-prev { left: 0; }
+    #tns-next { right: 0; }
   }
 
   @media (max-width: 768px) {
@@ -176,7 +175,7 @@
       grid-template-columns: 1fr;
       text-align: center;
     }
-    .tns-controls {
+    .slider-controls {
         display: none; /* ซ่อนปุ่มบน Mobile */
     }
   }
@@ -225,7 +224,7 @@
     </div>
 
     {% if items %}
-    <div class="slider-container">
+    <div class="slider-wrapper">
         <div class="my-slider">
             {% for prop in items %}
             <div class="px-2">
@@ -262,7 +261,12 @@
             </div>
             {% endfor %}
         </div>
-    </div>
+
+        <div class="slider-controls">
+            <button id="tns-prev" aria-label="Previous"><i data-feather="chevron-left"></i></button>
+            <button id="tns-next" aria-label="Next"><i data-feather="chevron-right"></i></button>
+        </div>
+        </div>
     {% else %}
     <div class="text-center py-5 card">
         <i data-feather="home" class="text-muted mb-3" style="width: 48px; height: 48px;"></i>
@@ -309,8 +313,11 @@
             slideBy: 'page',
             autoplay: false,
             mouseDrag: true,
-            controls: true, // **เปิดใช้งานปุ่มที่ไลบรารีสร้างให้**
+            controls: false, // ปิดปุ่ม default ก่อน
             nav: false,
+            // ระบุปุ่มที่เราสร้างขึ้นเอง
+            prevButton: "#tns-prev",
+            nextButton: "#tns-next",
             responsive: {
                 768: { items: 3 },
                 992: { items: 4 }
