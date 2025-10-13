@@ -6,23 +6,30 @@ from wtforms.validators import DataRequired, Length, NumberRange, Optional, URL,
 from app.utils.validation import validate_image_file
 from flask import request
 
+# --- vvv ส่วนที่ 1: สร้างตัวแปรกลาง vvv ---
+# ตัวแปรนี้จะถูกใช้ทั้งในฟอร์มนี้ และส่งต่อไปยังหน้าเว็บ
+ROOM_TYPE_CHOICES = [
+    ('', '--- กรุณาเลือกประเภทห้อง ---'),
+    ('standard', 'ห้องธรรมดา (Standard Room)'),
+    ('studio', 'ห้องสตูดิโอ (Studio Room)'),
+    ('suite', 'ห้องชุด (Suite Room)'),
+    ('other', 'อื่นๆ (โปรดระบุ)')
+]
+# --- ^^^ จบส่วนที่ 1 ^^^ ---
+
 class PropertyForm(FlaskForm):
     dorm_name = StringField("ชื่อหอ", validators=[DataRequired("กรุณากรอกชื่อหอพัก"), Length(max=120)])
     
     road = StringField("ถนน", validators=[DataRequired("กรุณากรอกชื่อถนน"), Length(max=255)])
     soi = StringField("ซอย", validators=[DataRequired("กรุณากรอกชื่อซอย"), Length(max=255)])
     
+    # --- vvv ส่วนที่ 2: อัปเดตฟอร์มให้ใช้ตัวแปรกลาง vvv ---
     room_type = SelectField(
         "ประเภทห้อง",
-        choices=[
-            ('', '--- กรุณาเลือกประเภทห้อง ---'),
-            ('ห้องธรรมดา (Standard Room)', 'ห้องธรรมดา (Standard Room)'),
-            ('ห้องสตูดิโอ (Studio Room)', 'ห้องสตูดิโอ (Studio Room)'),
-            ('ห้องชุด (Suite Room)', 'ห้องชุด (Suite Room)'),
-            ('อื่นๆ', 'อื่นๆ (โปรดระบุ)')
-        ],
+        choices=ROOM_TYPE_CHOICES, # <--- ทำให้ฟอร์มนี้ใช้ตัวแปรที่เราสร้าง
         validators=[DataRequired("กรุณาเลือกประเภทห้อง")]
     )
+    # --- ^^^ จบส่วนที่ 2 ^^^ ---
     
     other_room_type = StringField(
         "ระบุประเภทห้อง",
@@ -32,11 +39,8 @@ class PropertyForm(FlaskForm):
     rent_price = IntegerField("ค่าเช่า", validators=[DataRequired("กรุณากรอกค่าเช่า"), NumberRange(min=0)])
     contact_phone = StringField("เบอร์โทร", validators=[DataRequired("กรุณากรอกเบอร์โทรติดต่อ"), Length(max=20)])
     
-    # --- vvv ส่วนที่แก้ไข vvv ---
-    # บังคับกรอกข้อมูล โดยจะใช้ custom validation ด้านล่าง
     line_id = StringField("LINE ID", validators=[Length(max=80)])
     facebook_url = StringField("Facebook", validators=[Length(max=255)])
-    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
     water_rate = FloatField("ค่าน้ำ", validators=[DataRequired("กรุณากรอกค่าน้ำ"), NumberRange(min=0)])
     electric_rate = FloatField("ค่าไฟ", validators=[DataRequired("กรุณากรอกค่าไฟ"), NumberRange(min=0)])
@@ -49,33 +53,24 @@ class PropertyForm(FlaskForm):
     
     amenities = HiddenField() 
 
-    # --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
     def validate_line_id(self, field):
-        """
-        ตรวจสอบ LINE ID: ต้องไม่เว้นว่าง แต่สามารถใช้ "-" ได้
-        """
         if not field.data or not field.data.strip():
             raise ValidationError("กรุณากรอก LINE ID หรือใส่เครื่องหมาย - หากไม่มี")
         
         if field.data.strip() == '-':
-            field.data = None  # แปลงค่า "-" เป็นค่าว่างเพื่อบันทึกลงฐานข้อมูล
+            field.data = None
 
     def validate_facebook_url(self, field):
-        """
-        ตรวจสอบ Facebook URL: ต้องไม่เว้นว่าง, สามารถใช้ "-" ได้ หรือต้องเป็น URL ที่ถูกต้อง
-        """
         value = field.data
         if not value or not value.strip():
             raise ValidationError("กรุณากรอก Facebook URL หรือใส่เครื่องหมาย - หากไม่มี")
 
         if value.strip() == '-':
-            field.data = None  # แปลงค่า "-" เป็นค่าว่างเพื่อบันทึกลงฐานข้อมูล
+            field.data = None
             return
 
-        # หากกรอกข้อมูลอื่นที่ไม่ใช่ "-" ให้ตรวจสอบว่าเป็น URL ที่ถูกต้อง
         validator = URL(message="กรุณากรอก URL ให้ถูกต้อง")
         validator(self, field)
-    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
     def validate_images(self, field):
         if field.data and field.data[0].filename:
@@ -88,7 +83,7 @@ class PropertyForm(FlaskForm):
     def validate(self, **kwargs):
         is_valid = super().validate(**kwargs)
         
-        if self.room_type.data == 'อื่นๆ' and not self.other_room_type.data:
+        if self.room_type.data == 'other' and not self.other_room_type.data:
             self.other_room_type.errors.append('กรุณาระบุประเภทห้อง เมื่อเลือก "อื่นๆ"')
             is_valid = False
             
