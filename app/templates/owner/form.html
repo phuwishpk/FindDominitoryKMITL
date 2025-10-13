@@ -4,7 +4,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 fw-bold mb-0">{% if prop %}แก้ไข{% else %}สร้าง{% endif %}ประกาศหอพัก</h1>
     <a href="{{ url_for('owner.dashboard') }}" class="btn btn-sm btn-outline-secondary">
-        ← กลับสู่ Dashboard
+        ← กลับสู่หน้าหลัก
     </a>
 </div>
 
@@ -64,12 +64,37 @@
           <div class="row g-3 mb-3">
             <div class="col-md-6"><label class="form-label">เงินประกัน (บาท)</label>{{ form.deposit_amount(class_='form-control' + (' is-invalid' if form.deposit_amount.errors else ''), placeholder='เงินประกัน') }}</div>
           </div>
+          
           <div class="row g-3">
-            <div class="col-md-4"><label class="form-label">เบอร์โทรติดต่อ</label>{{ form.contact_phone(class_='form-control' + (' is-invalid' if form.contact_phone.errors else ''), placeholder='เบอร์โทร') }}</div>
-            <div class="col-md-4"><label class="form-label">LINE ID</label>{{ form.line_id(class_='form-control' + (' is-invalid' if form.line_id.errors else ''), placeholder='LINE ID') }}</div>
-            <div class="col-md-4"><label class="form-label">Facebook URL</label>{{ form.facebook_url(class_='form-control' + (' is-invalid' if form.facebook_url.errors else ''), placeholder='Facebook URL') }}</div>
+            <div class="col-md-4">
+              <label class="form-label">เบอร์โทรติดต่อ</label>
+              {{ form.contact_phone(class_='form-control' + (' is-invalid' if form.contact_phone.errors else ''), placeholder='เบอร์โทร') }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">LINE ID</label>
+              {{ form.line_id(class_='form-control' + (' is-invalid' if form.line_id.errors else ''), placeholder='LINE ID') }}
+              <div class="form-text">หากไม่มีข้อมูล กรุณาใส่เครื่องหมาย - แทน</div>
+              {% if form.line_id.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for error in form.line_id.errors %}
+                    <span>{{ error }}</span>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Facebook URL</label>
+              {{ form.facebook_url(class_='form-control' + (' is-invalid' if form.facebook_url.errors else ''), placeholder='Facebook URL') }}
+              <div class="form-text">หากไม่มีข้อมูล กรุณาใส่เครื่องหมาย - แทน</div>
+              {% if form.facebook_url.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for error in form.facebook_url.errors %}
+                    <span>{{ error }}</span>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
           </div>
-
           <div class="my-3">
               <label for="additionalInfo" class="form-label">ข้อมูลเพิ่มเติม</label>
               {{ form.additional_info(id='additionalInfo', class_='form-control' + (' is-invalid' if form.additional_info.errors else ''), rows=5, placeholder='รายละเอียดอื่นๆ เช่น โปรโมชัน, จุดสังเกต, หรือกฎระเบียบเพิ่มเติม') }}
@@ -145,9 +170,7 @@
             {% else %}
               <button type="submit" class="btn btn-primary" name="save_property" value="true">สร้างประกาศ</button>
             {% endif %}
-            {# --- vvv ส่วนที่แก้ไข: เพิ่ม id เข้าไปในปุ่มยกเลิก vvv --- #}
             <a href="{{ url_for('owner.dashboard') }}" class="btn btn-secondary" id="cancel-form-btn">ยกเลิก</a>
-            {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
           </div>
         </form>
 
