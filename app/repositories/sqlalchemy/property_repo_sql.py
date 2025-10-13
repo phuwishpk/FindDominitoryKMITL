@@ -1,125 +1,143 @@
-from sqlalchemy import or_, func, case, desc
-from app.models.property import Property, Amenity, PropertyAmenity
+from sqlalchemy import or_, func, desc, case
 from app.extensions import db
 from datetime import datetime
 
 class SqlPropertyRepo:
+    
     def get(self, prop_id: int):
-        # ดึงข้อมูล Property ที่มีสถานะ approved เท่านั้น
+        from app.models.property import Property # FIX: Import inside method
         return Property.query.filter_by(id=prop_id, workflow_status="approved").first()
 
-    def add(self, prop: Property) -> Property:
-        # บันทึก property ใหม่
+    def add(self, prop) -> 'Property':
         db.session.add(prop)
         db.session.commit()
         return prop
 
-    def save(self, prop: Property):
-        # บันทึกการเปลี่ยนแปลง
+    def save(self, prop):
         db.session.commit()
 
+    def delete(self, prop):
+        """ลบ Property ออกจากฐานข้อมูลอย่างถาวร (Permanent Delete)"""
+        db.session.delete(prop)
+        db.session.commit()
+
+    # --- PUBLIC SEARCH FUNCTION (Best Match) ---
     def list_approved(self, **filters):
-        """
-        คืน SQLAlchemy Query ของประกาศที่ workflow_status='approved'
-        พร้อมฟิลเตอร์ q, road, soi, price_min/max, room_type, amenities
-        และมีการจัดเรียงตามความเกี่ยวข้อง (Relevance)
-        """
+        from app.models.property import Property, Amenity, PropertyAmenity # FIX: Import inside method
+        
         q = Property.query.filter(Property.workflow_status == "approved")
+        relevance_score_expression = 0
+        has_score = False 
         
-        # 0. Relevance Scoring Initialization
-        relevance_score = 0
-        
-        # 1. Filter by text search (q) - ค้นหาจากชื่อหอและให้คะแนน
+        # 1. Text Search and Scoring
         q_text = filters.get('q')
+        road_text = filters.get('road')
+        soi_text = filters.get('soi')
+        
         if q_text:
             cleaned_q = q_text.strip()
             like = f"%{cleaned_q}%"
-            
-            # Filter: ต้องมีคำที่ค้นหาใน dorm_name หรือ facebook_url
-            q = q.filter(or_(
-                Property.dorm_name.ilike(like),
-                Property.facebook_url.ilike(like)
-            ))
-            
-            # Ranking: ให้คะแนน 100 หากชื่อหอตรงกันแบบเป๊ะๆ 
-            relevance_score += case(
-                (func.lower(Property.dorm_name) == func.lower(cleaned_q), 100),
-                (Property.dorm_name.ilike(like), 50),
-                else_=0
-            )
+            q = q.filter(or_(Property.dorm_name.ilike(like), Property.facebook_url.ilike(like)))
+            relevance_score_expression += case([(func.lower(Property.dorm_name) == func.lower(cleaned_q), 100)], else_=0)
+            has_score = True
 
-
-        # 2. Filter by road - ค้นหาจากชื่อถนนและให้คะแนน
-        road_text = filters.get('road')
-        if road_text:
+        # 2. Road Filter and Scoring (Best Match)
+        if road_text and hasattr(Property, 'road'):
             cleaned_road = road_text.strip()
             like = f"%{cleaned_road}%"
-            
-            # Filter: ต้องมีคำที่ค้นหาใน road (สมมติว่า model มี 'road' column)
-            # NOTE: ถ้า model ไม่มี 'road' หรือ 'soi' จะต้องสร้าง migration เพิ่มคอลัมน์ก่อน
-            q = q.filter(Property.road.ilike(like))
+            q = q.filter(Property.road.ilike(like)) 
+            relevance_score_expression += case([(func.lower(Property.road) == func.lower(cleaned_road), 20)], else_=0)
+            has_score = True
 
-            # Ranking: ให้คะแนน 20 หากถนนตรงกันแบบเป๊ะๆ
-            relevance_score += case(
-                (func.lower(Property.road) == func.lower(cleaned_road), 20),
-                (Property.road.ilike(like), 10),
-                else_=0
-            )
-
-
-        # 3. Filter by soi - ค้นหาจากชื่อซอยและให้คะแนน
-        soi_text = filters.get('soi')
-        if soi_text:
+        # 3. Soi Filter and Scoring (Best Match)
+        if soi_text and hasattr(Property, 'soi'):
             cleaned_soi = soi_text.strip()
             like = f"%{cleaned_soi}%"
-            
-            # Filter: ต้องมีคำที่ค้นหาใน soi
             q = q.filter(Property.soi.ilike(like))
-            
-            # Ranking: ให้คะแนน 5 หากซอยตรงกันแบบเป๊ะๆ
-            relevance_score += case(
-                (func.lower(Property.soi) == func.lower(cleaned_soi), 5),
-                (Property.soi.ilike(like), 2),
-                else_=0
-            )
+            relevance_score_expression += case([(func.lower(Property.soi) == func.lower(cleaned_soi), 5)], else_=0)
+            has_score = True
 
-
-        # 4. Filter by price range
-        min_price = filters.get('min_price')
-        max_price = filters.get('max_price')
-        if min_price is not None:
-            q = q.filter(Property.rent_price >= int(min_price))
-        if max_price is not None:
-            q = q.filter(Property.rent_price <= int(max_price))
-
-        # 5. Filter by room type
+        # 4. Price range and Room type filters...
+        min_price = filters.get('min_price'); max_price = filters.get('max_price')
+        if min_price is not None: q = q.filter(Property.rent_price >= int(min_price))
+        if max_price is not None: q = q.filter(Property.rent_price <= int(max_price))
         room_type = filters.get('room_type')
-        if room_type:
-            q = q.filter(Property.room_type == room_type)
+        if room_type: q = q.filter(Property.room_type == room_type)
+        availability = filters.get('availability')
+        if availability in {"vacant", "occupied"}: q = q.filter(Property.availability_status == availability)
 
-        # 6. Filter by amenities (ต้องมีครบทุกอย่างที่เลือก - AND logic)
+        # 5. Amenities Filter and Scoring
         codes = filters.get('amenities')
         if codes:
-            codes_list = [c.strip() for c in codes.split(',') if c.strip()]
+            codes_list = [c.strip() for c in codes.split(',') if c.strip()] if isinstance(codes, str) else codes
             if codes_list:
-                q = (
-                    q.join(PropertyAmenity)
-                     .join(Amenity)
+                q = (q.join(PropertyAmenity).join(Amenity)
                      .filter(Amenity.code.in_(codes_list))
                      .group_by(Property.id)
-                     .having(func.count(func.distinct(Amenity.code)) == len(codes_list))
                 )
-                
-                # Ranking: ให้คะแนน 10 ต่อ 1 Amenity ที่ตรง
-                relevance_score += (func.count(func.distinct(Amenity.code)) * 10)
+                relevance_score_expression += (func.count(Amenity.code) * 10) 
+                has_score = True
 
-
-        # 7. Sorting: จัดเรียงตามคะแนนความเกี่ยวข้อง (สูงสุดไปต่ำสุด) ก่อน แล้วตามวันที่อนุมัติ
-        if isinstance(relevance_score, int) and relevance_score == 0:
-            # Default sorting: เรียงตามวันที่อัปเดตล่าสุด
-            q = q.order_by(desc(Property.updated_at))
+        # 6. Final Ordering
+        if has_score:
+            q = q.order_by(desc(relevance_score_expression), desc(Property.updated_at))
         else:
-            # Relevance sorting: เรียงตามคะแนนก่อน แล้วตามวันที่ล่าสุด
-            q = q.order_by(desc(relevance_score), desc(Property.approved_at), desc(Property.updated_at))
+            q = q.order_by(desc(Property.updated_at))
 
         return q
+
+    # --- ADMIN/DASHBOARD REPOSITORY FUNCTIONS ---
+
+    def list_all_paginated(self, search_query=None, page=1, per_page=15):
+        from app.models.property import Property # FIX: Import inside method
+        from app.models.user import Owner # FIX: Import inside method
+        
+        q = Property.query
+
+        if search_query:
+            like_filter = f"%{search_query}%"
+            q = q.join(Property.owner).filter(or_(
+                Property.dorm_name.ilike(like_filter),
+                Property.owner.has(Owner.full_name_th.ilike(like_filter))
+            ))
+
+        return db.paginate(
+            q.order_by(desc(Property.created_at)),
+            page=page, per_page=per_page, error_out=False
+        )
+
+    def get_deleted_properties_paginated(self, page=1, per_page=15):
+        from app.models.property import Property # FIX: Import inside method
+        
+        if hasattr(Property, 'deleted_at'):
+             q = Property.query.filter(Property.deleted_at.isnot(None))
+        else:
+             q = Property.query.filter(Property.workflow_status.in_(["rejected", "draft"])) 
+             
+        return db.paginate(
+            q.order_by(desc(Property.updated_at)),
+            page=page, per_page=per_page, error_out=False
+        )
+    
+    def count_active_properties(self) -> int:
+        from app.models.property import Property # FIX: Import inside method
+        return db.session.query(Property).filter(Property.workflow_status == "approved").count()
+    
+    def count_properties_by_month(self, date_obj: datetime) -> int:
+        from app.models.property import Property # FIX: Import inside method
+        return db.session.query(Property).filter(
+            func.strftime('%Y-%m', Property.created_at) == date_obj.strftime("%Y-%m")
+        ).count()
+
+    def get_property_counts_by_road(self, limit: int = 5):
+        from app.models.property import Property # FIX: Import inside method
+        
+        if hasattr(Property, 'road'):
+            q = db.session.query(
+                Property.road, func.count(Property.id).label('count')
+            ).filter(
+                Property.road.isnot(None), Property.road != '',
+                Property.workflow_status == "approved"
+            ).group_by(Property.road).order_by(desc('count')).limit(limit).all()
+            return q
+        return []

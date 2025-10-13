@@ -1,3 +1,1 @@
-from .user import Owner, Admin
-from .property import Property, PropertyImage, Amenity, PropertyAmenity
-from .approval import ApprovalRequest, AuditLog
+#ปล่อยว่างนำเข้าโมเดลจากไฟล์เฉพาะของมันโดยตรง แต่เนื่องจากโค้ดเดิมของคุณอาจมีการนำเข้าโมเดลไว้ ผมจะทำให้มันเป็นการนำเข้าที่ปลอดภัยที่สุด
