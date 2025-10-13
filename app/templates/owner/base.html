@@ -84,13 +84,13 @@
 <div class="sidebar">
     <div>
         <h1 class="sidebar-header">
-            <a href="{{ url_for('owner.dashboard') }}">Owner Panel</a>
+            <a href="{{ url_for('owner.dashboard') }}">จัดการหอพัก</a>
         </h1>
         
         <ul class="nav flex-column sidebar-nav">
             <li class="nav-item">
                 <a class="nav-link {% if request.endpoint == 'owner.dashboard' %}active{% endif %}" href="{{ url_for('owner.dashboard') }}">
-                    <i data-feather="grid"></i> Dashboard
+                    <i data-feather="grid"></i> หน้าหลัก
                 </a>
             </li>
             <li class="nav-item">
