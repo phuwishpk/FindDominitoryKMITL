@@ -9,7 +9,7 @@
 </div>
 
 <div class="card mb-4 border-0">
-    <div class="card-body">
+    <div class="card-body p-3">
         <form method="GET" action="{{ url_for('admin.properties') }}">
             <div class="input-group">
                 <span class="input-group-text bg-light border-0"><i data-feather="search"></i></span>
@@ -20,55 +20,58 @@
     </div>
 </div>
 
-<div class="table-responsive">
-    <table class="table align-middle">
-        <thead>
-            <tr>
-                <th scope="col" style="width: 5%;">ลำดับ</th>
-                <th scope="col">ชื่อหอพัก</th>
-                <th scope="col">Owner ID</th>
-                <th scope="col">สถานะ</th>
-                <th scope="col" class="text-end">การกระทำ</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for prop in pagination.items %}
-            <tr>
-                <th scope="row">{{ pagination.per_page * (pagination.page - 1) + loop.index }}</th>
-                <td>{{ prop.dorm_name }} <span class="text-muted small">(ID: {{ prop.id }})</span></td>
-                <td>{{ prop.owner_id }}</td>
-                <td>
-                    {% if prop.workflow_status == 'approved' %}
-                        <span class="badge bg-success-subtle text-success-emphasis rounded-pill">Approved</span>
-                    {% elif prop.workflow_status == 'submitted' %}
-                        <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">Submitted</span>
-                    {% elif prop.workflow_status == 'rejected' %}
-                        <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill">Rejected</span>
-                    {% else %}
-                        <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill">Draft</span>
-                    {% endif %}
-                </td>
-                <td class="text-end">
-                    <a href="{{ url_for('admin.view_property', prop_id=prop.id) }}" class="btn btn-sm btn-outline-info me-1" title="ดูรายละเอียด">
-                        <i data-feather="eye" style="width:16px;"></i>
-                    </a>
-                    <a href="{{ url_for('admin.admin_edit_property', prop_id=prop.id) }}" class="btn btn-sm btn-outline-secondary me-1" title="แก้ไข">
-                        <i data-feather="edit-2" style="width:16px;"></i>
-                    </a>
-                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ prop.id }}" title="ย้ายไปถังขยะ">
-                        <i data-feather="trash-2" style="width:16px;"></i>
-                    </button>
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="5" class="text-center text-muted py-5 card">ไม่พบข้อมูลหอพัก</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="table-container"> 
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th scope="col" style="width: 5%;">ลำดับ</th>
+                    <th scope="col">ชื่อหอพัก</th>
+                    <th scope="col">Owner ID</th>
+                    <th scope="col">สถานะ</th>
+                    <th scope="col" class="text-end">การกระทำ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prop in pagination.items %}
+                <tr>
+                    <th scope="row">{{ pagination.per_page * (pagination.page - 1) + loop.index }}</th>
+                    <td>{{ prop.dorm_name }} <span class="text-muted small">(ID: {{ prop.id }})</span></td>
+                    <td>{{ prop.owner_id }}</td>
+                    <td>
+                        {% if prop.workflow_status == 'approved' %}
+                            <span class="badge bg-success-subtle text-success-emphasis rounded-pill">อนุมัติแล้ว</span>
+                        {% elif prop.workflow_status == 'submitted' %}
+                            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">รออนุมัติ</span>
+                        {% elif prop.workflow_status == 'rejected' %}
+                            <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill">ถูกปฏิเสธ</span>
+                        {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill">แบบร่าง</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('admin.view_property', prop_id=prop.id) }}" class="btn btn-sm btn-outline-info me-1" title="ดูรายละเอียด">
+                            <i data-feather="eye" style="width:16px;"></i>
+                        </a>
+                        <a href="{{ url_for('admin.admin_edit_property', prop_id=prop.id) }}" class="btn btn-sm btn-outline-secondary me-1" title="แก้ไข">
+                            <i data-feather="edit-2" style="width:16px;"></i>
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ prop.id }}" title="ย้ายไปถังขยะ">
+                            <i data-feather="trash-2" style="width:16px;"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-5">ไม่พบข้อมูลหอพัก</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
+{# Pagination Code #}
 {% if pagination.pages > 1 %}
 <nav aria-label="Page navigation" class="mt-4 d-flex justify-content-center">
     <ul class="pagination">
@@ -91,6 +94,7 @@
 </nav>
 {% endif %}
 
+{# Modals #}
 {% for prop in pagination.items %}
 <div class="modal fade" id="deleteModal-{{ prop.id }}" tabindex="-1">
   <div class="modal-dialog">
