@@ -133,7 +133,6 @@
   /* --- vvv CSS ที่แก้ไขสำหรับปุ่ม Slider vvv --- */
   .slider-container {
     position: relative;
-    padding: 0 30px; /* เพิ่มพื้นที่ด้านข้างสำหรับปุ่ม */
   }
 
   .tns-controls button {
@@ -142,7 +141,7 @@
     transform: translateY(-50%);
     background: white;
     border: 1px solid #e0e0e0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     width: 45px;
     height: 45px;
     border-radius: 50%;
@@ -151,30 +150,34 @@
     align-items: center;
     justify-content: center;
     z-index: 10;
+    transition: all 0.2s ease;
+  }
+  .tns-controls button:hover {
+      transform: translateY(-50%) scale(1.1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   }
 
   .tns-controls button[data-controls="prev"] {
-    left: 0;
+    left: -20px;
   }
 
   .tns-controls button[data-controls="next"] {
-    right: 0;
+    right: -20px;
   }
   /* --- ^^^ สิ้นสุดการแก้ไข CSS ^^^ --- */
   
-  @media (max-width: 992px) {
-    .slider-container {
-        padding: 0; /* ไม่มีพื้นที่ข้างบน Tablet และ Mobile */
-    }
-    .tns-controls {
-        display: none; /* ซ่อนปุ่มบน Tablet และ Mobile */
-    }
+  @media (max-width: 1200px) {
+    .tns-controls button[data-controls="prev"] { left: 0; }
+    .tns-controls button[data-controls="next"] { right: 0; }
   }
 
   @media (max-width: 768px) {
     .room-details-grid {
       grid-template-columns: 1fr;
       text-align: center;
+    }
+    .tns-controls {
+        display: none; /* ซ่อนปุ่มบน Mobile */
     }
   }
 </style>
@@ -306,9 +309,8 @@
             slideBy: 'page',
             autoplay: false,
             mouseDrag: true,
-            controls: true, // เปิดใช้งานปุ่ม
+            controls: true, // **เปิดใช้งานปุ่มที่ไลบรารีสร้างให้**
             nav: false,
-            // ไม่ต้องใช้ controlsContainer แล้ว เพราะเราจะใช้ปุ่มที่ไลบรารีสร้างให้
             responsive: {
                 768: { items: 3 },
                 992: { items: 4 }
