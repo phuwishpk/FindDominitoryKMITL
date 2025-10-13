@@ -17,21 +17,17 @@ class OwnerRegisterForm(FlaskForm):
     occupancy_pdf = FileField('หนังสือแจ้งมีผู้เข้าพัก (PDF)', validators=[Optional()])
 
     def validate_citizen_id(self, field):
-        # --- vvv ส่วนที่แก้ไข vvv ---
         # ตรวจสอบ format ของเลขบัตรประชาชน
         if not is_valid_citizen_id(field.data):
             raise ValidationError('เลขบัตรประชาชนไม่ถูกต้อง')
         # ตรวจสอบว่าเลขบัตรนี้มีในระบบแล้วหรือยัง
         if Owner.query.filter_by(citizen_id=field.data).first():
             raise ValidationError('เลขบัตรประชาชนนี้มีผู้ใช้งานในระบบแล้ว')
-        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
-    # --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
     def validate_email(self, field):
         # ตรวจสอบว่าอีเมลนี้มีในระบบแล้วหรือยัง
         if Owner.query.filter_by(email=field.data).first():
             raise ValidationError('อีเมลนี้มีผู้ใช้งานในระบบแล้ว')
-    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
     def validate_occupancy_pdf(self, field):
         if field.data:
@@ -48,5 +44,5 @@ class AdminLoginForm(FlaskForm):
 class CombinedLoginForm(FlaskForm):
     username = StringField('ชื่อผู้ใช้ / อีเมล', validators=[DataRequired(), Length(max=120)])
     password = PasswordField('รหัสผ่าน', validators=[DataRequired(), Length(min=3, max=128)])
-    role = SelectField('ประเภทผู้ใช้', choices=[('owner','Owner'), ('admin','Admin')], default='owner')
+    # REMOVED: role = SelectField('ประเภทผู้ใช้', choices=[('owner','Owner'), ('admin','Admin')], default='owner')
     remember = BooleanField('จำการเข้าสู่ระบบ')

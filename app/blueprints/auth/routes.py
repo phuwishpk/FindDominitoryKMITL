@@ -23,30 +23,38 @@ def login():
         from app.extensions import db
         db.session.add(a); db.session.commit()
 
-    form = CombinedLoginForm(role=request.args.get("role","owner"))
+    form = CombinedLoginForm()
     
     if form.validate_on_submit():
-        role = form.role.data
+        username_or_email = form.username.data
+        password = form.password.data
         svc = current_app.extensions["container"]["auth_service"]
+        user_repo = current_app.extensions["container"]["user_repo"]
+
+        # 1. ลองล็อกอินเป็น Admin (ใช้ username)
+        admin = svc.verify_admin(username_or_email, password)
+        if admin:
+            svc.login_admin(admin)
+            return redirect(url_for("admin.dashboard"))
+
+        # 2. ลองล็อกอินเป็น Owner (ใช้ email)
+        owner = user_repo.get_owner_by_email(username_or_email)
         
-        if role == "owner":
-            user_repo = current_app.extensions["container"]["user_repo"]
-            owner = user_repo.get_owner_by_email(form.username.data)
-            
-            if owner and not owner.is_active:
-                flash("บัญชีของคุณยังไม่ได้รับการอนุมัติจากผู้ดูแลระบบ", "warning")
-            elif svc.verify_owner(form.username.data, form.password.data):
+        if owner:
+            # ตรวจสอบสถานะการใช้งาน
+            is_verified_and_active = svc.verify_owner(username_or_email, password)
+
+            if is_verified_and_active:
                 svc.login_owner(owner)
                 return redirect(url_for("owner.dashboard"))
-            else:
-                flash("ข้อมูลเข้าใช้งานไม่ถูกต้อง (Owner)")
+            
+            # หากอีเมลถูกต้องแต่บัญชีไม่ Active (รอดำเนินการ/ถูกปฏิเสธ)
+            if not owner.is_active: 
+                flash("บัญชีของคุณยังไม่ได้รับการอนุมัติจากผู้ดูแลระบบ", "warning")
+                return render_template("auth/login.html", form=form)
 
-        else: # Admin
-            admin = svc.verify_admin(form.username.data, form.password.data)
-            if admin:
-                svc.login_admin(admin)
-                return redirect(url_for("admin.dashboard"))
-            flash("ข้อมูลเข้าใช้งานไม่ถูกต้อง (Admin)")
+        # 3. หาก Admin และ Owner ไม่สำเร็จ (รหัสผิด, user ไม่พบ, หรือ owner รหัสผิด)
+        flash("ข้อมูลเข้าใช้งานไม่ถูกต้อง กรุณาตรวจสอบชื่อผู้ใช้/อีเมล และรหัสผ่าน", "danger")
             
     return render_template("auth/login.html", form=form)
 
