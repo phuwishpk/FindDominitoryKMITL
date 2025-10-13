@@ -23,18 +23,18 @@
       font-family: 'Kanit', sans-serif;
     }
 
-    /* --- เพิ่มส่วนนี้เพื่อบังคับใช้ Font Kanit กับส่วนที่ไม่ถูกเปลี่ยน --- */
+    /* ---บังคับใช้ Font Kanit กับส่วนที่ไม่ถูกเปลี่ยน --- */
     .header__container h1, 
     .section__header,
     .feature-card h5,
     .feature-card p,
     .room-specs p,
     .room-description h4,
-    .room-description p {
+    .room-description p,
+    .room-tab-btn {
       font-family: 'Kanit', sans-serif !important;
     }
-    /* --- สิ้นสุดส่วนที่เพิ่ม --- */
-
+    
     .navbar-custom {
         background-color: #004a99; 
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
@@ -64,6 +64,19 @@
         color: #004a99;
         border-color: #ffd700;
     }
+
+    /* --- CSS สำหรับ Footer --- */
+    .footer-custom {
+      background-color: #0c6cacff; /* สีน้ำเงินอ่อน */
+      color: white; /* สีตัวอักษร */
+    }
+    .footer-custom a {
+      color: white; /* สีลิงก์ */
+    }
+    .footer-custom a:hover {
+      color: #f0f0f0; /* สีลิงก์เมื่อเมาส์ชี้ */
+    }
+
   </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -111,16 +124,16 @@
   {% block content %}{% endblock %}
 </main>
 
-<footer class="py-4 mt-auto bg-light border-top">
+<footer class="py-4 mt-auto footer-custom">
     <div class="container">
         <div class="row align-items-center justify-content-between flex-column flex-sm-row">
             <div class="col-auto"><div class="small m-0">Copyright &copy; FindDormitoryKMITL 2025</div></div>
             <div class="col-auto">
-                <a class="link-dark small" href="#!">Privacy</a>
+                <a class="small" href="#!">Privacy</a>
                 <span class="mx-1">&middot;</span>
-                <a class="link-dark small" href="#!">Terms</a>
+                <a class="small" href="#!">Terms</a>
                 <span class="mx-1">&middot;</span>
-                <a class="link-dark small" href="#!">Contact</a>
+                <a class="small" href="#!">Contact</a>
             </div>
         </div>
     </div>
