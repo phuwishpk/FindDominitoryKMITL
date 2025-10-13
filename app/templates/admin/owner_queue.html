@@ -1,0 +1,45 @@
+{% extends 'admin/base.html' %}
+
+{% block admin_content %}
+<h1 class="h3 mb-4 fw-bold">อนุมัติ Owner</h1>
+
+<div class="card border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">ชื่อ-สกุล</th>
+                        <th scope="col">อีเมล</th>
+                        <th scope="col">วันที่สมัคร</th>
+                        <th scope="col" class="text-end">การกระทำ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for owner in pending_owners %}
+                    <tr>
+                        <th scope="row">{{ owner.id }}</th>
+                        <td>{{ owner.full_name_th }}</td>
+                        <td>{{ owner.email }}</td>
+                        <td>{{ owner.created_at|to_bkk_time }}</td>
+                        <td class="text-end">
+                            <a href="{{ url_for('admin.review_owner', owner_id=owner.id) }}" class="btn btn-sm btn-outline-secondary">
+                                <i data-feather="edit-3" class="me-1" style="width:16px; height: 16px;"></i> ตรวจสอบ
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-5">
+                            <i data-feather="user-check" class="mb-3" style="width: 48px; height: 48px;"></i>
+                            <h5 class="mb-0">ไม่มี Owner ที่รอการอนุมัติ</h5>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

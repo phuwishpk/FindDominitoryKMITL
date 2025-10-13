@@ -1,25 +1,106 @@
-from flask_wtf import FlaskForm
-from wtforms import StringField, FloatField, IntegerField
-from wtforms.validators import DataRequired, Length, NumberRange, Optional, URL
-from wtforms import ValidationError
+# phuwishpk/finddominitorykmitl/FindDominitoryKMITL-owner-improvements/app/forms/owner.py
 
-ROOM_TYPES = ("studio", "1br", "2br", "other")
+from flask_wtf import FlaskForm
+from wtforms import StringField, FloatField, IntegerField, HiddenField, TextAreaField, SelectField, MultipleFileField
+from wtforms.validators import DataRequired, Length, NumberRange, Optional, URL, ValidationError
+from app.utils.validation import validate_image_file
+from flask import request
 
 class PropertyForm(FlaskForm):
-    dorm_name = StringField("ชื่อหอ", validators=[DataRequired(), Length(max=120)])
-    room_type = StringField("ประเภทห้อง", validators=[DataRequired(), Length(max=30)])
-    contact_phone = StringField("เบอร์โทร", validators=[Optional(), Length(max=20)])
-    line_id = StringField("LINE ID", validators=[Optional(), Length(max=80)])
-    facebook_url = StringField("Facebook", validators=[Optional(), URL(), Length(max=255)])
+    dorm_name = StringField("ชื่อหอ", validators=[DataRequired("กรุณากรอกชื่อหอพัก"), Length(max=120)])
+    
+    road = StringField("ถนน", validators=[DataRequired("กรุณากรอกชื่อถนน"), Length(max=255)])
+    soi = StringField("ซอย", validators=[DataRequired("กรุณากรอกชื่อซอย"), Length(max=255)])
+    
+    room_type = SelectField(
+        "ประเภทห้อง",
+        choices=[
+            ('', '--- กรุณาเลือกประเภทห้อง ---'),
+            ('ห้องธรรมดา (Standard Room)', 'ห้องธรรมดา (Standard Room)'),
+            ('ห้องสตูดิโอ (Studio Room)', 'ห้องสตูดิโอ (Studio Room)'),
+            ('ห้องชุด (Suite Room)', 'ห้องชุด (Suite Room)'),
+            ('อื่นๆ', 'อื่นๆ (โปรดระบุ)')
+        ],
+        validators=[DataRequired("กรุณาเลือกประเภทห้อง")]
+    )
+    
+    other_room_type = StringField(
+        "ระบุประเภทห้อง",
+        validators=[Optional(), Length(max=100, message="ประเภทห้องต้องมีความยาวไม่เกิน 100 ตัวอักษร")]
+    )
 
-    rent_price = IntegerField("ค่าเช่า", validators=[Optional(), NumberRange(min=0, max=200000)])
-    water_rate = FloatField("ค่าน้ำ", validators=[Optional(), NumberRange(min=0, max=10000)])
-    electric_rate = FloatField("ค่าไฟ", validators=[Optional(), NumberRange(min=0, max=10000)])
-    deposit_amount = IntegerField("เงินประกัน", validators=[Optional(), NumberRange(min=0, max=1000000)])
+    rent_price = IntegerField("ค่าเช่า", validators=[DataRequired("กรุณากรอกค่าเช่า"), NumberRange(min=0)])
+    contact_phone = StringField("เบอร์โทร", validators=[DataRequired("กรุณากรอกเบอร์โทรติดต่อ"), Length(max=20)])
+    
+    # --- vvv ส่วนที่แก้ไข vvv ---
+    # บังคับกรอกข้อมูล โดยจะใช้ custom validation ด้านล่าง
+    line_id = StringField("LINE ID", validators=[Length(max=80)])
+    facebook_url = StringField("Facebook", validators=[Length(max=255)])
+    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
-    lat = FloatField("ละติจูด", validators=[Optional()])
-    lng = FloatField("ลองจิจูด", validators=[Optional()])
+    water_rate = FloatField("ค่าน้ำ", validators=[DataRequired("กรุณากรอกค่าน้ำ"), NumberRange(min=0)])
+    electric_rate = FloatField("ค่าไฟ", validators=[DataRequired("กรุณากรอกค่าไฟ"), NumberRange(min=0)])
+    deposit_amount = IntegerField("เงินประกัน", validators=[DataRequired("กรุณากรอกเงินประกัน"), NumberRange(min=0)])
+    
+    location_pin_json = HiddenField("Location Pin JSON", validators=[DataRequired("กรุณาปักหมุดตำแหน่งบนแผนที่")])
+    additional_info = TextAreaField("ข้อมูลเพิ่มเติม", validators=[Optional(), Length(max=5000, message="ข้อมูลเพิ่มเติมต้องมีความยาวไม่เกิน 5000 ตัวอักษร")])
+    
+    images = MultipleFileField('รูปภาพ', validators=[]) 
+    
+    amenities = HiddenField() 
 
-    def validate_room_type(self, field):
-        if field.data and field.data not in ROOM_TYPES:
-            raise ValidationError("room_type ต้องเป็นหนึ่งใน: " + ", ".join(ROOM_TYPES))
+    # --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
+    def validate_line_id(self, field):
+        """
+        ตรวจสอบ LINE ID: ต้องไม่เว้นว่าง แต่สามารถใช้ "-" ได้
+        """
+        if not field.data or not field.data.strip():
+            raise ValidationError("กรุณากรอก LINE ID หรือใส่เครื่องหมาย - หากไม่มี")
+        
+        if field.data.strip() == '-':
+            field.data = None  # แปลงค่า "-" เป็นค่าว่างเพื่อบันทึกลงฐานข้อมูล
+
+    def validate_facebook_url(self, field):
+        """
+        ตรวจสอบ Facebook URL: ต้องไม่เว้นว่าง, สามารถใช้ "-" ได้ หรือต้องเป็น URL ที่ถูกต้อง
+        """
+        value = field.data
+        if not value or not value.strip():
+            raise ValidationError("กรุณากรอก Facebook URL หรือใส่เครื่องหมาย - หากไม่มี")
+
+        if value.strip() == '-':
+            field.data = None  # แปลงค่า "-" เป็นค่าว่างเพื่อบันทึกลงฐานข้อมูล
+            return
+
+        # หากกรอกข้อมูลอื่นที่ไม่ใช่ "-" ให้ตรวจสอบว่าเป็น URL ที่ถูกต้อง
+        validator = URL(message="กรุณากรอก URL ให้ถูกต้อง")
+        validator(self, field)
+    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+
+    def validate_images(self, field):
+        if field.data and field.data[0].filename:
+            for file_storage in field.data:
+                try:
+                    validate_image_file(file_storage, max_mb=3)
+                except ValidationError as e:
+                    self.images.errors.append(str(e))
+
+    def validate(self, **kwargs):
+        is_valid = super().validate(**kwargs)
+        
+        if self.room_type.data == 'อื่นๆ' and not self.other_room_type.data:
+            self.other_room_type.errors.append('กรุณาระบุประเภทห้อง เมื่อเลือก "อื่นๆ"')
+            is_valid = False
+            
+        if not request.form.getlist('amenities'):
+            self.amenities.errors.append('กรุณาเลือกสิ่งอำนวยความสะดวกอย่างน้อย 1 อย่าง')
+            is_valid = False
+
+        is_create_mode = 'prop_id' not in request.view_args
+        if is_create_mode:
+            uploaded_files = request.files.getlist(self.images.name)
+            if not uploaded_files or not uploaded_files[0].filename:
+                 self.images.errors.append('กรุณาอัปโหลดรูปภาพอย่างน้อย 1 รูป')
+                 is_valid = False
+            
+        return is_valid

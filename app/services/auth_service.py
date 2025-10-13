@@ -3,12 +3,23 @@ from flask_login import login_user, logout_user
 from app.models.user import Owner, Admin
 from app.extensions import Principal
 from app.repositories.interfaces.user_repo import IUserRepo
+# --- vvv ส่วนที่เพิ่มเข้ามา vvv ---
+from app.services.upload_service import UploadService
+# --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
 
 class AuthService:
-    def __init__(self, user_repo: IUserRepo):
+    # --- vvv ส่วนที่แก้ไข vvv ---
+    def __init__(self, user_repo: IUserRepo, upload_service: UploadService):
         self.user_repo = user_repo
+        self.upload_service = upload_service
+    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
 
+    # --- vvv ส่วนที่แก้ไข vvv ---
     def register_owner(self, data: dict) -> Owner:
+        # แยกไฟล์ PDF ออกจากข้อมูลส่วนอื่นก่อน
+        pdf_file = data.pop('occupancy_pdf', None)
+        
+        # สร้าง Object ของ Owner โดยยังไม่มี path ของไฟล์ PDF
         owner = Owner(
             full_name_th=data.get("full_name_th"),
             full_name_en=data.get("full_name_en"),
@@ -17,11 +28,29 @@ class AuthService:
             phone=data.get("phone"),
             password_hash=generate_password_hash(data.get("password"))
         )
-        return self.user_repo.add_owner(owner)
+        
+        # บันทึก Owner ลงฐานข้อมูลเพื่อให้ได้ ID มาก่อน
+        new_owner = self.user_repo.add_owner(owner)
+        
+        # ถ้ามีการอัปโหลดไฟล์ PDF ให้ทำการบันทึกไฟล์
+        if pdf_file and pdf_file.filename:
+            try:
+                # ใช้ ID ของ new_owner ในการสร้าง folder path
+                pdf_path = self.upload_service.save_document(owner_id=new_owner.id, file_storage=pdf_file)
+                # อัปเดต path ของไฟล์ PDF กลับเข้าไปใน object
+                new_owner.occupancy_notice_pdf = pdf_path
+                # บันทึกการเปลี่ยนแปลง path ลงฐานข้อมูล
+                self.user_repo.save_owner(new_owner)
+            except Exception as e:
+                # กรณีเกิดข้อผิดพลาดในการอัปโหลด
+                print(f"Error uploading PDF for owner {new_owner.id}: {e}")
+        
+        return new_owner
+    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
 
     def verify_owner(self, email: str, password: str) -> bool:
         owner = self.user_repo.get_owner_by_email(email)
-        return bool(owner and check_password_hash(owner.password_hash, password))
+        return bool(owner and check_password_hash(owner.password_hash, password) and owner.is_active)
 
     def login_owner(self, owner: Owner) -> None:
         principal = Principal(f"owner:{owner.id}", "owner", owner.id)

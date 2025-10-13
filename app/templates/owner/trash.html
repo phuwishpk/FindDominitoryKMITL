@@ -1,0 +1,110 @@
+{% extends 'owner/base.html' %}
+
+{% block owner_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 fw-bold mb-0">ถังขยะ (ประกาศที่ถูกลบ)</h1>
+    <a href="{{ url_for('owner.dashboard') }}" class="btn btn-sm btn-outline-secondary">← กลับสู่หน้าหลัก</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">ชื่อหอพัก</th>
+                <th scope="col">วันที่ลบ</th>
+                <th scope="col" class="text-end">การกระทำ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for prop in pagination.items %}
+            <tr>
+                <th scope="row">{{ prop.id }}</th>
+                <td>{{ prop.dorm_name }}</td>
+                <td>{{ prop.deleted_at|to_bkk_time }}</td>
+                <td class="text-end">
+                    <button type="button" class="btn btn-sm btn-outline-success me-1" data-bs-toggle="modal" data-bs-target="#restoreModal-{{ prop.id }}">
+                        กู้คืน
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ prop.id }}">
+                        ลบถาวร
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="text-center text-muted py-5 card">
+                    <i data-feather="trash-2" class="mb-3" style="width: 48px; height: 48px;"></i>
+                    <h5 class="mb-0">ถังขยะว่าง</h5>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if pagination.pages > 1 %}
+<nav aria-label="Page navigation" class="mt-4 d-flex justify-content-center">
+    <ul class="pagination">
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('owner.trash', page=pagination.prev_num) }}">‹</a>
+        </li>
+        {% for page_num in pagination.iter_pages() %}
+            <li class="page-item {% if pagination.page == page_num %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('owner.trash', page=page_num) }}">{{ page_num }}</a>
+            </li>
+        {% endfor %}
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('owner.trash', page=pagination.next_num) }}">›</a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+
+{% for prop in pagination.items %}
+<div class="modal fade" id="restoreModal-{{ prop.id }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">ยืนยันการกู้คืน</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        คุณต้องการกู้คืนข้อมูลของหอพัก <strong>"{{ prop.dorm_name }}"</strong> ใช่หรือไม่?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+        <form action="{{ url_for('owner.restore_property', prop_id=prop.id) }}" method="POST">
+            {{ restore_form.csrf_token }}
+            <button type="submit" class="btn btn-success">ยืนยันกู้คืน</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="deleteModal-{{ prop.id }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-danger">ยืนยันการลบถาวร</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        คุณแน่ใจหรือไม่ว่าต้องการลบ <strong>"{{ prop.dorm_name }}"</strong> ออกจากระบบอย่างถาวร?
+        <p class="text-danger mt-2"><strong>คำเตือน:</strong> การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+        <form action="{{ url_for('owner.permanently_delete_property', prop_id=prop.id) }}" method="POST">
+            {{ delete_form.csrf_token }}
+            <button type="submit" class="btn btn-danger">ยืนยันลบถาวร</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}

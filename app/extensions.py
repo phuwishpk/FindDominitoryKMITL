@@ -10,7 +10,7 @@ from functools import wraps
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
-babel = Babel()
+babel_ext = Babel() # 💡 แก้ไข: เปลี่ยนชื่อจาก babel
 limiter = Limiter(key_func=get_remote_address)
 csrf = CSRFProtect()
 
