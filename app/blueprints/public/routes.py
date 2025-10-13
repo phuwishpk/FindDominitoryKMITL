@@ -4,31 +4,71 @@ from app.models.property import Amenity # <-- เพิ่มการ import
 
 @bp.get("/")
 def index():
+    # หน้านี้เหมือนเดิม แต่เราจะย้ายตรรกะส่วนใหญ่ไปที่ /search
     svc = current_app.extensions["container"]["search_service"]
-    filters = {
-        "q": request.args.get("q") or None,
-        "min_price": request.args.get("min_price"),
-        "max_price": request.args.get("max_price"),
-        "room_type": request.args.get("room_type") or None,
-        "amenities": request.args.get("amenities") or None,
-        "availability": request.args.get("availability") or None,
-        "near": request.args.get("near") or None,
-        "radius_km": request.args.get("radius_km") or None,
-        "sort": request.args.get("sort") or None,
-    }
+    filters = { "q": request.args.get("q") or None }
     page = request.args.get("page", default=1, type=int)
     per_page = request.args.get("per_page", default=12, type=int)
-    # 💡 บรรทัดนี้จะส่ง dict ที่มี 'items' กลับไป
+    
     result = svc.search(filters, page=page, per_page=per_page) 
     return render_template("public/index.html", **result)
 
 @bp.get("/search")
 def search():
-    """แสดงหน้าค้นหาพร้อมส่งข้อมูลสิ่งอำนวยความสะดวกสำหรับตัวกรอง"""
-    amenities = Amenity.query.order_by(Amenity.label_th).all()
-    # ในอนาคต ส่วนนี้จะรับค่าจากฟอร์มเพื่อไปค้นหาข้อมูลจริง
-    # ตอนนี้จะแสดงหน้าฟอร์มพร้อมตัวเลือกก่อน
-    return render_template("public/search.html", amenities=amenities)
+    """
+    (แก้ไข) แสดงหน้าค้นหาพร้อมส่งข้อมูลสิ่งอำนวยความสะดวกสำหรับตัวกรอง
+    และแสดงผลการค้นหาหากมี query parameters
+    """
+    svc = current_app.extensions["container"]["search_service"]
+    
+    # --- 1. รวบรวม Filters จาก URL (request.args) ---
+    room_type_select = request.args.get("room_type") or None
+    room_type_value = room_type_select
+    
+    if room_type_select == 'other':
+        # ถ้าเลือก 'อื่นๆ' ให้ใช้ค่าจากช่อง 'ระบุประเภทห้องอื่นๆ'
+        room_type_value = request.args.get("other_room_type") or "other"
+
+    amenities_list = request.args.getlist("amenities")
+    
+    filters = {
+        "q": request.args.get("q") or None,
+        "road": request.args.get("road") or None,
+        "soi": request.args.get("soi") or None,
+        "room_type": room_type_value,
+        "min_price": request.args.get("min_price") or None,
+        "max_price": request.args.get("max_price") or None,
+        "amenities": ",".join(amenities_list) if amenities_list else None,
+        
+        # เพิ่ม 2 รายการนี้เพื่อให้ส่งค่ากลับไป pre-fill ฟอร์มได้ถูกต้อง
+        "room_type_select": room_type_select, 
+        "other_room_type": request.args.get("other_room_type") or None,
+    }
+
+    # --- 2. ดึงข้อมูลสำหรับ Search Form ---
+    all_amenities = Amenity.query.order_by(Amenity.label_th).all()
+
+    # --- 3. ทำการค้นหา ---
+    page = request.args.get("page", default=1, type=int)
+    per_page = request.args.get("per_page", default=12, type=int)
+    
+    # สร้าง dict สำหรับส่งให้ service (ไม่รวมค่าที่ใช้สำหรับ pre-fill)
+    search_filters = filters.copy()
+    search_filters.pop("room_type_select", None)
+    search_filters.pop("other_room_type", None)
+
+    # search_service.search() จะคืน dict ที่มี items, page, total, etc.
+    result_data = svc.search(search_filters, page=page, per_page=per_page) 
+    
+    # --- 4. Render Template ---
+    return render_template(
+        "public/search.html", 
+        amenities=all_amenities,      # สำหรับ Checkbox
+        filters=filters,              # สำหรับ pre-fill ฟอร์ม
+        amenities_list=amenities_list, # สำหรับ pre-check checkboxes
+        **result_data                 # ส่งผลการค้นหา (items, page, total, etc.)
+    )
+
 
 @bp.get("/property/<int:prop_id>")
 def property_detail(prop_id: int):
