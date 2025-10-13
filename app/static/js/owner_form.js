@@ -82,7 +82,7 @@
     const otherRoomTypeInput = document.querySelector('[name="other_room_type"]');
     function toggleOtherRoomType() {
         if (roomTypeSelect && otherRoomTypeContainer) {
-            const isOther = roomTypeSelect.value === 'อื่นๆ';
+            const isOther = roomTypeSelect.value === 'other'; // แก้ไขเป็น 'other'
             otherRoomTypeContainer.style.display = isOther ? 'block' : 'none';
             if (!isOther && otherRoomTypeInput) { otherRoomTypeInput.value = ''; }
         }
@@ -268,8 +268,19 @@
             });
         }
         // --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
-        
+
         document.addEventListener('DOMContentLoaded', () => {
+            // --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
+            // ตรวจสอบ flash message เพื่อเคลียร์ storage
+            const flashMessages = document.querySelectorAll('.flash-messages .alert');
+            flashMessages.forEach(flash => {
+                if (flash.textContent.includes('clear_form_storage')) {
+                    sessionStorage.removeItem(storageKey);
+                    flash.style.display = 'none'; // ซ่อน message นี้
+                }
+            });
+            // --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+
             loadFileStore();
             renderPreviews();
         });

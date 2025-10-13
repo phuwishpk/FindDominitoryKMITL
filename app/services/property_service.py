@@ -9,18 +9,25 @@ class PropertyService:
 
     def _prepare_data(self, data: dict) -> dict:
         """
-        ฟังก์ชัน Helper เพื่อจัดการข้อมูล room_type และ location_pin ก่อนบันทึก
+        ฟังก์ชัน Helper เพื่อจัดการข้อมูลก่อนบันทึก
         """
-        if data.get('room_type') == 'อื่นๆ':
+        # --- vvv ส่วนที่แก้ไข vvv ---
+        # เปลี่ยนจากการตรวจสอบ "อื่นๆ" เป็น "other"
+        if data.get('room_type') == 'other':
             other_type = data.get('other_room_type', '').strip()
             if other_type:
                 data['room_type'] = other_type
-        
+        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
         data.pop('other_room_type', None)
 
         location_json_str = data.pop('location_pin_json', None)
         data['location_pin'] = self.location_handler.parse_geojson_string(location_json_str)
-        
+
+        if data.get('line_id', '').strip() == '-':
+            data['line_id'] = None
+        if data.get('facebook_url', '').strip() == '-':
+            data['facebook_url'] = None
+
         return data
 
     def create(self, owner_id: int, data: dict) -> Property:
