@@ -1,4 +1,3 @@
-# app/repositories/sqlalchemy/user_repo_sql.py
 from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 from datetime import datetime
@@ -18,6 +17,7 @@ class SqlUserRepo:
         return owner
 
     def save_owner(self, owner: "Owner"):
+        """Commits changes to an existing Owner object (e.g., updating PDF path)."""
         db.session.commit()
 
     def permanently_delete_owner(self, owner: "Owner"):

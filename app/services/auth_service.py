@@ -1,4 +1,3 @@
-# app/services/auth_service.py
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -20,7 +19,6 @@ class AuthService:
         self.upload_service = upload_service
 
     def register_owner(self, data: dict) -> "Owner":
-        # ✅ lazy import เพื่อตัดวงจรอิมพอร์ต
         from app.models.user import Owner
 
         # แยกไฟล์ PDF (ถ้ามี)
@@ -42,28 +40,33 @@ class AuthService:
         # อัปโหลด PDF (ถ้ามี) แล้วอัปเดต path กลับเข้าไป
         if pdf_file and getattr(pdf_file, "filename", None):
             try:
+                # ต้องมั่นใจว่า UploadService.save_document มีการ implement แล้ว
                 pdf_path = self.upload_service.save_document(
                     owner_id=new_owner.id,
                     file_storage=pdf_file,
                 )
                 new_owner.occupancy_notice_pdf = pdf_path
-                # ต้องมีเมธอดนี้ใน repo ของคุณ
+                # ต้องมั่นใจว่า user_repo.save_owner มีการ implement แล้ว
                 self.user_repo.save_owner(new_owner)
             except Exception as e:
-                # dev log; พิจารณา logger จริงในโปรดักชัน
                 print(f"Error uploading PDF for owner {new_owner.id}: {e}")
 
         return new_owner
 
-    def verify_owner(self, email: str, password: str) -> bool:
+    # แก้ไข: เปลี่ยน return type จาก bool เป็น Owner | None
+    def verify_owner(self, email: str, password: str) -> "Owner | None":
         owner = self.user_repo.get_owner_by_email(email)
-        return bool(owner and check_password_hash(owner.password_hash, password) and owner.is_active)
+        # ตรวจสอบรหัสผ่านและสถานะ is_active
+        if owner and check_password_hash(owner.password_hash, password) and owner.is_active:
+            return owner # คืนค่า Owner object
+        return None # คืนค่า None หากไม่ผ่าน
 
     def login_owner(self, owner: "Owner") -> None:
         principal = Principal(f"owner:{owner.id}", "owner", owner.id)
         login_user(principal, remember=True)
 
     def verify_admin(self, username: str, password: str) -> "Admin | None":
+        from app.models.user import Admin
         admin = self.user_repo.get_admin_by_username(username)
         if admin and check_password_hash(admin.password_hash, password):
             return admin

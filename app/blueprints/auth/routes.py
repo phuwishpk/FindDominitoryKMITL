@@ -1,9 +1,10 @@
+# app/blueprints/auth/routes.py
+
 from flask import render_template, redirect, url_for, flash, current_app, request
-from flask_login import login_required, current_user
 from . import bp
-from app.forms.auth import OwnerRegisterForm, CombinedLoginForm
-from app.forms.upload import EmptyForm
+from app.forms.auth import OwnerRegisterForm, OwnerLoginForm, AdminLoginForm, CombinedLoginForm
 from app.models.user import Owner, Admin
+from flask_login import login_required
 from werkzeug.security import generate_password_hash
 
 @bp.route("/owner/register", methods=["GET","POST"])
@@ -12,7 +13,7 @@ def owner_register():
     if form.validate_on_submit():
         svc = current_app.extensions["container"]["auth_service"]
         svc.register_owner(form.data)
-        flash("สมัครสมาชิกสำเร็จ! บัญชีของคุณจะถูกตรวจสอบโดยผู้ดูแลระบบก่อนเข้าใช้งาน", "info")
+        flash("สมัครสำเร็จ")
         return redirect(url_for("auth.login"))
     return render_template("auth/owner_register.html", form=form)
 
@@ -24,38 +25,26 @@ def login():
         db.session.add(a); db.session.commit()
 
     form = CombinedLoginForm(role=request.args.get("role","owner"))
-    
     if form.validate_on_submit():
         role = form.role.data
         svc = current_app.extensions["container"]["auth_service"]
-        
         if role == "owner":
-            user_repo = current_app.extensions["container"]["user_repo"]
-            owner = user_repo.get_owner_by_email(form.username.data)
-            
-            if owner and not owner.is_active:
-                flash("บัญชีของคุณยังไม่ได้รับการอนุมัติจากผู้ดูแลระบบ", "warning")
-            elif svc.verify_owner(form.username.data, form.password.data):
+            # แก้ไข: เรียก verify_owner ซึ่งตอนนี้จะคืนค่า Owner object หรือ None
+            owner = svc.verify_owner(form.username.data, form.password.data)
+            if owner:
                 svc.login_owner(owner)
                 return redirect(url_for("owner.dashboard"))
-            else:
-                flash("ข้อมูลเข้าใช้งานไม่ถูกต้อง (Owner)")
-
-        else: # Admin
+            flash("ข้อมูลเข้าใช้งานไม่ถูกต้อง (Owner)")
+        else:
             admin = svc.verify_admin(form.username.data, form.password.data)
             if admin:
                 svc.login_admin(admin)
-                return redirect(url_for("admin.dashboard"))
+                return redirect(url_for("admin.queue"))
             flash("ข้อมูลเข้าใช้งานไม่ถูกต้อง (Admin)")
-            
     return render_template("auth/login.html", form=form)
 
-@bp.route("/logout", methods=["POST"])
+@bp.get("/logout")
 @login_required
 def logout():
-    form = EmptyForm()
-    if form.validate_on_submit():
-        current_app.extensions["container"]["auth_service"].logout()
-    else:
-        flash("Invalid logout request.", "danger")
+    current_app.extensions["container"]["auth_service"].logout()
     return redirect(url_for("public.index"))
