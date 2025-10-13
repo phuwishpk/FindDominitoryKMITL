@@ -1,45 +1,59 @@
-from flask import Flask, send_from_directory
-from .extensions import db, migrate, login_manager, babel_ext, limiter, csrf 
+import os
+from flask import Flask, g
+from flask_wtf import CSRFProtect
+
+from .extensions import db, migrate, login_manager, babel, limiter, csrf
 from .config import Config
 
-from .utils.helpers import format_as_bangkok_time, from_json_string
-from .forms.upload import EmptyForm # <-- เพิ่ม
-
+# Blueprints
 from .blueprints.public import bp as public_bp
 from .blueprints.owner import bp as owner_bp
 from .blueprints.admin import bp as admin_bp
 from .blueprints.auth import bp as auth_bp
 from .blueprints.api import bp as api_bp
 
+# Repositories
 from .repositories.sqlalchemy.user_repo_sql import SqlUserRepo
 from .repositories.sqlalchemy.property_repo_sql import SqlPropertyRepo
 from .repositories.sqlalchemy.approval_repo_sql import SqlApprovalRepo
+from .repositories.sqlalchemy.review_repo_sql import SqlReviewRepo
 
+# Services
 from .services.auth_service import AuthService
 from .services.property_service import PropertyService
 from .services.search_service import SearchService
 from .services.approval_service import ApprovalService
 from .services.upload_service import UploadService
-from .services.dashboard_service import DashboardService # <-- เพิ่ม
+from .services.location_service import LocationService
+from .services.dashboard_service import DashboardService
+from .services.review_service import ReviewService
 
 def register_dependencies(app: Flask):
+    """
+    Dependency injection container.
+    """
     container = {}
+    
+    # Repositories
     container["user_repo"] = SqlUserRepo()
     container["property_repo"] = SqlPropertyRepo()
     container["approval_repo"] = SqlApprovalRepo()
+    container["review_repo"] = SqlReviewRepo()
+
+    # Services (services with no dependencies first)
     container["upload_service"] = UploadService(app.config.get("UPLOAD_FOLDER", "uploads"))
-    container["auth_service"] = AuthService(
-        user_repo=container["user_repo"],
-        upload_service=container["upload_service"]
-    )
-    container["property_service"] = PropertyService(container["property_repo"])
-    container["search_service"] = SearchService(container["property_repo"])
+    container["location_service"] = LocationService()
     container["approval_service"] = ApprovalService(container["approval_repo"], container["property_repo"])
-    container["dashboard_service"] = DashboardService( # <-- เพิ่ม
-        user_repo=container["user_repo"],
-        property_repo=container["property_repo"],
-        approval_repo=container["approval_repo"]
-    )
+    container["auth_service"] = AuthService(container["user_repo"])
+    
+    # --- บรรทัดที่แก้ไข ---
+    # ส่ง upload_service และ location_service ไปให้ PropertyService
+    container["property_service"] = PropertyService(container["property_repo"], container["upload_service"], container["location_service"])
+    # --- สิ้นสุดการแก้ไข ---
+
+    container["search_service"] = SearchService(container["property_repo"])
+    container["dashboard_service"] = DashboardService(container["property_repo"])
+    container["review_service"] = ReviewService(container["review_repo"])
     
     if not hasattr(app, "extensions"):
         app.extensions = {}
@@ -52,33 +66,30 @@ def create_app() -> Flask:
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    babel_ext.init_app(app)
+    babel.init_app(app)
     limiter.init_app(app)
     csrf.init_app(app)
-
-    app.jinja_env.filters['to_bkk_time'] = format_as_bangkok_time
-    app.jinja_env.filters['fromjson'] = from_json_string
-
-    @app.context_processor # <-- เพิ่ม
-    def inject_forms():
-        return dict(empty_form=EmptyForm())
 
     with app.app_context():
         register_dependencies(app)
 
+    # Register blueprints
     app.register_blueprint(public_bp)
     app.register_blueprint(owner_bp, url_prefix="/owner")
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(api_bp, url_prefix="/api")
+    
+    @app.before_request
+    def before_request():
+        # ตั้งค่า empty_form สำหรับใช้กับฟอร์ม logout ใน navbar
+        from app.forms.auth import EmptyForm
+        g.empty_form = EmptyForm()
 
-    @app.route('/uploads/<path:filename>')
-    def serve_uploads(filename):
-        return send_from_directory(
-            app.config['UPLOAD_FOLDER'],
-            filename,
-            as_attachment=False
-        )
+    @app.context_processor
+    def inject_empty_form():
+        # ทำให้ empty_form ใช้ได้ใน template ทั้งหมด
+        return dict(empty_form=g.empty_form)
 
     @app.get("/health")
     def health():
