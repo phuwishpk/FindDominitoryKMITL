@@ -19,18 +19,15 @@
         grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
         gap: 0.75rem;
     }
-    /* --- CSS ที่เพิ่มเข้ามาใหม่สำหรับปุ่มค้นหา --- */
     .btn-search-custom {
-      background-color: #0d6efd; /* สีน้ำเงิน (Bootstrap Primary) */
+      background-color: #0d6efd;
       color: white;
       border-color: #0d6efd;
     }
-
     .btn-search-custom:hover {
-      background-color: #6c757d; /* สีเทา (Bootstrap Secondary) */
+      background-color: #6c757d;
       border-color: #6c757d;
     }
-    /* --- สิ้นสุด CSS ที่เพิ่มเข้ามาใหม่ --- */
 </style>
 
 <div class="search-hero text-center">
@@ -41,12 +38,10 @@
             <form action="{{ url_for('public.search') }}" method="GET">
                 <div class="input-group input-group-lg">
                     <input type="text" class="form-control" name="q" placeholder="ค้นหาตามชื่อหอพัก..." aria-label="Search">
-                    
                     <button class="btn btn-search-custom" type="submit">
                         <i data-feather="search" class="align-middle"></i>
                         <span class="align-middle">ค้นหา</span>
                     </button>
-                    
                     <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
                         <i data-feather="filter" class="align-middle me-1"></i> ตัวกรอง
                     </button>

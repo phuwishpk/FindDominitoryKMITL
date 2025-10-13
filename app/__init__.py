@@ -1,74 +1,45 @@
-import os
-from flask import Flask, g, send_from_directory
-from flask_wtf import CSRFProtect, FlaskForm
-
-from .extensions import db, migrate, login_manager, babel, limiter, csrf
+from flask import Flask, send_from_directory
+from .extensions import db, migrate, login_manager, babel_ext, limiter, csrf 
 from .config import Config
 
-# Blueprints
+from .utils.helpers import format_as_bangkok_time, from_json_string
+from .forms.upload import EmptyForm # <-- เพิ่ม
+
 from .blueprints.public import bp as public_bp
 from .blueprints.owner import bp as owner_bp
 from .blueprints.admin import bp as admin_bp
 from .blueprints.auth import bp as auth_bp
 from .blueprints.api import bp as api_bp
 
-# Repositories (Only importing files known to exist or provided)
 from .repositories.sqlalchemy.user_repo_sql import SqlUserRepo
 from .repositories.sqlalchemy.property_repo_sql import SqlPropertyRepo
 from .repositories.sqlalchemy.approval_repo_sql import SqlApprovalRepo
-# REMOVED: from .repositories.sqlalchemy.review_repo_sql import SqlReviewRepo
 
-# Services (Only importing files known to exist or provided)
 from .services.auth_service import AuthService
 from .services.property_service import PropertyService
 from .services.search_service import SearchService
 from .services.approval_service import ApprovalService
 from .services.upload_service import UploadService
-# REMOVED: LocationService, DashboardService, ReviewService (Non-existent or broken dependencies)
-
-# Mock class to satisfy dependency injection for unimplemented services (like LocationService)
-class MockService:
-    def __init__(self, *args, **kwargs): pass
-    def __call__(self, *args, **kwargs): return self
-
-# Defining a simple EmptyForm as it is used in app context setup
-class EmptyForm(FlaskForm):
-    pass
+from .services.dashboard_service import DashboardService # <-- เพิ่ม
 
 def register_dependencies(app: Flask):
-    """
-    Dependency injection container.
-    """
     container = {}
-    
-    # Repositories
     container["user_repo"] = SqlUserRepo()
     container["property_repo"] = SqlPropertyRepo()
     container["approval_repo"] = SqlApprovalRepo()
-    # REMOVED: container["review_repo"] = SqlReviewRepo()
-
-    # Services
     container["upload_service"] = UploadService(app.config.get("UPLOAD_FOLDER", "uploads"))
-    
-    # Using MockService for required but incomplete dependencies
-    container["location_service"] = MockService() 
-    
-    # FIX: AuthService now requires user_repo and upload_service (2 args)
-    container["auth_service"] = AuthService(container["user_repo"], container["upload_service"])
-    
-    # FIX: PropertyService now requires property_repo, upload_service, and location_service (3 args)
-    container["property_service"] = PropertyService(
-        container["property_repo"], 
-        container["upload_service"], 
-        container["location_service"]
+    container["auth_service"] = AuthService(
+        user_repo=container["user_repo"],
+        upload_service=container["upload_service"]
     )
-    
-    # FIX: ApprovalService now requires approval_repo and property_repo (2 args)
-    container["approval_service"] = ApprovalService(container["approval_repo"], container["property_repo"])
-
+    container["property_service"] = PropertyService(container["property_repo"])
     container["search_service"] = SearchService(container["property_repo"])
-    # REMOVED: container["dashboard_service"] = MockService()
-    # REMOVED: container["review_service"] = MockService()
+    container["approval_service"] = ApprovalService(container["approval_repo"], container["property_repo"])
+    container["dashboard_service"] = DashboardService( # <-- เพิ่ม
+        user_repo=container["user_repo"],
+        property_repo=container["property_repo"],
+        approval_repo=container["approval_repo"]
+    )
     
     if not hasattr(app, "extensions"):
         app.extensions = {}
@@ -81,42 +52,33 @@ def create_app() -> Flask:
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    babel.init_app(app)
+    babel_ext.init_app(app)
     limiter.init_app(app)
     csrf.init_app(app)
+
+    app.jinja_env.filters['to_bkk_time'] = format_as_bangkok_time
+    app.jinja_env.filters['fromjson'] = from_json_string
+
+    @app.context_processor # <-- เพิ่ม
+    def inject_forms():
+        return dict(empty_form=EmptyForm())
 
     with app.app_context():
         register_dependencies(app)
 
-    # Register blueprints
     app.register_blueprint(public_bp)
     app.register_blueprint(owner_bp, url_prefix="/owner")
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(api_bp, url_prefix="/api")
 
-    # === START FIX: Serve Uploaded Files ===
     @app.route('/uploads/<path:filename>')
-    def uploaded_file(filename):
-        """กำหนด Route เพื่อให้ Flask เสิร์ฟไฟล์จาก UPLOAD_FOLDER"""
-        root_dir = app.config['UPLOAD_FOLDER']
-        
-        # ตรวจสอบและสร้างโฟลเดอร์ uploads ถ้ายังไม่มี
-        if not os.path.exists(root_dir):
-            os.makedirs(root_dir, exist_ok=True)
-            
-        # ใช้ send_from_directory เพื่อส่งไฟล์กลับไป
-        return send_from_directory(root_dir, filename)
-    # === END FIX: Serve Uploaded Files ===
-    
-    # Context processors and before request hooks
-    @app.before_request
-    def before_request():
-        g.empty_form = EmptyForm()
-
-    @app.context_processor
-    def inject_empty_form():
-        return dict(empty_form=g.empty_form)
+    def serve_uploads(filename):
+        return send_from_directory(
+            app.config['UPLOAD_FOLDER'],
+            filename,
+            as_attachment=False
+        )
 
     @app.get("/health")
     def health():
@@ -153,6 +115,8 @@ def create_app() -> Flask:
         from app.extensions import db
         from werkzeug.security import generate_password_hash
         
+        location_pin_data = {"type": "Point", "coordinates": [100.7758, 13.7292]}
+
         if not Owner.query.filter_by(email="owner@example.com").first():
             o = Owner(full_name_th="เจ้าของตัวอย่าง", citizen_id="1101700203451",
                       email="owner@example.com", password_hash=generate_password_hash("password"))
@@ -160,8 +124,8 @@ def create_app() -> Flask:
             
             p = Property(owner_id=o.id, dorm_name="ตัวอย่างหอพัก", room_type="studio",
                          rent_price=6500, 
-                         lat=13.7563, lng=100.5018,
-                         workflow_status="approved")
+                         location_pin=location_pin_data, 
+                         workflow_status=Property.WORKFLOW_APPROVED)
             db.session.add(p); db.session.commit()
             
         if not Admin.query.filter_by(username="admin").first():
