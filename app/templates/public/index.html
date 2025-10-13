@@ -128,31 +128,16 @@
     color: #475569;
     line-height: 1.6;
   }
+    
+  /* --- CSS สำหรับการ์ดผลลัพธ์ --- */
+  .result-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .result-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+  }
 
-  /* --- CSS สำหรับ Carousel --- */
-  .carousel-control-prev,
-  .carousel-control-next {
-    width: 5%;
-    background-color: rgba(0, 0, 0, 0.3);
-    border-radius: 50%;
-    top: 50%;
-    transform: translateY(-50%);
-    height: 50px;
-    width: 50px;
-  }
-  .carousel-control-prev {
-    left: -25px;
-  }
-  .carousel-control-next {
-    right: -25px;
-  }
-  .carousel-inner .card {
-    transition: transform 0.2s;
-  }
-  .carousel-inner .card:hover {
-    transform: scale(1.05);
-    z-index: 10;
-  }
 
   @media (max-width: 768px) {
     .room-details-grid {
@@ -170,17 +155,146 @@
   </div>
 </header>
 
+{# --- vvv ส่วนที่ 1: Feature Section (เนื้อหาที่เพิ่มเข้ามา) vvv --- #}
 <section class="feature-section">
-  ...
+  <div class="container">
+    <div class="text-center">
+      <p class="section__subheader">ทำไมต้องเลือกเรา</p>
+      <h2 class="section__header">แพลตฟอร์มค้นหาหอพักที่ครบวงจร</h2>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="icon"><i data-feather="search" style="width: 32px; height: 32px;"></i></div>
+        <h5>ค้นหาง่ายและรวดเร็ว</h5>
+        <p>ระบบกรองข้อมูลที่ละเอียด ช่วยให้คุณเจอหอพักที่ตรงใจได้ในไม่กี่คลิก</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon"><i data-feather="check-square" style="width: 32px; height: 32px;"></i></div>
+        <h5>ข้อมูลเชื่อถือได้</h5>
+        <p>ทุกประกาศผ่านการตรวจสอบเบื้องต้นจากทีมงาน เพื่อความมั่นใจของคุณ</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon"><i data-feather="map-pin" style="width: 32px; height: 32px;"></i></div>
+        <h5>ตำแหน่งแม่นยำ</h5>
+        <p>แสดงตำแหน่งที่ตั้งของหอพักบนแผนที่ ช่วยให้คุณวางแผนการเดินทางได้สะดวก</p>
+      </div>
+    </div>
+  </div>
 </section>
+{# --- ^^^ สิ้นสุดส่วนที่ 1 ^^^ --- #}
 
+
+{# --- vvv ส่วนที่ 2: Room Finder Section (เนื้อหาที่เพิ่มเข้ามา) vvv --- #}
 <section class="room-finder-section">
-  ...
-</section>
+  <div class="container text-center">
+    <p class="section__subheader">ตัวอย่างห้องพัก</p>
+    <h2 class="section__header">ค้นหาห้องที่ใช่สำหรับคุณ</h2>
+    <div class="room-tabs">
+      <button class="room-tab-btn active" data-tab="tab-furnished">ห้องพร้อมเฟอร์นิเจอร์</button>
+      <button class="room-tab-btn" data-tab="tab-partial">ห้องกึ่งเฟอร์นิเจอร์</button>
+      <button class="room-tab-btn" data-tab="tab-empty">ห้องเปล่า</button>
+    </div>
 
-<section class="container py-5" id="dorm-list">
-  ...
+    <div id="tab-furnished" class="room-tab-content active">
+        <div class="room-details-grid">
+            <div class="room-image-wrapper"><img src="{{ url_for('static', filename='images/furnished.jpg') }}" alt="Furnished Room"></div>
+            <div class="room-description text-start">
+                <h4>ห้องพร้อมเฟอร์นิเจอร์</h4>
+                <p>เหมาะสำหรับผู้ที่ต้องการความสะดวกสบายสูงสุด แค่ย้ายกระเป๋าเข้ามาก็พร้อมอยู่ได้ทันที มาพร้อมเฟอร์นิเจอร์ครบครัน ทั้งเตียง, ตู้เสื้อผ้า, โต๊ะทำงาน และเครื่องใช้ไฟฟ้าพื้นฐาน</p>
+            </div>
+            <div class="room-specs text-start">
+                <p><strong>เหมาะสำหรับ:</strong> นักศึกษาที่ต้องการความสะดวก</p>
+                <p><strong>ข้อดี:</strong> ไม่ต้องซื้อเฟอร์นิเจอร์เอง</p>
+                <p><strong>ราคาเฉลี่ย:</strong> 5,000 - 8,000 บาท</p>
+            </div>
+        </div>
+    </div>
+    <div id="tab-partial" class="room-tab-content">
+        <div class="room-details-grid">
+            <div class="room-image-wrapper"><img src="{{ url_for('static', filename='images/partially-furnished.jpg') }}" alt="Partially Furnished Room"></div>
+            <div class="room-description text-start">
+                <h4>ห้องกึ่งเฟอร์นิเจอร์</h4>
+                <p>ความลงตัวระหว่างความสะดวกสบายและการตกแต่งในสไตล์ของตัวเอง มีเฟอร์นิเจอร์ชิ้นใหญ่ให้บางส่วน เช่น เตียงหรือตู้เสื้อผ้า คุณสามารถนำของตกแต่งหรือเฟอร์นิเจอร์ชิ้นเล็กๆ เข้ามาเพิ่มได้</p>
+            </div>
+             <div class="room-specs text-start">
+                <p><strong>เหมาะสำหรับ:</strong> ผู้ที่มีเฟอร์นิเจอร์บางส่วน</p>
+                <p><strong>ข้อดี:</strong> ยืดหยุ่นในการตกแต่ง</p>
+                <p><strong>ราคาเฉลี่ย:</strong> 4,000 - 6,500 บาท</p>
+            </div>
+        </div>
+    </div>
+    <div id="tab-empty" class="room-tab-content">
+        <div class="room-details-grid">
+            <div class="room-image-wrapper"><img src="{{ url_for('static', filename='images/empty-room.jpg') }}" alt="Empty Room"></div>
+            <div class="room-description text-start">
+                <h4>ห้องเปล่า</h4>
+                <p>อิสระเต็มที่ในการออกแบบและตกแต่งพื้นที่ของคุณเอง เหมาะสำหรับผู้ที่มีเฟอร์นิเจอร์ครบชุดมาแล้ว หรือต้องการสร้างสรรค์ห้องในฝันตามสไตล์ที่ไม่เหมือนใคร</p>
+            </div>
+             <div class="room-specs text-start">
+                <p><strong>เหมาะสำหรับ:</strong> ผู้ที่ต้องการแต่งห้องเอง</p>
+                <p><strong>ข้อดี:</strong> ค่าเช่าถูกกว่า, เป็นส่วนตัว</p>
+                <p><strong>ราคาเฉลี่ย:</strong> 3,000 - 5,000 บาท</p>
+            </div>
+        </div>
+    </div>
+  </div>
 </section>
+{# --- ^^^ สิ้นสุดส่วนที่ 2 ^^^ --- #}
+
+
+{# --- vvv ส่วนที่ 3: Dorm List Section (เนื้อหาที่เพิ่มเข้ามา) vvv --- #}
+<section class="container py-5" id="dorm-list">
+    <div class="text-center mb-5">
+      <p class="section__subheader">รายการแนะนำ</p>
+      <h2 class="section__header">หอพักล่าสุด</h2>
+    </div>
+
+    {% if items %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+        {% for prop in items %}
+        <div class="col">
+            <div class="card h-100 shadow-sm result-card">
+                {% set first_image = prop.images|sort(attribute='position')|first %}
+                <a href="{{ url_for('public.property_detail', prop_id=prop.id) }}">
+                    {% if first_image %}
+                    <img src="/{{ first_image.file_path }}" class="card-img-top" alt="{{ prop.dorm_name }}" style="height: 180px; object-fit: cover;">
+                    {% else %}
+                    <div class="d-flex justify-content-center align-items-center bg-light text-muted" style="height: 180px;">
+                        <i data-feather="image" style="width: 48px; height: 48px;"></i>
+                    </div>
+                    {% endif %}
+                </a>
+                <div class="card-body">
+                    <h5 class="card-title text-truncate">
+                        <a href="{{ url_for('public.property_detail', prop_id=prop.id) }}" class="text-decoration-none text-dark">{{ prop.dorm_name }}</a>
+                    </h5>
+                    <p class="card-text text-muted small">
+                        {{ prop.soi or 'N/A' }}, ถ. {{ prop.road or 'N/A' }}
+                    </p>
+                    <h4 class="card-text text-primary fw-bold">
+                        {{ "{:,.0f}".format(prop.rent_price) if prop.rent_price is not none else 'N/A' }} <span class="small text-muted fw-normal">บาท/เดือน</span>
+                    </h4>
+                </div>
+                 <div class="card-footer bg-white border-0 pb-3">
+                    {% if prop.availability_status == 'vacant' %}
+                        <span class="badge bg-success-subtle text-success-emphasis rounded-pill">ห้องว่าง</span>
+                    {% else %}
+                        <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill">ห้องเต็ม</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5 card">
+        <i data-feather="home" class="text-muted mb-3" style="width: 48px; height: 48px;"></i>
+        <h4>ยังไม่มีประกาศหอพักในระบบ</h4>
+        <p class="text-muted">กรุณากลับมาตรวจสอบอีกครั้งในภายหลัง</p>
+    </div>
+    {% endif %}
+</section>
+{# --- ^^^ สิ้นสุดส่วนที่ 3 ^^^ --- #}
 
 {% endblock %}
 
@@ -213,6 +327,11 @@
     sr.reveal('.feature-section', { delay: 300 });
     sr.reveal('.room-finder-section', { delay: 300 });
     sr.reveal('.container.py-5', { delay: 300 });
+      
+    // ทำให้ icon แสดงผลหลังจากการ reveal
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
   });
 </script>
 {% endblock %}
