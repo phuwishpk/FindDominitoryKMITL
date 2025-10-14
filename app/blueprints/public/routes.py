@@ -15,6 +15,7 @@ def index():
     filters = { 
         "sort": "updated_at_desc" 
     }
+
     per_page = 12
     # --- สิ้นสุดการแก้ไข ---
     

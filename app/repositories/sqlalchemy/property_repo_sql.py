@@ -26,8 +26,6 @@ class SqlPropertyRepo:
             Property.deleted_at.is_(None)
         ).order_by(Property.created_at.desc())
 
-        # --- vvv ส่วนที่แก้ไขทั้งหมดจะอยู่ในฟังก์ชันนี้ vvv ---
-
         q_text = (filters or {}).get('q')
         if q_text:
             like = f"%{q_text.strip()}%"
@@ -51,13 +49,10 @@ class SqlPropertyRepo:
 
         room_type = (filters or {}).get('room_type')
         if room_type:
-            # นี่คือตรรกะใหม่ที่เพิ่มเข้ามา
             if room_type == 'other':
-                # ถ้าผู้ใช้เลือก "อื่นๆ" ให้ค้นหาทุกประเภทที่ไม่ใช่ประเภทมาตรฐาน
                 standard_types = ['standard', 'studio', 'suite']
                 q = q.filter(not_(Property.room_type.in_(standard_types)))
             else:
-                # ถ้าเลือกประเภทอื่น หรือกรอกข้อความมา ก็ให้ค้นหาตรงๆ
                 q = q.filter(Property.room_type.ilike(f"%{room_type.strip()}%"))
         
         availability = (filters or {}).get('availability')
@@ -74,7 +69,6 @@ class SqlPropertyRepo:
                        .group_by(Property.id)
                        .having(func.count(func.distinct(Amenity.code)) == len(codes_list)))
         
-        # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
         return q
 
     def list_all_paginated(self, search_query=None, page=1, per_page=15):
@@ -108,3 +102,19 @@ class SqlPropertyRepo:
         ).filter(
             Property.road.isnot(None), Property.road != ''
         ).group_by(Property.road).order_by(func.count(Property.id).desc()).limit(limit).all()
+
+    # --- vvv ส่วนที่แก้ไข: เพิ่มฟังก์ชันที่ขาดหายไป vvv ---
+    def get_property_counts_by_room_type(self, limit: int = 5):
+        """นับจำนวนหอพักตามประเภทห้อง (room_type)"""
+        return db.session.query(
+            Property.room_type, func.count(Property.id).label('count')
+        ).filter(
+            Property.room_type.isnot(None), Property.room_type != ''
+        ).group_by(Property.room_type).order_by(func.count(Property.id).desc()).limit(limit).all()
+    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
+
+    def get_property_counts_by_workflow_status(self):
+        """นับจำนวนหอพักในแต่ละสถานะ (workflow_status)"""
+        return db.session.query(
+            Property.workflow_status, func.count(Property.id).label('count')
+        ).filter(Property.deleted_at.is_(None)).group_by(Property.workflow_status).all()
