@@ -13,10 +13,14 @@ def owner_register():
         svc = current_app.extensions["container"]["auth_service"]
         new_owner = svc.register_owner(form.data)
         
+        # --- vvv ส่วนที่แก้ไข vvv ---
+        # เปลี่ยนจากการใช้ flash มาใช้ session สำหรับ toast message โดยเฉพาะ
         session['toast_message'] = {
             'message': f"สมัครสมาชิกสำเร็จ! บัญชีของคุณ '{new_owner.full_name_th}' กำลังรอการอนุมัติ",
             'category': 'success'
         }
+        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+        
         session['toast_admin_notification'] = {
             'message': f"มี Owner ใหม่สมัครเข้ามา: {new_owner.full_name_th}",
             'category': 'info'
