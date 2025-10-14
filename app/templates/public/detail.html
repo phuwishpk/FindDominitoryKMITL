@@ -9,7 +9,6 @@
     {% else %}
     <div class="row">
 
-        <!-- ====== ฝั่งซ้าย: รายละเอียดหอพัก ====== -->
         <div class="col-lg-8">
             <div class="d-flex align-items-center mb-3">
                 <h1 class="mb-0">{{ prop.dorm_name }}</h1>
@@ -20,7 +19,6 @@
                 {% endif %}
             </div>
 
-            <!-- Carousel -->
             <div id="propertyCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
                 <div class="carousel-inner rounded shadow-sm">
                     {% for img in prop.images %}
@@ -61,7 +59,6 @@
                 {% endif %}
             </div>
 
-            <!-- รายละเอียดหอพัก -->
             <div class="card mb-4 shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">รายละเอียดหอพัก</h5>
@@ -86,7 +83,6 @@
                 </div>
             </div>
 
-            <!-- ส่วนรีวิว -->
             <div class="card mb-4 shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">รีวิวจากผู้ใช้</h5>
@@ -118,7 +114,7 @@
                                 {% endfor %}
                             </div>
                             <p class="mb-1">{{ review.comment }}</p>
-                            <small class="text-muted">เมื่อ {{ review.created_at.strftime('%d/%m/%Y') }}</small>
+                            <small class="text-muted">เมื่อ {{ review.created_at.strftime('%d/%m/%Y') if review.created_at else 'N/A' }}</small>
                         </div>
                         {% endfor %}
                     {% else %}
@@ -157,7 +153,6 @@
             </div>
         </div>
 
-        <!-- ====== ฝั่งขวา: ติดต่อและแผนที่ ====== -->
         <div class="col-lg-4">
             <div class="card sticky-top shadow-lg" style="top: 100px;">
                 <div class="card-body">
@@ -254,9 +249,8 @@
 #imageLightbox .close:hover { color: #ffcc00; }
 </style>
 
-<!-- Lightbox -->
 <div id="imageLightbox">
-    <span class="close">&times;</span>
+    <span class="close">×</span>
     <img id="lightboxImg" alt="Zoomed Image">
 </div>
 
