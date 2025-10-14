@@ -71,10 +71,10 @@ def search():
     # --- 4. Render Template ---
     return render_template(
         "public/search.html", 
-        amenities=all_amenities,      # สำหรับ Checkbox
-        filters=filters,              # สำหรับ pre-fill ฟอร์ม
+        amenities=all_amenities,       # สำหรับ Checkbox
+        filters=filters,               # สำหรับ pre-fill ฟอร์ม
         amenities_list=amenities_list, # สำหรับ pre-check checkboxes
-        **result_data                 # ส่งผลการค้นหา (items, page, total, etc.)
+        **result_data                  # ส่งผลการค้นหา (items, page, total, etc.)
     )
 
 @bp.get("/property/<int:prop_id>")
