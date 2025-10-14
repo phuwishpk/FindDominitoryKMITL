@@ -53,6 +53,10 @@ class SqlUserRepo:
         return db.session.query(Owner).filter(Owner.deleted_at.is_(None)).count()
 
     def count_owners_by_month(self, date_obj: datetime) -> int:
+        """
+        นับจำนวน Owner ที่สมัครในเดือนที่กำหนด (ใช้ to_char สำหรับ PostgreSQL)
+        """
+        # แก้ไข: เปลี่ยน func.strftime เป็น func.to_char เพื่อรองรับ PostgreSQL
         return db.session.query(Owner).filter(
-            func.strftime('%Y-%m', Owner.created_at) == date_obj.strftime("%Y-%m")
+            func.to_char(Owner.created_at, 'YYYY-MM') == date_obj.strftime("%Y-%m")
         ).count()

@@ -10,11 +10,9 @@
         --text-color-dark: #111827;
         --text-color-light: #6b7280;
     }
-
-    /* --- Glassmorphism Register Card --- */
     .register-card {
         width: 100%;
-        max-width: 480px; /* ขยายความกว้างเล็กน้อยสำหรับฟอร์มที่ยาวขึ้น */
+        max-width: 480px;
         background: rgba(255, 255, 255, 0.65);
         backdrop-filter: blur(15px) saturate(180%);
         -webkit-backdrop-filter: blur(15px) saturate(180%);
@@ -23,8 +21,6 @@
         box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
         padding: 2.5rem;
     }
-    
-    /* --- Branding inside the card --- */
     .card-branding {
         display: flex;
         flex-direction: column;
@@ -34,9 +30,7 @@
         text-decoration: none;
         transition: transform 0.2s ease-in-out;
     }
-    .card-branding:hover {
-        transform: scale(1.03);
-    }
+    .card-branding:hover { transform: scale(1.03); }
     .card-branding .icon-wrapper {
         background: linear-gradient(145deg, var(--primary-color), #6366f1);
         color: #fff;
@@ -49,24 +43,10 @@
         box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.3);
         margin-bottom: 1rem;
     }
-    .card-branding h1 {
-        font-weight: 700;
-        font-size: 1.75rem;
-    }
-    .card-branding p {
-        color: var(--text-color-light);
-        margin-top: 0.25rem;
-    }
-
-    /* --- Form Fields --- */
-    .form-floating > .form-control {
-        height: calc(3.5rem + 2px);
-        padding: 1rem 1rem;
-    }
-    .form-floating > label {
-        padding: 1rem 1rem;
-        color: var(--text-color-light);
-    }
+    .card-branding h1 { font-weight: 700; font-size: 1.75rem; }
+    .card-branding p { color: var(--text-color-light); margin-top: 0.25rem; }
+    .form-floating > .form-control { height: calc(3.5rem + 2px); padding: 1rem 1rem; }
+    .form-floating > label { padding: 1rem 1rem; color: var(--text-color-light); }
     .form-control-custom {
         background-color: rgba(243, 244, 246, 0.8);
         border: 1px solid transparent;
@@ -79,20 +59,16 @@
         border-color: rgba(var(--primary-rgb), 0.4);
         box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
     }
-    .form-control-custom.is-invalid {
-        border-color: var(--danger-color);
-    }
-    .form-control-custom.is-invalid:focus {
-         box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
-    }
-    .invalid-feedback {
+    .form-control-custom.is-invalid { border-color: var(--danger-color); }
+    .form-control-custom.is-invalid:focus { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2); }
+    .invalid-feedback-custom {
         font-weight: 500;
+        color: var(--danger-color);
+        font-size: 0.875em;
+        margin-top: 0.25rem;
+        padding-left: 0.25rem;
     }
-    .form-text {
-        color: var(--text-color-light);
-    }
-
-    /* --- Buttons --- */
+    .form-text { color: var(--text-color-light); }
     .btn-submit-custom {
         background: linear-gradient(145deg, var(--primary-color), #6366f1);
         color: #fff;
@@ -107,24 +83,13 @@
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.3);
     }
-    
-    .btn-login-link {
-        color: var(--text-color-light);
-        font-weight: 500;
-    }
-    .btn-login-link strong {
-        color: var(--primary-color);
-        font-weight: 600;
-    }
-
+    .btn-login-link { color: var(--text-color-light); font-weight: 500; }
+    .btn-login-link strong { color: var(--primary-color); font-weight: 600; }
 </style>
 
 <div class="register-card">
-    
     <a href="{{ url_for('public.index') }}" class="card-branding">
-        <div class="icon-wrapper">
-            <i data-feather="user-plus" style="width: 24px; height: 24px;"></i>
-        </div>
+        <div class="icon-wrapper"><i data-feather="user-plus" style="width: 24px; height: 24px;"></i></div>
         <h1>Create Account</h1>
         <p>สมัครสมาชิกสำหรับเจ้าของหอพัก</p>
     </a>
@@ -137,55 +102,63 @@
                 <div class="form-floating">
                     {{ form.full_name_th(class="form-control form-control-custom" + (" is-invalid" if form.full_name_th.errors else ""), placeholder="ชื่อ-สกุล (ภาษาไทย)") }}
                     <label for="full_name_th">ชื่อ-สกุล (ภาษาไทย)</label>
-                    {% for error in form.full_name_th.errors %}
-                        <div class="invalid-feedback d-block">{{ error }}</div>
-                    {% endfor %}
                 </div>
+                {% if form.full_name_th.errors %}<div class="invalid-feedback-custom">{% for error in form.full_name_th.errors %}{{ error }}{% endfor %}</div>{% endif %}
+            </div>
+
+            <div class="col-12">
+                <div class="form-floating">
+                    {{ form.full_name_en(class="form-control form-control-custom" + (" is-invalid" if form.full_name_en.errors else ""), placeholder="ชื่อ-สกุล (ภาษาอังกฤษ)") }}
+                    <label for="full_name_en">ชื่อ-สกุล (ภาษาอังกฤษ) (ถ้ามี)</label>
+                </div>
+                {% if form.full_name_en.errors %}<div class="invalid-feedback-custom">{% for error in form.full_name_en.errors %}{{ error }}{% endfor %}</div>{% endif %}
             </div>
             <div class="col-12">
                 <div class="form-floating">
                     {{ form.email(class="form-control form-control-custom" + (" is-invalid" if form.email.errors else ""), placeholder="อีเมล") }}
                     <label for="email">อีเมล</label>
-                    {% for error in form.email.errors %}
-                        <div class="invalid-feedback d-block">{{ error }}</div>
-                    {% endfor %}
                 </div>
+                {% if form.email.errors %}<div class="invalid-feedback-custom">{% for error in form.email.errors %}{{ error }}{% endfor %}</div>{% endif %}
             </div>
-             <div class="col-12">
+
+            <div class="col-md-6">
                 <div class="form-floating">
                     {{ form.password(class="form-control form-control-custom" + (" is-invalid" if form.password.errors else ""), placeholder="รหัสผ่าน") }}
-                    <label for="password">รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)</label>
-                    {% for error in form.password.errors %}
-                        <div class="invalid-feedback d-block">{{ error }}</div>
-                    {% endfor %}
+                    <label for="password">รหัสผ่าน</label>
                 </div>
+                {% if form.password.errors %}<div class="invalid-feedback-custom">{% for error in form.password.errors %}{{ error }}{% endfor %}</div>{% endif %}
             </div>
+
+            <div class="col-md-6">
+                <div class="form-floating">
+                    {{ form.confirm_password(class="form-control form-control-custom" + (" is-invalid" if form.confirm_password.errors else ""), placeholder="ยืนยันรหัสผ่าน") }}
+                    <label for="confirm_password">ยืนยันรหัสผ่าน</label>
+                </div>
+                {% if form.confirm_password.errors %}<div class="invalid-feedback-custom">{% for error in form.confirm_password.errors %}{{ error }}{% endfor %}</div>{% endif %}
+            </div>
+
             <div class="col-12">
                 <div class="form-floating">
                     {{ form.citizen_id(class="form-control form-control-custom" + (" is-invalid" if form.citizen_id.errors else ""), placeholder="เลขบัตรประชาชน 13 หลัก") }}
                     <label for="citizen_id">เลขบัตรประชาชน 13 หลัก</label>
-                     {% for error in form.citizen_id.errors %}
-                        <div class="invalid-feedback d-block">{{ error }}</div>
-                    {% endfor %}
                 </div>
+                {% if form.citizen_id.errors %}<div class="invalid-feedback-custom">{% for error in form.citizen_id.errors %}{{ error }}{% endfor %}</div>{% endif %}
             </div>
+
             <div class="col-12">
                 <div class="form-floating">
                      {{ form.phone(class="form-control form-control-custom" + (" is-invalid" if form.phone.errors else ""), placeholder="เบอร์โทรศัพท์ (ถ้ามี)") }}
                      <label for="phone">เบอร์โทรศัพท์ (ถ้ามี)</label>
-                     {% for error in form.phone.errors %}
-                        <div class="invalid-feedback d-block">{{ error }}</div>
-                    {% endfor %}
                 </div>
+                {% if form.phone.errors %}<div class="invalid-feedback-custom">{% for error in form.phone.errors %}{{ error }}{% endfor %}</div>{% endif %}
             </div>
-             <div class="col-12">
+
+            <div class="col-12">
                 <div>
                     <label for="occupancy_pdf" class="form-label ms-1">หนังสือแจ้งมีผู้เข้าพัก (PDF)</label>
                     {{ form.occupancy_pdf(class="form-control form-control-custom" + (" is-invalid" if form.occupancy_pdf.errors else "")) }}
                     <div class="form-text ms-1">แนบเอกสาร (ถ้ามี, ไฟล์ PDF ขนาดไม่เกิน 10MB)</div>
-                    {% for error in form.occupancy_pdf.errors %}
-                        <div class="invalid-feedback d-block">{{ error }}</div>
-                    {% endfor %}
+                    {% if form.occupancy_pdf.errors %}<div class="invalid-feedback-custom">{% for error in form.occupancy_pdf.errors %}{{ error }}{% endfor %}</div>{% endif %}
                 </div>
             </div>
         </div>
@@ -195,11 +168,20 @@
         </div>
         
         <div class="text-center">
-            <a class="btn-login-link" href="{{ url_for('auth.login') }}">
-                Already have an account? <strong>Sign In</strong>
-            </a>
+            <a class="btn-login-link" href="{{ url_for('auth.login') }}">Already have an account? <strong>Sign In</strong></a>
         </div>
     </form>
 </div>
+{% endblock %}
 
+{% block page_scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const firstErrorField = document.querySelector('.is-invalid');
+        if (firstErrorField) {
+            firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    });
+</script>
 {% endblock %}

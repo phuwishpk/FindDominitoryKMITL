@@ -1,6 +1,21 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
-    <div class="flash-messages mb-4">
+    {# This block now generates JavaScript calls instead of old HTML alerts #}
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        {% for category, message in messages %}
+          {% if category != 'script_command' %}
+            if (typeof createToast === 'function') {
+              createToast("{{ message | escape | safe }}", "{{ category or 'info' }}");
+            } else {
+              console.error('Error: createToast function not found.');
+            }
+          {% endif %}
+        {% endfor %}
+      });
+    </script>
+    
+    {# This part remains for special non-visible commands #}
     {% for category, message in messages %}
       {% if category == 'script_command' %}
         <script>
@@ -9,13 +24,7 @@
             sessionStorage.removeItem(storageKey);
           }
         </script>
-      {% else %}
-      <div class="alert alert-{{ category or 'info' }} alert-dismissible fade show" role="alert" style="box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
       {% endif %}
     {% endfor %}
-    </div>
   {% endif %}
 {% endwith %}

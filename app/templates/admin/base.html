@@ -209,7 +209,9 @@
 </div>
 
 <div class="main-content">
-    {% include '_shared/flashes.html' %}
+    {# --- vvv บรรทัดนี้ถูกลบออกเพื่อแก้ปัญหาการแจ้งเตือนซ้ำซ้อน vvv --- #}
+    {# {% include '_shared/flashes.html' %} #}
+    {# --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ --- #}
     {% block admin_content %}{% endblock %}
 </div>
 {% endblock %}

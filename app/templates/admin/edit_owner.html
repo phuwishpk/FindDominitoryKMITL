@@ -4,47 +4,70 @@
 <div class="container-fluid my-2">
     <a href="{{ url_for('admin.owners') }}" class="btn btn-sm btn-outline-secondary mb-4">← กลับสู่หน้าจัดการ Owner</a>
     
-    <h1 class="h3 mb-4 fw-bold">แก้ไขข้อมูล Owner: {{ owner.full_name_th }}</h1>
+    <h1 class="h3 mb-4 fw-bold">ดูและแก้ไขสถานะ Owner: {{ owner.full_name_th }}</h1>
 
     <div class="row">
         <div class="col-lg-8">
-            <div class="card">
-                <div class="card-body p-4">
+            <div class="card mb-4">
+                <div class="card-header fw-semibold">
+                    ข้อมูลส่วนตัว (สำหรับตรวจสอบ)
+                </div>
+                <div class="card-body">
+                    <p><strong>ID:</strong> {{ owner.id }}</p>
+                    <p><strong>ชื่อ-สกุล (ไทย):</strong> {{ owner.full_name_th or '-' }}</p>
+                    <p><strong>ชื่อ-สกุล (อังกฤษ):</strong> {{ owner.full_name_en or '-' }}</p>
+                    <p><strong>เลขบัตรประชาชน:</strong> {{ owner.citizen_id or '-' }}</p>
+                    <p><strong>อีเมล:</strong> {{ owner.email or '-' }}</p>
+                    <p><strong>เบอร์โทรศัพท์:</strong> {{ owner.phone or '-' }}</p>
+                    <p><strong>สถานะอนุมัติ:</strong> 
+                        {% if owner.approval_status == 'approved' %}
+                            <span class="badge bg-success-subtle text-success-emphasis rounded-pill">อนุมัติแล้ว</span>
+                        {% elif owner.approval_status == 'pending' %}
+                            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">รออนุมัติ</span>
+                        {% else %}
+                            <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill">ถูกปฏิเสธ</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>สถานะการใช้งาน:</strong>
+                        {% if owner.is_active %}
+                            <span class="badge bg-success-subtle text-success-emphasis rounded-pill">ใช้งานอยู่</span>
+                        {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill">ไม่ใช้งาน</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>วันที่สมัคร:</strong> {{ owner.created_at|to_bkk_time }}</p>
+                    {% if owner.occupancy_notice_pdf %}
+                    <p><strong>เอกสารแนบ:</strong> <a href="/{{ owner.occupancy_notice_pdf }}" target="_blank" class="btn btn-sm btn-outline-primary">ดูเอกสาร</a></p>
+                    {% else %}
+                    <p><strong>เอกสารแนบ:</strong> <span class="text-muted">ไม่มี</span></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+             <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header fw-semibold">
+                    แก้ไขสถานะการใช้งาน
+                </div>
+                <div class="card-body">
                     <form method="POST" novalidate>
                         {{ form.csrf_token }}
 
-                        <div class="mb-3">
-                            {{ form.full_name_th.label(class="form-label") }}
-                            {{ form.full_name_th(class="form-control" + (" is-invalid" if form.full_name_th.errors else "")) }}
-                            {% for error in form.full_name_th.errors %}
-                                <div class="invalid-feedback">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-
-                        <div class="mb-3">
-                            {{ form.email.label(class="form-label") }}
-                            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
-                            {% for error in form.email.errors %}
-                                <div class="invalid-feedback">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-
-                        <div class="mb-3">
-                            {{ form.phone.label(class="form-label") }}
-                            {{ form.phone(class="form-control" + (" is-invalid" if form.phone.errors else "")) }}
-                            {% for error in form.phone.errors %}
-                                <div class="invalid-feedback">{{ error }}</div>
-                            {% endfor %}
+                        <div class="form-check form-switch mb-4">
+                            {# ตั้งค่า checked ตามค่าที่อยู่ใน form.data (จาก POST) หรือ owner.is_active (จาก GET) #}
+                            {% set is_active_checked = form.is_active.data if request.method == 'POST' or form.is_active.data is not none else owner.is_active %}
+                            <input type="checkbox" name="{{ form.is_active.name }}" class="form-check-input" id="{{ form.is_active.id }}" {% if is_active_checked %}checked{% endif %}>
+                            <label class="form-check-label" for="{{ form.is_active.id }}">บัญชีนี้สามารถใช้งานได้ (Active)</label>
                         </div>
                         
-                        <div class="form-check form-switch mb-4">
-                            {{ form.is_active(class="form-check-input") }}
-                            {{ form.is_active.label(class="form-check-label") }}
-                        </div>
+                        {# แสดง error ถ้ามี (แม้จะไม่ควรเกิดขึ้น) #}
+                        {% for error in form.is_active.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
 
                         <div class="d-flex align-items-center">
-                            {{ form.submit(class="btn btn-primary") }}
-                            <a href="{{ url_for('admin.owners') }}" class="btn btn-link ms-2">ยกเลิก</a>
+                            {{ form.submit(class="btn btn-primary w-100") }}
                         </div>
                     </form>
                 </div>
