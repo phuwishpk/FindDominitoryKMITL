@@ -26,6 +26,8 @@ class SqlPropertyRepo:
             Property.deleted_at.is_(None)
         ).order_by(Property.created_at.desc())
 
+        # --- vvv ส่วนที่แก้ไขทั้งหมดจะอยู่ในฟังก์ชันนี้ vvv ---
+
         q_text = (filters or {}).get('q')
         if q_text:
             like = f"%{q_text.strip()}%"
@@ -49,10 +51,13 @@ class SqlPropertyRepo:
 
         room_type = (filters or {}).get('room_type')
         if room_type:
+            # นี่คือตรรกะใหม่ที่เพิ่มเข้ามา
             if room_type == 'other':
+                # ถ้าผู้ใช้เลือก "อื่นๆ" ให้ค้นหาทุกประเภทที่ไม่ใช่ประเภทมาตรฐาน
                 standard_types = ['standard', 'studio', 'suite']
                 q = q.filter(not_(Property.room_type.in_(standard_types)))
             else:
+                # ถ้าเลือกประเภทอื่น หรือกรอกข้อความมา ก็ให้ค้นหาตรงๆ
                 q = q.filter(Property.room_type.ilike(f"%{room_type.strip()}%"))
         
         availability = (filters or {}).get('availability')
@@ -64,11 +69,12 @@ class SqlPropertyRepo:
             codes_list = [c.strip() for c in codes.split(',') if c.strip()]
             if codes_list:
                 q = (q.join(PropertyAmenity, PropertyAmenity.property_id == Property.id)
-                       .join(Amenity, Amenity.id == PropertyAmenity.amenity_id)
-                       .filter(Amenity.code.in_(codes_list))
-                       .group_by(Property.id)
-                       .having(func.count(func.distinct(Amenity.code)) == len(codes_list)))
+                      .join(Amenity, Amenity.id == PropertyAmenity.amenity_id)
+                      .filter(Amenity.code.in_(codes_list))
+                      .group_by(Property.id)
+                      .having(func.count(func.distinct(Amenity.code)) == len(codes_list)))
         
+        # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
         return q
 
     def list_all_paginated(self, search_query=None, page=1, per_page=15):
