@@ -1,4 +1,4 @@
-from sqlalchemy import or_, func
+from sqlalchemy import or_, func, not_
 from app.models.property import Property, Amenity, PropertyAmenity
 from app.extensions import db
 from datetime import datetime
@@ -24,21 +24,41 @@ class SqlPropertyRepo:
         q = Property.query.filter(
             Property.workflow_status == Property.WORKFLOW_APPROVED,
             Property.deleted_at.is_(None)
-        ).order_by(Property.approved_at.desc(), Property.updated_at.desc()) # <--- เพิ่มการเรียงลำดับที่นี่
+        ).order_by(Property.created_at.desc())
 
         q_text = (filters or {}).get('q')
         if q_text:
             like = f"%{q_text.strip()}%"
-            q = q.filter(or_(Property.dorm_name.ilike(like), Property.facebook_url.ilike(like)))
+            q = q.filter(Property.dorm_name.ilike(like))
+        
+        road_text = (filters or {}).get('road')
+        if road_text:
+            q = q.filter(Property.road.ilike(f"%{road_text.strip()}%"))
+
+        soi_text = (filters or {}).get('soi')
+        if soi_text:
+            q = q.filter(Property.soi.ilike(f"%{soi_text.strip()}%"))
+
         min_price = (filters or {}).get('min_price')
+        if min_price is not None and min_price.isdigit():
+            q = q.filter(Property.rent_price >= int(min_price))
+
         max_price = (filters or {}).get('max_price')
-        if min_price is not None: q = q.filter(Property.rent_price >= int(min_price))
-        if max_price is not None: q = q.filter(Property.rent_price <= int(max_price))
+        if max_price is not None and max_price.isdigit():
+            q = q.filter(Property.rent_price <= int(max_price))
+
         room_type = (filters or {}).get('room_type')
-        if room_type: q = q.filter(Property.room_type == room_type)
+        if room_type:
+            if room_type == 'other':
+                standard_types = ['standard', 'studio', 'suite']
+                q = q.filter(not_(Property.room_type.in_(standard_types)))
+            else:
+                q = q.filter(Property.room_type.ilike(f"%{room_type.strip()}%"))
+        
         availability = (filters or {}).get('availability')
-        if availability in {Property.AVAILABILITY_VACANT, Property.AVAILABILITY_OCCUPIED}: 
+        if availability in {Property.AVAILABILITY_VACANT, Property.AVAILABILITY_OCCUPIED}:
             q = q.filter(Property.availability_status == availability)
+        
         codes = (filters or {}).get('amenities')
         if codes:
             codes_list = [c.strip() for c in codes.split(',') if c.strip()]
@@ -48,22 +68,20 @@ class SqlPropertyRepo:
                        .filter(Amenity.code.in_(codes_list))
                        .group_by(Property.id)
                        .having(func.count(func.distinct(Amenity.code)) == len(codes_list)))
+        
         return q
 
     def list_all_paginated(self, search_query=None, page=1, per_page=15):
         q = Property.query.filter(Property.deleted_at.is_(None))
-
         if search_query:
             like_filter = f"%{search_query}%"
             q = q.filter(Property.dorm_name.ilike(like_filter))
-
         return db.paginate(
             q.order_by(Property.id.asc()),
             page=page, per_page=per_page, error_out=False
         )
 
     def get_deleted_properties_paginated(self, page=1, per_page=15):
-        """ดึงรายการ Properties ที่ถูกลบ (soft-deleted)"""
         q = Property.query.filter(Property.deleted_at.isnot(None))
         return db.paginate(
             q.order_by(Property.deleted_at.desc()),
@@ -84,3 +102,19 @@ class SqlPropertyRepo:
         ).filter(
             Property.road.isnot(None), Property.road != ''
         ).group_by(Property.road).order_by(func.count(Property.id).desc()).limit(limit).all()
+
+    # --- vvv ส่วนที่แก้ไข: เพิ่มฟังก์ชันที่ขาดหายไป vvv ---
+    def get_property_counts_by_room_type(self, limit: int = 5):
+        """นับจำนวนหอพักตามประเภทห้อง (room_type)"""
+        return db.session.query(
+            Property.room_type, func.count(Property.id).label('count')
+        ).filter(
+            Property.room_type.isnot(None), Property.room_type != ''
+        ).group_by(Property.room_type).order_by(func.count(Property.id).desc()).limit(limit).all()
+    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
+
+    def get_property_counts_by_workflow_status(self):
+        """นับจำนวนหอพักในแต่ละสถานะ (workflow_status)"""
+        return db.session.query(
+            Property.workflow_status, func.count(Property.id).label('count')
+        ).filter(Property.deleted_at.is_(None)).group_by(Property.workflow_status).all()
