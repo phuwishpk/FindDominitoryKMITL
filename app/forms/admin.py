@@ -19,13 +19,12 @@ class RejectForm(FlaskForm):
 
 class AdminEditOwnerForm(FlaskForm):
     """
-    ฟอร์มสำหรับ Admin ในการแก้ไขข้อมูล Owner
+    ฟอร์มสำหรับ Admin ในการแก้ไขข้อมูล Owner (จำกัดให้แก้ไขได้เพียง is_active เท่านั้น)
     """
-    full_name_th = StringField('ชื่อ-สกุล (ไทย)', validators=[DataRequired(), Length(max=120)])
-    email = StringField('อีเมล', validators=[DataRequired(), Email(), Length(max=120)])
-    phone = StringField('เบอร์โทร', validators=[Optional(), Length(max=20)])
+    # ฟิลด์ is_active ถูกคงไว้เพื่อแก้ไขสถานะการใช้งาน
     is_active = BooleanField('บัญชีนี้สามารถใช้งานได้ (Active)')
-    submit = SubmitField('บันทึกการเปลี่ยนแปลง')
+    # ฟิลด์ submit ถูกเปลี่ยนชื่อปุ่ม
+    submit = SubmitField('บันทึกสถานะ')
 
 # --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
 class AmenityForm(FlaskForm):
