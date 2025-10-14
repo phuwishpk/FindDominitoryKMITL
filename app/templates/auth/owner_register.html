@@ -108,6 +108,13 @@
 
             <div class="col-12">
                 <div class="form-floating">
+                    {{ form.full_name_en(class="form-control form-control-custom" + (" is-invalid" if form.full_name_en.errors else ""), placeholder="ชื่อ-สกุล (ภาษาอังกฤษ)") }}
+                    <label for="full_name_en">ชื่อ-สกุล (ภาษาอังกฤษ) (ถ้ามี)</label>
+                </div>
+                {% if form.full_name_en.errors %}<div class="invalid-feedback-custom">{% for error in form.full_name_en.errors %}{{ error }}{% endfor %}</div>{% endif %}
+            </div>
+            <div class="col-12">
+                <div class="form-floating">
                     {{ form.email(class="form-control form-control-custom" + (" is-invalid" if form.email.errors else ""), placeholder="อีเมล") }}
                     <label for="email">อีเมล</label>
                 </div>

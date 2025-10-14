@@ -7,6 +7,9 @@ from app.models.user import Owner
 
 class OwnerRegisterForm(FlaskForm):
     full_name_th = StringField('ชื่อ-สกุล (ไทย)', validators=[DataRequired(), Length(max=120)])
+    # --- vvv เพิ่มฟิลด์นี้ vvv ---
+    full_name_en = StringField('ชื่อ-สกุล (อังกฤษ)', validators=[Optional(), Length(max=120)])
+    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
     email = StringField('อีเมล', validators=[DataRequired(), Email(), Length(max=120)])
     password = PasswordField('รหัสผ่าน', validators=[DataRequired(), Length(min=6, max=128)])
     confirm_password = PasswordField('ยืนยันรหัสผ่าน', validators=[
