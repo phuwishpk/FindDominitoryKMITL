@@ -1,4 +1,4 @@
-from sqlalchemy import or_, func
+from sqlalchemy import or_, func, not_
 from app.models.property import Property, Amenity, PropertyAmenity
 from app.extensions import db
 from datetime import datetime
@@ -24,56 +24,46 @@ class SqlPropertyRepo:
         q = Property.query.filter(
             Property.workflow_status == Property.WORKFLOW_APPROVED,
             Property.deleted_at.is_(None)
-        )
+        ).order_by(Property.created_at.desc())
 
-        # --- vvv START: ส่วนที่แก้ไขเรื่องการจัดเรียงข้อมูล vvv ---
-        sort_option = (filters or {}).get('sort')
-        if sort_option == 'updated_at_desc':
-            # เรียงตามวันที่อัปเดตล่าสุด
-            q = q.order_by(Property.updated_at.desc())
-        else:
-            # การจัดเรียงแบบปกติ (ตามวันที่อนุมัติและอัปเดต)
-            q = q.order_by(Property.approved_at.desc(), Property.updated_at.desc())
-        # --- ^^^ END: สิ้นสุดส่วนที่แก้ไข ^^^ ---
+        # --- vvv ส่วนที่แก้ไขทั้งหมดจะอยู่ในฟังก์ชันนี้ vvv ---
 
-
-        # --- vvv START: เพิ่มตรรกะการกรองข้อมูล vvv ---
-
-        # ค้นหาตามชื่อหอพัก
         q_text = (filters or {}).get('q')
         if q_text:
             like = f"%{q_text.strip()}%"
             q = q.filter(Property.dorm_name.ilike(like))
         
-        # ค้นหาตามถนน
-        road_filter = (filters or {}).get('road')
-        if road_filter:
-            q = q.filter(Property.road.ilike(f"%{road_filter.strip()}%"))
+        road_text = (filters or {}).get('road')
+        if road_text:
+            q = q.filter(Property.road.ilike(f"%{road_text.strip()}%"))
 
-        # ค้นหาตามซอย
-        soi_filter = (filters or {}).get('soi')
-        if soi_filter:
-            q = q.filter(Property.soi.ilike(f"%{soi_filter.strip()}%"))
+        soi_text = (filters or {}).get('soi')
+        if soi_text:
+            q = q.filter(Property.soi.ilike(f"%{soi_text.strip()}%"))
 
-        # ค้นหาตามราคา
         min_price = (filters or {}).get('min_price')
-        max_price = (filters or {}).get('max_price')
         if min_price is not None and min_price.isdigit():
             q = q.filter(Property.rent_price >= int(min_price))
+
+        max_price = (filters or {}).get('max_price')
         if max_price is not None and max_price.isdigit():
             q = q.filter(Property.rent_price <= int(max_price))
-        
-        # ค้นหาตามประเภทห้อง
+
         room_type = (filters or {}).get('room_type')
         if room_type:
-            q = q.filter(Property.room_type == room_type)
-            
-        # ค้นหาตามสถานะห้อง (ว่าง/เต็ม)
+            # นี่คือตรรกะใหม่ที่เพิ่มเข้ามา
+            if room_type == 'other':
+                # ถ้าผู้ใช้เลือก "อื่นๆ" ให้ค้นหาทุกประเภทที่ไม่ใช่ประเภทมาตรฐาน
+                standard_types = ['standard', 'studio', 'suite']
+                q = q.filter(not_(Property.room_type.in_(standard_types)))
+            else:
+                # ถ้าเลือกประเภทอื่น หรือกรอกข้อความมา ก็ให้ค้นหาตรงๆ
+                q = q.filter(Property.room_type.ilike(f"%{room_type.strip()}%"))
+        
         availability = (filters or {}).get('availability')
-        if availability in {Property.AVAILABILITY_VACANT, Property.AVAILABILITY_OCCUPIED}: 
+        if availability in {Property.AVAILABILITY_VACANT, Property.AVAILABILITY_OCCUPIED}:
             q = q.filter(Property.availability_status == availability)
-            
-        # ค้นหาตามสิ่งอำนวยความสะดวก (แบบ AND)
+        
         codes = (filters or {}).get('amenities')
         if codes:
             codes_list = [c.strip() for c in codes.split(',') if c.strip()]
@@ -84,16 +74,14 @@ class SqlPropertyRepo:
                        .group_by(Property.id)
                        .having(func.count(func.distinct(Amenity.code)) == len(codes_list)))
         
-        # --- ^^^ END: สิ้นสุดการแก้ไข ^^^ ---
+        # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
         return q
 
     def list_all_paginated(self, search_query=None, page=1, per_page=15):
         q = Property.query.filter(Property.deleted_at.is_(None))
-
         if search_query:
             like_filter = f"%{search_query}%"
             q = q.filter(Property.dorm_name.ilike(like_filter))
-
         return db.paginate(
             q.order_by(Property.id.asc()),
             page=page, per_page=per_page, error_out=False
