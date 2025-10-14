@@ -1,7 +1,5 @@
 import json
 from app.models.property import Property, Amenity
-from app.models.approval import AuditLog
-from app.extensions import db
 from .location_service import LocationDataHandler
 
 class PropertyService:
@@ -45,6 +43,11 @@ class PropertyService:
         return self.repo.add(prop)
 
     def update(self, owner_id: int, prop_id: int, data: dict):
+        # --- vvv START: แก้ไขปัญหา Circular Import โดยย้าย import เข้ามาในฟังก์ชัน vvv ---
+        from app.models.approval import AuditLog
+        from app.extensions import db
+        # --- ^^^ END: สิ้นสุดการแก้ไข ^^^ ---
+
         prop = self.repo.get(prop_id)
         if not prop or prop.owner_id != owner_id:
             return None
