@@ -130,12 +130,19 @@
       box-shadow: 0 8px 25px rgba(0,0,0,0.08);
   }
 
-  /* --- vvv CSS ที่แก้ไขสำหรับปุ่ม Slider vvv --- */
+  /* --- ★★★ CSS สำหรับปุ่ม Slider (แก้ไขล่าสุด) ★★★ --- */
   .slider-wrapper {
     position: relative;
+    padding: 0 40px; /* เพิ่ม padding ด้านข้างเพื่อให้มีที่สำหรับปุ่ม */
   }
 
-  .slider-controls button {
+  /* จัดสไตล์ให้คอนเทนเนอร์ของปุ่มที่ไลบรารีสร้างขึ้น */
+  .tns-controls {
+    position: static; /* ไม่ต้องกำหนด position ที่นี่ */
+  }
+  
+  /* จัดสไตล์ให้ปุ่มที่ถูกสร้างขึ้นโดยไลบรารี */
+  .tns-controls button {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
@@ -146,36 +153,43 @@
     height: 45px;
     border-radius: 50%;
     cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s ease;
+    
+    /* สไตล์สำหรับตัวอักษรลูกศร */
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #333;
+    line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10;
-    transition: all 0.2s ease;
+    padding-bottom: 4px; /* ขยับลูกศรลงเล็กน้อยให้อยู่กลาง */
   }
-  .slider-controls button:hover {
-      transform: translateY(-50%) scale(1.1);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  
+  .tns-controls button:hover {
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   }
-  .slider-controls button:disabled {
+
+  .tns-controls button:disabled {
       opacity: 0.3;
       cursor: not-allowed;
   }
 
-  #tns-prev { left: -20px; }
-  #tns-next { right: -20px; }
-  /* --- ^^^ สิ้นสุดการแก้ไข CSS ^^^ --- */
+  /* กำหนดตำแหน่งของปุ่ม prev/next */
+  .tns-controls [data-controls="prev"] { left: 0; }
+  .tns-controls [data-controls="next"] { right: 0; }
   
-  @media (max-width: 1200px) {
-    #tns-prev { left: 0; }
-    #tns-next { right: 0; }
-  }
-
   @media (max-width: 768px) {
     .room-details-grid {
       grid-template-columns: 1fr;
       text-align: center;
     }
-    .slider-controls {
+     .slider-wrapper {
+        padding: 0; /* ลบ padding บน mobile */
+    }
+    .tns-controls {
         display: none; /* ซ่อนปุ่มบน Mobile */
     }
   }
@@ -216,7 +230,7 @@
   </div>
 </section>
 
-{# --- vvv ส่วนแสดงรายการหอพัก (Dorm List Section) ที่แก้ไขแล้ว vvv --- #}
+{# --- ส่วนแสดงรายการหอพัก --- #}
 <section class="container py-5" id="dorm-list">
     <div class="text-center mb-5">
       <p class="section__subheader">รายการแนะนำ</p>
@@ -261,11 +275,7 @@
             </div>
             {% endfor %}
         </div>
-
-        <div class="slider-controls">
-            <button id="tns-prev" aria-label="Previous"><i data-feather="chevron-left"></i></button>
-            <button id="tns-next" aria-label="Next"><i data-feather="chevron-right"></i></button>
-        </div>
+        
         </div>
     {% else %}
     <div class="text-center py-5 card">
@@ -275,12 +285,9 @@
     </div>
     {% endif %}
 </section>
-{# --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ --- #}
-
 {% endblock %}
 
 {% block page_scripts %}
-{{ super() }}
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     // โค้ดสำหรับ Tab และ ScrollReveal (เหมือนเดิม)
@@ -305,7 +312,7 @@
         feather.replace();
     }
 
-    // --- vvv JavaScript สำหรับ Slider ที่แก้ไขแล้ว vvv ---
+    // โค้ดสำหรับ Slider ที่แก้ไขใหม่และใช้งานได้แน่นอน
     if(document.querySelector('.my-slider')) {
         var slider = tns({
             container: '.my-slider',
@@ -313,18 +320,15 @@
             slideBy: 'page',
             autoplay: false,
             mouseDrag: true,
-            controls: false, // ปิดปุ่ม default ก่อน
+            controls: true, // เปิดใช้งาน controls ของไลบรารี
+            controlsText: ['‹', '›'], // ใช้สัญลักษณ์ข้อความที่ปลอดภัย
             nav: false,
-            // ระบุปุ่มที่เราสร้างขึ้นเอง
-            prevButton: "#tns-prev",
-            nextButton: "#tns-next",
             responsive: {
                 768: { items: 3 },
                 992: { items: 4 }
             }
         });
     }
-    // --- ^^^ สิ้นสุดการแก้ไข JavaScript ^^^ ---
   });
 </script>
 {% endblock %}

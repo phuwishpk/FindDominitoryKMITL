@@ -15,7 +15,7 @@ def index():
     filters = { 
         "sort": "updated_at_desc" 
     }
-    per_page = 4
+    per_page = 12
     # --- สิ้นสุดการแก้ไข ---
     
     result = svc.search(filters, page=1, per_page=per_page) 
