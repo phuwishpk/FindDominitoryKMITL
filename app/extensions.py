@@ -7,6 +7,11 @@ from flask_limiter.util import get_remote_address
 from flask_wtf import CSRFProtect
 from functools import wraps
 
+# --- SQLAlchemy Engine Imports ---
+from sqlalchemy.engine import Engine
+from sqlalchemy import event
+# --- End Imports ---
+
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
@@ -62,3 +67,36 @@ def admin_required(f):
             return redirect(url_for("auth.login", role="admin"))
         return f(*args, **kwargs)
     return wrapper
+
+# --- vvv ส่วนที่แก้ไขเพื่อแก้ AttributeError vvv ---
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    """
+    เพิ่มฟังก์ชัน to_char เข้าไปใน SQLite DBAPI Connection เพื่อให้โค้ดที่ใช้ to_char
+    ยังสามารถทำงานได้ในสภาพแวดล้อม SQLite (โดยใช้ strftime แทน)
+    """
+    # แก้ไข: เปลี่ยนมาตรวจสอบที่ connection_record.engine.dialect.name
+    # เพื่อแก้ปัญหา AttributeError ที่เกิดขึ้นในบางเวอร์ชันของ SQLAlchemy
+    try:
+        is_sqlite = connection_record.engine.dialect.name == 'sqlite'
+    except AttributeError:
+        # Fallback: ใช้การตรวจสอบ driver name ซึ่งปลอดภัยกว่าใน context นี้
+        is_sqlite = dbapi_connection.__class__.__name__ == 'Connection'
+
+    if is_sqlite:
+        
+        def sqlite_to_char(value, format_str):
+            # แปลงรูปแบบ 'YYYY-MM' (PostgreSQL style) เป็น '%Y-%m' (SQLite strftime style)
+            sqlite_format = format_str.replace('YYYY', '%Y').replace('MM', '%m')
+            
+            cursor = dbapi_connection.cursor()
+            try:
+                # คำสั่ง SQL ที่รันจริงบน SQLite
+                cursor.execute("SELECT strftime(?, ?)", (sqlite_format, value))
+                return cursor.fetchone()[0]
+            finally:
+                cursor.close()
+
+        # สร้างฟังก์ชัน to_char ใน SQLite connection
+        dbapi_connection.create_function("to_char", 2, sqlite_to_char)
+# --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
