@@ -1,28 +1,26 @@
 {% extends 'public/public_base.html' %}
 
-
 {% block content %}
 <div class="container my-5">
     <a href="{{ url_for('public.index') }}" class="btn btn-sm btn-outline-secondary mb-3">← กลับสู่หน้าหลัก</a>
-    
-    {% if not prop %}
-    <div class="alert alert-danger">ไม่พบประกาศนี้ หรือประกาศยังไม่ได้รับการอนุมัติ</div>
-    {% else %}
 
+    {% if not prop %}
+        <div class="alert alert-danger">ไม่พบประกาศนี้ หรือประกาศยังไม่ได้รับการอนุมัติ</div>
+    {% else %}
     <div class="row">
-        
+
+        <!-- ====== ข้อมูลฝั่งซ้าย ====== -->
         <div class="col-lg-8">
             <div class="d-flex align-items-center mb-3">
                 <h1 class="mb-0">{{ prop.dorm_name }}</h1>
                 {% if prop.availability_status == 'vacant' %}
                     <span class="badge bg-success fs-6 ms-3">ห้องว่าง</span>
                 {% else %}
-                    {# --- vvv ส่วนที่แก้ไข vvv --- #}
                     <span class="badge bg-danger text-white fs-6 ms-3">ห้องเต็ม</span>
-                    {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
                 {% endif %}
             </div>
 
+            <!-- Carousel -->
             <div id="propertyCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
                 <div class="carousel-inner rounded shadow-sm">
                     {% for img in prop.images %}
@@ -35,29 +33,29 @@
                     </div>
                     {% endfor %}
                 </div>
-                
                 {% if prop.images|length > 1 %}
                 <button class="carousel-control-prev" type="button" data-bs-target="#propertyCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="carousel-control-prev-icon"></span>
                     <span class="visually-hidden">Previous</span>
                 </button>
                 <button class="carousel-control-next" type="button" data-bs-target="#propertyCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="carousel-control-next-icon"></span>
                     <span class="visually-hidden">Next</span>
                 </button>
                 {% endif %}
             </div>
 
+            <!-- รายละเอียดหอพัก -->
             <div class="card mb-4 shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">รายละเอียดหอพัก</h5>
-                    <p class="card-text"><strong>ประเภทห้อง:</strong> {{ ROOM_TYPES.get(prop.room_type, prop.room_type) }}</p>
-                    <p class="card-text"><strong>คำอธิบายเพิ่มเติม:</strong> {{ prop.additional_info or 'ไม่มีข้อมูลเพิ่มเติม' }}</p>
-                    
+                    <p><strong>ประเภทห้อง:</strong> {{ ROOM_TYPES.get(prop.room_type, prop.room_type) }}</p>
+                    <p><strong>คำอธิบายเพิ่มเติม:</strong> {{ prop.additional_info or 'ไม่มีข้อมูลเพิ่มเติม' }}</p>
+
                     <h6 class="mt-3">ราคาและค่าบริการ</h6>
                     <ul class="list-unstyled">
-                        <li><strong>ค่าเช่าต่อเดือน:</strong> {{ "{:,.0f}".format(prop.rent_price) if prop.rent_price is not none else 'N/A' }} บาท</li>
-                        <li><strong>เงินประกัน:</strong> {{ "{:,.0f}".format(prop.deposit_amount) if prop.deposit_amount is not none else 'N/A' }} บาท</li>
+                        <li><strong>ค่าเช่าต่อเดือน:</strong> {{ "{:,.0f}".format(prop.rent_price) if prop.rent_price else 'N/A' }} บาท</li>
+                        <li><strong>เงินประกัน:</strong> {{ "{:,.0f}".format(prop.deposit_amount) if prop.deposit_amount else 'N/A' }} บาท</li>
                         <li><strong>ค่าน้ำ/ค่าไฟ:</strong> น้ำ {{ prop.water_rate or 'N/A' }} / ไฟ {{ prop.electric_rate or 'N/A' }}</li>
                     </ul>
 
@@ -72,31 +70,72 @@
                 </div>
             </div>
 
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card sticky-top shadow-lg" style="top: 20px;">
+            <!-- ส่วนรีวิว -->
+            <div class="card mb-4 shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title text-success">ติดต่อสอบถาม</h5>
-                    <p class="mb-2"><strong>โทรศัพท์:</strong> <a href="tel:{{ prop.contact_phone }}">{{ prop.contact_phone or 'N/A' }}</a></p>
-                    <p class="mb-2"><strong>LINE ID:</strong> {{ prop.line_id or 'N/A' }}</p>
-                    <p class="mb-2"><strong>Facebook:</strong> <a href="{{ prop.facebook_url }}" target="_blank">{{ prop.facebook_url or 'N/A' }}</a></p>
+                    <h5 class="card-title">รีวิวจากผู้ใช้</h5>
+                    
+                    {% if reviews %}
+                        {% for review in reviews %}
+                        <div class="border-bottom pb-2 mb-3">
+                            <div>
+                                {% for i in range(1,6) %}
+                                    {% if i <= review.rating %}
+                                        <i class="ri-star-fill text-warning"></i>
+                                    {% else %}
+                                        <i class="ri-star-line text-muted"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <p class="mb-1">{{ review.comment }}</p>
+                            <small class="text-muted">เมื่อ {{ review.created_at.strftime('%d/%m/%Y') }}</small>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">ยังไม่มีรีวิวสำหรับหอพักนี้</p>
+                    {% endif %}
                     
                     <hr>
+                    <h6>เพิ่มรีวิวของคุณ</h6>
+                    <form method="POST" action="{{ url_for('public.property_add_review', prop_id=prop.id) }}">
+                        {{ form.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ form.rating.label(class="form-label") }}
+                            {{ form.rating(class="form-select") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.comment.label(class="form-label") }}
+                            {{ form.comment(class="form-control", rows=3) }}
+                        </div>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </form>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ====== ข้อมูลฝั่งขวา (แมพ) ====== -->
+        <div class="col-lg-4">
+            <div class="card sticky-top shadow-lg" style="top: 100px;">
+                <div class="card-body">
+                    <h5 class="card-title text-success">ติดต่อสอบถาม</h5>
+                    <p><strong>โทรศัพท์:</strong> <a href="tel:{{ prop.contact_phone }}">{{ prop.contact_phone or 'N/A' }}</a></p>
+                    <p><strong>LINE ID:</strong> {{ prop.line_id or 'N/A' }}</p>
+                    <p><strong>Facebook:</strong> <a href="{{ prop.facebook_url }}" target="_blank">{{ prop.facebook_url or 'N/A' }}</a></p>
+
+                    <hr>
                     <h5 class="mt-3">ตำแหน่งที่ตั้ง</h5>
-                    <p class="card-text">{{ prop.soi or 'N/A' }} ถ. {{ prop.road or 'N/A' }}</p>
-                    
+                    <p>{{ prop.soi or 'N/A' }} ถ. {{ prop.road or 'N/A' }}</p>
+
                     <div id="map" style="height: 250px; width: 100%;" class="border rounded mb-3"></div>
-                    
-                    <div class="mt-2 text-center">
-                        {% if prop.location_pin and prop.location_pin.coordinates %}
+
+                    {% if prop.location_pin and prop.location_pin.coordinates %}
                         <a href="https://www.google.com/maps/search/?api=1&query={{ prop.location_pin.coordinates[1] }},{{ prop.location_pin.coordinates[0] }}" target="_blank" class="btn btn-sm btn-outline-success w-100">
                             เปิดใน Google Maps
                         </a>
-                        {% else %}
+                    {% else %}
                         <p class="text-danger small">ไม่มีข้อมูลพิกัด</p>
-                        {% endif %}
-                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -111,17 +150,14 @@
     const lng = {{ prop.location_pin.coordinates[0] }};
     const lat = {{ prop.location_pin.coordinates[1] }};
 
-    const map = L.map('map').setView([lat, lng], 16); 
-
+    const map = L.map('map', { scrollWheelZoom: false }).setView([lat, lng], 16);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
-
     L.marker([lat, lng]).addTo(map)
-        .bindPopup('<b>{{ prop.dorm_name }}</b><br>พิกัดที่ปักหมุด.')
+        .bindPopup('<b>{{ prop.dorm_name }}</b>')
         .openPopup();
-    
     {% else %}
     document.getElementById('map').innerHTML = '<div class="text-center p-5 text-muted">ไม่พบข้อมูลพิกัด</div>';
     {% endif %}
