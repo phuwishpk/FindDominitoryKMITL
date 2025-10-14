@@ -5,18 +5,17 @@ from app.models.property import Amenity, Property # <-- เพิ่มการ
 @bp.get("/")
 def index():
     """
-    (แก้ไข) แสดงหน้าหลักโดยดึงข้อมูลหอพักที่อัปเดตล่าสุด 4 รายการ
+    (แก้ไข) แสดงหน้าหลักโดยดึงข้อมูลหอพักที่อัปเดตล่าสุด 8 รายการ
     """
     svc = current_app.extensions["container"]["search_service"]
     
     # --- ส่วนที่แก้ไข ---
     # เราจะส่ง filter 'sort' เพื่อบอกให้ repository เรียงข้อมูลตามวันที่อัปเดตล่าสุด
-    # และกำหนด per_page เป็น 4 เพื่อดึงแค่ 4 รายการ
+    # และกำหนด per_page เป็น 8 เพื่อดึงแค่ 8 รายการ
     filters = { 
         "sort": "updated_at_desc" 
     }
-
-    per_page = 12
+    per_page = 8
     # --- สิ้นสุดการแก้ไข ---
     
     result = svc.search(filters, page=1, per_page=per_page) 

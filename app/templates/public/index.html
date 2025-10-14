@@ -130,18 +130,19 @@
       box-shadow: 0 8px 25px rgba(0,0,0,0.08);
   }
 
-  /* --- vvv CSS ที่แก้ไขสำหรับปุ่ม Slider vvv --- */
+  /* --- CSS สำหรับปุ่ม Slider --- */
   .slider-wrapper {
     position: relative;
+    padding: 0 40px; 
   }
 
   .slider-controls button {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background: white;
+    background: rgba(255, 255, 255, 0.9);
     border: 1px solid #e0e0e0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     width: 45px;
     height: 45px;
     border-radius: 50%;
@@ -150,24 +151,29 @@
     align-items: center;
     justify-content: center;
     z-index: 10;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    color: #333;
   }
   .slider-controls button:hover {
-      transform: translateY(-50%) scale(1.1);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      transform: translateY(-50%) scale(1.05);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+      background-color: #fff;
   }
   .slider-controls button:disabled {
       opacity: 0.3;
       cursor: not-allowed;
+      transform: translateY(-50%) scale(1);
   }
 
-  #tns-prev { left: -20px; }
-  #tns-next { right: -20px; }
+  /* --- vvv CSS ที่แก้ไขแล้ว --- */
+  /* อ้างอิงปุ่มจาก attribute แทน id */
+  .slider-controls button[data-controls="prev"] { left: 0px; } 
+  .slider-controls button[data-controls="next"] { right: 0px; }
   /* --- ^^^ สิ้นสุดการแก้ไข CSS ^^^ --- */
   
   @media (max-width: 1200px) {
-    #tns-prev { left: 0; }
-    #tns-next { right: 0; }
+    .slider-controls button[data-controls="prev"] { left: 0; }
+    .slider-controls button[data-controls="next"] { right: 0; }
   }
 
   @media (max-width: 768px) {
@@ -176,7 +182,7 @@
       text-align: center;
     }
     .slider-controls {
-        display: none; /* ซ่อนปุ่มบน Mobile */
+        display: none;
     }
   }
 </style>
@@ -216,7 +222,7 @@
   </div>
 </section>
 
-{# --- vvv ส่วนแสดงรายการหอพัก (Dorm List Section) ที่แก้ไขแล้ว vvv --- #}
+{# --- ส่วนแสดงรายการหอพัก (Dorm List Section) --- #}
 <section class="container py-5" id="dorm-list">
     <div class="text-center mb-5">
       <p class="section__subheader">รายการแนะนำ</p>
@@ -261,12 +267,13 @@
             </div>
             {% endfor %}
         </div>
-
+        
         <div class="slider-controls">
-            <button id="tns-prev" aria-label="Previous"><i data-feather="chevron-left"></i></button>
-            <button id="tns-next" aria-label="Next"><i data-feather="chevron-right"></i></button>
+            <button data-controls="prev" aria-label="Previous"><i data-feather="chevron-left"></i></button>
+            <button data-controls="next" aria-label="Next"><i data-feather="chevron-right"></i></button>
         </div>
-        </div>
+
+    </div>
     {% else %}
     <div class="text-center py-5 card">
         <i data-feather="home" class="text-muted mb-3" style="width: 48px; height: 48px;"></i>
@@ -275,7 +282,6 @@
     </div>
     {% endif %}
 </section>
-{# --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ --- #}
 
 {% endblock %}
 
@@ -301,29 +307,29 @@
     sr.reveal('.room-finder-section', { delay: 300 });
     sr.reveal('.container.py-5', { delay: 300 });
 
-    if (typeof feather !== 'undefined') {
-        feather.replace();
-    }
-
     // --- vvv JavaScript สำหรับ Slider ที่แก้ไขแล้ว vvv ---
-    if(document.querySelector('.my-slider')) {
-        var slider = tns({
-            container: '.my-slider',
-            items: 1,
-            slideBy: 'page',
-            autoplay: false,
-            mouseDrag: true,
-            controls: false, // ปิดปุ่ม default ก่อน
-            nav: false,
-            // ระบุปุ่มที่เราสร้างขึ้นเอง
-            prevButton: "#tns-prev",
-            nextButton: "#tns-next",
-            responsive: {
-                768: { items: 3 },
-                992: { items: 4 }
-            }
-        });
-    }
+    // หน่วงเวลาการทำงานของสคริปต์ Slider เพื่อรอให้ Feather Icons ทำงานเสร็จก่อน
+    setTimeout(function() {
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+
+        if(document.querySelector('.my-slider')) {
+            var slider = tns({
+                container: '.my-slider',
+                items: 1,
+                slideBy: 'page',
+                autoplay: false,
+                mouseDrag: true,
+                nav: false,
+                controlsContainer: ".slider-controls",
+                responsive: {
+                    768: { items: 3 },
+                    992: { items: 4 }
+                }
+            });
+        }
+    }, 100); 
     // --- ^^^ สิ้นสุดการแก้ไข JavaScript ^^^ ---
   });
 </script>
