@@ -95,7 +95,7 @@
             <a class="nav-link {% if request.endpoint == 'public.search' %}active{% endif %}" href="{{ url_for('public.search') }}">ค้นหาหอพัก</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#">ติดต่อเรา</a>
+              <a class="nav-link {% if request.endpoint == 'public.contact' %}active{% endif %}" href="{{ url_for('public.contact') }}">ติดต่อเรา</a>
           </li>
         </ul>
         <div class="nav-buttons d-flex align-items-center gap-2">

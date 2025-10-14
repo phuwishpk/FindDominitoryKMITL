@@ -85,3 +85,8 @@ def property_detail(prop_id: int):
     if not prop or prop.workflow_status != 'approved':
         return render_template("public/detail.html", prop=None), 404
     return render_template("public/detail.html", prop=prop)
+
+@bp.get("/contact")
+def contact():
+    """แสดงหน้าติดต่อเรา"""
+    return render_template("public/contact.html")
