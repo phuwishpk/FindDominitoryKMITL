@@ -38,3 +38,5 @@ MarkupSafe==2.1.5
 
 # Environment Variables
 python-dotenv==1.0.1
+
+psycopg2-binary==2.9.9
