@@ -98,8 +98,12 @@ class SqlPropertyRepo:
         return db.session.query(Property).filter(Property.deleted_at.is_(None)).count()
 
     def count_properties_by_month(self, date_obj: datetime) -> int:
+        """
+        นับจำนวน Property ที่ถูกสร้างในเดือนที่กำหนด (ใช้ to_char สำหรับ PostgreSQL)
+        """
+        # แก้ไข: เปลี่ยน func.strftime เป็น func.to_char เพื่อรองรับ PostgreSQL
         return db.session.query(Property).filter(
-            func.strftime('%Y-%m', Property.created_at) == date_obj.strftime("%Y-%m")
+            func.to_char(Property.created_at, 'YYYY-MM') == date_obj.strftime("%Y-%m")
         ).count()
 
     def get_property_counts_by_road(self, limit: int = 5):
@@ -109,7 +113,6 @@ class SqlPropertyRepo:
             Property.road.isnot(None), Property.road != ''
         ).group_by(Property.road).order_by(func.count(Property.id).desc()).limit(limit).all()
 
-    # --- vvv ส่วนที่แก้ไข: เพิ่มฟังก์ชันที่ขาดหายไป vvv ---
     def get_property_counts_by_room_type(self, limit: int = 5):
         """นับจำนวนหอพักตามประเภทห้อง (room_type)"""
         return db.session.query(
@@ -117,7 +120,6 @@ class SqlPropertyRepo:
         ).filter(
             Property.room_type.isnot(None), Property.room_type != ''
         ).group_by(Property.room_type).order_by(func.count(Property.id).desc()).limit(limit).all()
-    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
 
     def get_property_counts_by_workflow_status(self):
         """นับจำนวนหอพักในแต่ละสถานะ (workflow_status)"""

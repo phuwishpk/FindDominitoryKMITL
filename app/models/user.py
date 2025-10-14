@@ -10,7 +10,9 @@ class Owner(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     full_name_th = db.Column(db.String(120), nullable=False)
-    full_name_en = db.Column(db.String(120))
+    # --- vvv เพิ่มฟิลด์นี้ vvv ---
+    full_name_en = db.Column(db.String(120), nullable=True) # ตั้งเป็น nullable=True ถ้าไม่บังคับกรอก
+    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
     citizen_id = db.Column(db.String(13), unique=True, nullable=False)
     occupancy_notice_pdf = db.Column(db.String(255))
     email = db.Column(db.String(120), unique=True, nullable=False)

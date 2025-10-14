@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, current_app, request
+from flask import render_template, redirect, url_for, flash, current_app, request, session
 from flask_login import login_required, current_user
 from . import bp
 from app.forms.auth import OwnerRegisterForm, CombinedLoginForm
@@ -11,9 +11,23 @@ def owner_register():
     form = OwnerRegisterForm()
     if form.validate_on_submit():
         svc = current_app.extensions["container"]["auth_service"]
-        svc.register_owner(form.data)
-        flash("สมัครสมาชิกสำเร็จ! บัญชีของคุณจะถูกตรวจสอบโดยผู้ดูแลระบบก่อนเข้าใช้งาน", "info")
+        new_owner = svc.register_owner(form.data)
+        
+        # --- vvv ส่วนที่แก้ไข vvv ---
+        # เปลี่ยนจากการใช้ flash มาใช้ session สำหรับ toast message โดยเฉพาะ
+        session['toast_message'] = {
+            'message': f"สมัครสมาชิกสำเร็จ! บัญชีของคุณ '{new_owner.full_name_th}' กำลังรอการอนุมัติ",
+            'category': 'success'
+        }
+        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+        
+        session['toast_admin_notification'] = {
+            'message': f"มี Owner ใหม่สมัครเข้ามา: {new_owner.full_name_th}",
+            'category': 'info'
+        }
+        
         return redirect(url_for("auth.login"))
+        
     return render_template("auth/owner_register.html", form=form)
 
 @bp.route("/login", methods=["GET","POST"])
@@ -31,29 +45,23 @@ def login():
         svc = current_app.extensions["container"]["auth_service"]
         user_repo = current_app.extensions["container"]["user_repo"]
 
-        # 1. ลองล็อกอินเป็น Admin (ใช้ username)
         admin = svc.verify_admin(username_or_email, password)
         if admin:
             svc.login_admin(admin)
             return redirect(url_for("admin.dashboard"))
 
-        # 2. ลองล็อกอินเป็น Owner (ใช้ email)
         owner = user_repo.get_owner_by_email(username_or_email)
         
         if owner:
-            # ตรวจสอบสถานะการใช้งาน
             is_verified_and_active = svc.verify_owner(username_or_email, password)
-
             if is_verified_and_active:
                 svc.login_owner(owner)
                 return redirect(url_for("owner.dashboard"))
             
-            # หากอีเมลถูกต้องแต่บัญชีไม่ Active (รอดำเนินการ/ถูกปฏิเสธ)
             if not owner.is_active: 
                 flash("บัญชีของคุณยังไม่ได้รับการอนุมัติจากผู้ดูแลระบบ", "warning")
                 return render_template("auth/login.html", form=form)
 
-        # 3. หาก Admin และ Owner ไม่สำเร็จ (รหัสผิด, user ไม่พบ, หรือ owner รหัสผิด)
         flash("ข้อมูลเข้าใช้งานไม่ถูกต้อง กรุณาตรวจสอบชื่อผู้ใช้/อีเมล และรหัสผ่าน", "danger")
             
     return render_template("auth/login.html", form=form)

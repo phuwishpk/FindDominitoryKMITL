@@ -37,8 +37,6 @@ def dashboard():
         room_type_pie_chart=room_type_pie_chart
     )
 
-# --- (โค้ดส่วนที่เหลือเหมือนเดิม) ---
-
 # --- Property Approval Workflow ---
 @bp.route("/queue")
 @login_required
@@ -201,16 +199,39 @@ def owners():
 @admin_required
 def edit_owner(owner_id: int):
     owner = Owner.query.get_or_404(owner_id)
-    form = AdminEditOwnerForm(obj=owner)
+    # ใช้ฟอร์มที่ถูกจำกัดฟิลด์
+    form = AdminEditOwnerForm() 
+    
+    # Pre-fill form on GET/initial display
+    if request.method == "GET":
+        form.is_active.data = owner.is_active
+        
     if form.validate_on_submit():
-        if owner.email != form.email.data and Owner.query.filter_by(email=form.email.data).first():
-            flash('อีเมลนี้มีผู้ใช้งานแล้ว', 'danger')
-            return render_template("admin/edit_owner.html", form=form, owner=owner)
-        owner.full_name_th, owner.email, owner.phone, owner.is_active = form.full_name_th.data, form.email.data, form.phone.data, form.is_active.data
-        db.session.add(AuditLog.log("admin", current_user.ref_id, "admin_edit_owner", meta={"owner_id": owner_id, "owner_name": owner.full_name_th}))
-        db.session.commit()
-        flash(f"อัปเดตข้อมูลของ '{owner.full_name_th}' เรียบร้อยแล้ว", "success")
-        return redirect(url_for('admin.owners'))
+        # ตรวจสอบว่าสถานะมีการเปลี่ยนแปลงหรือไม่
+        new_is_active = form.is_active.data
+        old_is_active = owner.is_active
+        
+        if new_is_active != old_is_active:
+            owner.is_active = new_is_active
+            
+            action = "activate_owner" if new_is_active else "deactivate_owner"
+            meta_detail = "Activated" if new_is_active else "Deactivated"
+            
+            # บันทึก AuditLog
+            db.session.add(AuditLog.log(
+                "admin", current_user.ref_id, 
+                action, 
+                meta={"owner_id": owner_id, "owner_name": owner.full_name_th, "details": f"Account {meta_detail}"}
+            ))
+            db.session.commit()
+            flash(f"อัปเดตสถานะการใช้งานของ '{owner.full_name_th}' เป็น {'ใช้งานอยู่' if new_is_active else 'ไม่ใช้งาน'} เรียบร้อยแล้ว", "success")
+        else:
+            flash(f"ไม่มีการเปลี่ยนแปลงสถานะการใช้งานของ '{owner.full_name_th}'", "info")
+            
+        # หลังจากการส่งฟอร์ม ให้แสดงผลหน้าเดิม
+        return redirect(url_for('admin.edit_owner', owner_id=owner_id))
+
+    # ใช้เทมเพลตใหม่เพื่อแสดงข้อมูล Owner ทั้งหมด (View) พร้อมกับฟอร์มแก้ไขสถานะ (Edit)
     return render_template("admin/edit_owner.html", form=form, owner=owner)
 
 @bp.route("/owners/queue")
