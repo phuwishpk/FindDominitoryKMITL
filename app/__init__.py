@@ -4,6 +4,7 @@ from .config import Config
 
 from .utils.helpers import format_as_bangkok_time, from_json_string
 from .forms.upload import EmptyForm
+from .forms.owner import ROOM_TYPE_CHOICES
 
 from .blueprints.public import bp as public_bp
 from .blueprints.owner import bp as owner_bp
@@ -70,8 +71,12 @@ def create_app() -> Flask:
 
     # Context processors
     @app.context_processor
-    def inject_forms():
-        return dict(empty_form=EmptyForm())
+    def inject_global_vars():
+        room_type_map = dict(ROOM_TYPE_CHOICES)
+        return dict(
+            empty_form=EmptyForm(),
+            ROOM_TYPES=room_type_map
+        )
 
     # DI container
     with app.app_context():
@@ -98,7 +103,7 @@ def create_app() -> Flask:
     def health():
         return {"ok": True}
 
-    # ---------- CLI commands (ต้องอยู่ "ภายใน" create_app) ----------
+    # ---------- CLI commands (must be "inside" create_app) ----------
     @app.cli.command("seed_amenities")
     def seed_amenities():
         from app.models.property import Amenity
@@ -165,6 +170,6 @@ def create_app() -> Flask:
             db.session.commit()
 
         print("Seeded sample data ✅")
-    # ---------- จบ CLI commands ----------
+    # ---------- End CLI commands ----------
 
     return app

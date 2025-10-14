@@ -2,7 +2,7 @@
 
 {% block owner_content %}
 <div class="d-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 fw-bold mb-0">Owner Dashboard</h1>
+  <h1 class="h3 fw-bold mb-0">ภาพรวมหอพัก</h1>
   <div>
     <a class="btn btn-outline-secondary" href="{{ url_for('owner.trash') }}">
       <i data-feather="trash-2" class="me-1" style="width:16px;"></i> ถังขยะ
@@ -23,20 +23,20 @@
       <div class="flex-grow-1">
         <a href="{{ url_for('owner.edit_property', prop_id=p.id) }}" class="text-decoration-none text-dark fw-semibold">{{ p.dorm_name }}</a>
         <div class="small text-muted d-flex align-items-center">
-          <span>Workflow:</span>
+          <span>สถานะ:</span>
             {% if p.workflow_status == 'approved' %}
-                <span class="badge bg-success-subtle text-success-emphasis rounded-pill ms-2">Approved</span>
+                <span class="badge bg-success-subtle text-success-emphasis rounded-pill ms-2">อนุมัติแล้ว</span>
             {% elif p.workflow_status == 'submitted' %}
-                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill ms-2">Submitted</span>
+                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill ms-2">รออนุมัติ</span>
             {% elif p.workflow_status == 'rejected' %}
-                <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill ms-2">Rejected</span>
+                <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill ms-2">ถูกปฏิเสธ</span>
                 {% if rejected_notes.get(p.id) %}
                 <button type="button" class="btn btn-link p-0 ms-1" data-bs-toggle="modal" data-bs-target="#rejectionNoteModal-{{ p.id }}" title="ดูเหตุผลการปฏิเสธ">
                     <i data-feather="alert-circle" class="text-danger" style="width:16px; height:16px;"></i>
                 </button>
                 {% endif %}
             {% else %}
-                <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill ms-2">Draft</span>
+                <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill ms-2">แบบร่าง</span>
             {% endif %}
 
           <span class="ms-3">สถานะห้อง:
@@ -115,7 +115,11 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <p>{{ rejected_notes.get(p.id) }}</p>
+          {# --- vvv ส่วนที่แก้ไข vvv --- #}
+          <blockquote class="blockquote bg-light p-3 rounded" style="word-wrap: break-word; font-size: 0.95rem;">
+            <p class="mb-0">{{ rejected_notes.get(p.id) }}</p>
+          </blockquote>
+          {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
         </div>
         <div class="modal-footer">
           <a href="{{ url_for('owner.edit_property', prop_id=p.id) }}" class="btn btn-primary">ไปที่หน้าแก้ไข</a>

@@ -1,7 +1,5 @@
 import json
 from app.models.property import Property, Amenity
-from app.models.approval import AuditLog
-from app.extensions import db
 from .location_service import LocationDataHandler
 
 class PropertyService:
@@ -11,18 +9,25 @@ class PropertyService:
 
     def _prepare_data(self, data: dict) -> dict:
         """
-        ฟังก์ชัน Helper เพื่อจัดการข้อมูล room_type และ location_pin ก่อนบันทึก
+        ฟังก์ชัน Helper เพื่อจัดการข้อมูลก่อนบันทึก
         """
-        if data.get('room_type') == 'อื่นๆ':
+        # --- vvv ส่วนที่แก้ไข vvv ---
+        # เปลี่ยนจากการตรวจสอบ "อื่นๆ" เป็น "other"
+        if data.get('room_type') == 'other':
             other_type = data.get('other_room_type', '').strip()
             if other_type:
                 data['room_type'] = other_type
-        
+        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
         data.pop('other_room_type', None)
 
         location_json_str = data.pop('location_pin_json', None)
         data['location_pin'] = self.location_handler.parse_geojson_string(location_json_str)
-        
+
+        if data.get('line_id', '').strip() == '-':
+            data['line_id'] = None
+        if data.get('facebook_url', '').strip() == '-':
+            data['facebook_url'] = None
+
         return data
 
     def create(self, owner_id: int, data: dict) -> Property:
@@ -38,9 +43,16 @@ class PropertyService:
         return self.repo.add(prop)
 
     def update(self, owner_id: int, prop_id: int, data: dict):
+        # --- vvv START: แก้ไขปัญหา Circular Import โดยย้าย import เข้ามาในฟังก์ชัน vvv ---
+        from app.models.approval import AuditLog
+        from app.extensions import db
+        # --- ^^^ END: สิ้นสุดการแก้ไข ^^^ ---
+
         prop = self.repo.get(prop_id)
         if not prop or prop.owner_id != owner_id:
             return None
+
+        was_approved = prop.workflow_status == Property.WORKFLOW_APPROVED
 
         amenity_codes = data.pop('amenities', [])
         data.pop('images', None)
@@ -55,7 +67,9 @@ class PropertyService:
         else:
             prop.amenities = []
         
-        # --- vvv ส่วนที่แก้ไข: เพิ่ม Log เข้าไปใน session ก่อน commit vvv ---
+        if was_approved:
+            prop.workflow_status = Property.WORKFLOW_DRAFT
+
         log_entry = AuditLog.log(
             actor_type="owner",
             actor_id=owner_id,
@@ -64,7 +78,6 @@ class PropertyService:
             meta={"details": "Owner updated property info."}
         )
         db.session.add(log_entry)
-        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
-        self.repo.save(prop) # .save() จะทำการ commit ข้อมูลทั้งหมดใน session
+        self.repo.save(prop)
         return prop

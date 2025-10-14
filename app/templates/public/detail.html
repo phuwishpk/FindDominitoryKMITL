@@ -24,7 +24,8 @@
             <div class="card mb-4 shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">รายละเอียดหอพัก</h5>
-                    <p class="card-text"><strong>ประเภทห้อง:</strong> {{ prop.room_type }}</p>
+                    <p class="card-text"><strong>ประเภทห้อง:</strong> {{ ROOM_TYPES.get(prop.room_type, prop.room_type) }}</p>
+                    <p class="card-text"><strong>คำอธิบายเพิ่มเติม:</strong> {{ prop.additional_info or 'ไม่มีข้อมูลเพิ่มเติม' }}</p>
                     
                     <h6 class="mt-3">ราคาและค่าบริการ</h6>
                     <ul class="list-unstyled">
@@ -59,26 +60,26 @@
                     <h6 class="mt-3">แสดงความคิดเห็น</h6>
 
                     <form method="POST" action="">
-                     {{ form.hidden_tag() }}
+                       {{ form.hidden_tag() }}
 
-                    <div class="mb-2">
-                     {{ form.rating.label(class="form-label") }}
-                     {{ form.rating(class="form-select") }}
-                     {% for e in form.rating.errors %}
-                    <div class="text-danger small">{{ e }}</div>
-                     {% endfor %}
-                   </div>
+                       <div class="mb-2">
+                         {{ form.rating.label(class="form-label") }}
+                         {{ form.rating(class="form-select") }}
+                         {% for e in form.rating.errors %}
+                         <div class="text-danger small">{{ e }}</div>
+                         {% endfor %}
+                       </div>
 
-                     <div class="mb-3">
-                     {{ form.comment.label(class="form-label") }}
-                     {{ form.comment(class="form-control", rows=3, placeholder="พิมพ์ความคิดเห็นของคุณ...") }}
-                     {% for e in form.comment.errors %}
-                <div class="text-danger small">{{ e }}</div>
-                     {% endfor %}
-                 </div>
+                       <div class="mb-3">
+                         {{ form.comment.label(class="form-label") }}
+                         {{ form.comment(class="form-control", rows=3, placeholder="พิมพ์ความคิดเห็นของคุณ...") }}
+                         {% for e in form.comment.errors %}
+                         <div class="text-danger small">{{ e }}</div>
+                         {% endfor %}
+                       </div>
 
-                  {{ form.submit(class="btn btn-primary") }}
-                 </form>
+                       {{ form.submit(class="btn btn-primary") }}
+                   </form>
 
                     <hr>
                     <h6 class="mt-3">ความคิดเห็นทั้งหมด ({{ reviews|length }})</h6>

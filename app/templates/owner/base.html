@@ -84,13 +84,13 @@
 <div class="sidebar">
     <div>
         <h1 class="sidebar-header">
-            <a href="{{ url_for('owner.dashboard') }}">Owner Panel</a>
+            <a href="{{ url_for('owner.dashboard') }}">จัดการหอพัก</a>
         </h1>
         
         <ul class="nav flex-column sidebar-nav">
             <li class="nav-item">
                 <a class="nav-link {% if request.endpoint == 'owner.dashboard' %}active{% endif %}" href="{{ url_for('owner.dashboard') }}">
-                    <i data-feather="grid"></i> Dashboard
+                    <i data-feather="grid"></i> หน้าหลัก
                 </a>
             </li>
             <li class="nav-item">
@@ -98,21 +98,25 @@
                     <i data-feather="plus-circle"></i> สร้างประกาศใหม่
                 </a>
             </li>
+        </ul>
+    </div>
+    <div class="sidebar-footer">
+        <ul class="nav flex-column sidebar-nav">
             <li class="nav-item">
                 <hr style="border-color: #4a5568;">
                 <a class="nav-link" href="{{ url_for('public.index') }}">
                     <i data-feather="external-link"></i> ดูหน้าเว็บไซต์
                 </a>
             </li>
+            <li class="nav-item">
+                <form action="{{ url_for('auth.logout') }}" method="POST" class="nav-link p-0 m-0">
+                    {{ empty_form.csrf_token }}
+                    <button type="submit" class="btn nav-link w-100 text-start">
+                        <i data-feather="log-out"></i> ออกจากระบบ
+                    </button>
+                </form>
+            </li>
         </ul>
-    </div>
-    <div class="sidebar-footer">
-        <form action="{{ url_for('auth.logout') }}" method="POST" class="nav-link p-0 m-0">
-            {{ empty_form.csrf_token }}
-            <button type="submit" class="btn nav-link w-100 text-start">
-                <i data-feather="log-out"></i> ออกจากระบบ
-            </button>
-        </form>
     </div>
 </div>
 
