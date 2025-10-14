@@ -25,13 +25,19 @@ def dashboard():
     stats = dashboard_svc.get_stats()
     pie_chart = dashboard_svc.get_pie_chart_data()
     line_chart = dashboard_svc.get_line_chart_data()
+    workflow_chart = dashboard_svc.get_workflow_status_chart_data()
+    room_type_pie_chart = dashboard_svc.get_room_type_pie_chart_data()
     
     return render_template(
         "admin/dashboard.html", 
         stats=stats, 
         pie_chart=pie_chart, 
-        line_chart=line_chart
+        line_chart=line_chart,
+        workflow_chart=workflow_chart,
+        room_type_pie_chart=room_type_pie_chart
     )
+
+# --- (โค้ดส่วนที่เหลือเหมือนเดิม) ---
 
 # --- Property Approval Workflow ---
 @bp.route("/queue")
