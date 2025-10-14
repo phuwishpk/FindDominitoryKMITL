@@ -1,4 +1,4 @@
-# phuwishpk/finddominitorykmitl/FindDominitoryKMITL-owner-improvements/app/blueprints/owner/routes.py
+# app/blueprints/owner/routes.py
 
 from flask import render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
@@ -6,10 +6,11 @@ from sqlalchemy import func
 from datetime import datetime
 import json
 from . import bp
-from app.forms.owner import PropertyForm
+from app.forms.owner import PropertyForm, RequestReviewDeletionForm
 from app.forms.upload import UploadImageForm, ReorderImagesForm, EmptyForm
 from app.models.property import Property, PropertyImage, Amenity
 from app.models.approval import ApprovalRequest, AuditLog
+from app.models.review import Review
 from app.extensions import owner_required, db
 
 try:
@@ -109,12 +110,10 @@ def edit_property(prop_id: int):
             form.other_room_type.data = prop.room_type
         if prop.location_pin:
             form.location_pin_json.data = json.dumps(prop.location_pin)
-        # --- vvv ส่วนที่แก้ไข vvv ---
         if prop.line_id is None:
             form.line_id.data = "-"
         if prop.facebook_url is None:
             form.facebook_url.data = "-"
-        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
     upload_form = UploadImageForm()
     reorder_form = ReorderImagesForm()
     all_amenities = Amenity.query.all()
@@ -313,3 +312,58 @@ def permanently_delete_property(prop_id: int):
     db.session.commit()
     flash(f"ลบประกาศ '{dorm_name}' ออกจากระบบอย่างถาวรแล้ว", "success")
     return redirect(url_for('owner.trash'))
+
+@bp.route("/property/<int:prop_id>/reviews")
+@login_required
+@owner_required
+def property_reviews(prop_id: int):
+    prop = Property.query.get_or_404(prop_id)
+    if prop.owner_id != current_user.ref_id:
+        flash("คุณไม่มีสิทธิ์เข้าถึงหน้านี้", "danger")
+        return redirect(url_for('owner.dashboard'))
+    
+    review_repo = current_app.extensions["container"]["review_repo"]
+    
+    # --- vvv ส่วนที่แก้ไข vvv ---
+    reviews = review_repo.get_by_property_id(prop_id) # เปลี่ยนชื่อฟังก์ชัน
+    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+    
+    form = RequestReviewDeletionForm()
+    
+    return render_template("owner/property_reviews.html", prop=prop, reviews=reviews, form=form)
+
+
+@bp.route("/review/<int:review_id>/request-delete", methods=["POST"])
+@login_required
+@owner_required
+def request_delete_review(review_id: int):
+    form = RequestReviewDeletionForm()
+    review = current_app.extensions["container"]["review_repo"].get(review_id)
+    if not review:
+        flash("ไม่พบรีวิวที่ต้องการ", "danger")
+        return redirect(url_for('owner.dashboard'))
+
+    if form.validate_on_submit():
+        review_mgmt_svc = current_app.extensions["container"]["review_management_service"]
+        try:
+            review_mgmt_svc.request_deletion(
+                owner_id=current_user.ref_id,
+                review_id=review_id,
+                reason=form.reason.data
+            )
+            flash("ส่งคำร้องขอลบคอมเมนต์สำเร็จแล้ว", "success")
+        except (PermissionError, ValueError) as e:
+            flash(str(e), "danger")
+    else:
+        flash("กรุณากรอกเหตุผลในการขอลบ (ขั้นต่ำ 10 ตัวอักษร)", "danger")
+
+    return redirect(url_for('owner.property_reviews', prop_id=review.property_id))
+
+
+@bp.route("/review-reports")
+@login_required
+@owner_required
+def review_reports():
+    report_repo = current_app.extensions["container"]["review_report_repo"]
+    reports = report_repo.get_reports_by_owner(current_user.ref_id)
+    return render_template("owner/review_reports.html", reports=reports)

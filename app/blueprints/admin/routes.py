@@ -199,25 +199,19 @@ def owners():
 @admin_required
 def edit_owner(owner_id: int):
     owner = Owner.query.get_or_404(owner_id)
-    # ใช้ฟอร์มที่ถูกจำกัดฟิลด์
     form = AdminEditOwnerForm() 
     
-    # Pre-fill form on GET/initial display
     if request.method == "GET":
         form.is_active.data = owner.is_active
         
     if form.validate_on_submit():
-        # ตรวจสอบว่าสถานะมีการเปลี่ยนแปลงหรือไม่
         new_is_active = form.is_active.data
         old_is_active = owner.is_active
         
         if new_is_active != old_is_active:
             owner.is_active = new_is_active
-            
             action = "activate_owner" if new_is_active else "deactivate_owner"
             meta_detail = "Activated" if new_is_active else "Deactivated"
-            
-            # บันทึก AuditLog
             db.session.add(AuditLog.log(
                 "admin", current_user.ref_id, 
                 action, 
@@ -228,10 +222,8 @@ def edit_owner(owner_id: int):
         else:
             flash(f"ไม่มีการเปลี่ยนแปลงสถานะการใช้งานของ '{owner.full_name_th}'", "info")
             
-        # หลังจากการส่งฟอร์ม ให้แสดงผลหน้าเดิม
         return redirect(url_for('admin.edit_owner', owner_id=owner_id))
 
-    # ใช้เทมเพลตใหม่เพื่อแสดงข้อมูล Owner ทั้งหมด (View) พร้อมกับฟอร์มแก้ไขสถานะ (Edit)
     return render_template("admin/edit_owner.html", form=form, owner=owner)
 
 @bp.route("/owners/queue")
@@ -415,3 +407,40 @@ def logs():
     approval_repo = current_app.extensions["container"]["approval_repo"]
     pagination = approval_repo.list_logs(page=page)
     return render_template("admin/logs.html", pagination=pagination)
+
+# --- vvv เพิ่ม 3 Routes นี้เข้าไปท้ายไฟล์ vvv ---
+@bp.route("/reviews/deletion-queue")
+@login_required
+@admin_required
+def review_deletion_queue():
+    report_repo = current_app.extensions["container"]["review_report_repo"]
+    reports = report_repo.get_pending_reports()
+    return render_template("admin/review_deletion_queue.html", reports=reports, empty_form=EmptyForm())
+
+@bp.route("/review-report/<int:report_id>/approve", methods=["POST"])
+@login_required
+@admin_required
+def approve_review_deletion(report_id: int):
+    form = EmptyForm()
+    if form.validate_on_submit():
+        review_mgmt_svc = current_app.extensions["container"]["review_management_service"]
+        try:
+            review_mgmt_svc.process_report(current_user.ref_id, report_id, approve=True)
+            flash("อนุมัติการลบคอมเมนต์สำเร็จ", "success")
+        except (ValueError, PermissionError) as e:
+            flash(str(e), "danger")
+    return redirect(url_for('admin.review_deletion_queue'))
+
+@bp.route("/review-report/<int:report_id>/reject", methods=["POST"])
+@login_required
+@admin_required
+def reject_review_deletion(report_id: int):
+    form = EmptyForm()
+    if form.validate_on_submit():
+        review_mgmt_svc = current_app.extensions["container"]["review_management_service"]
+        try:
+            review_mgmt_svc.process_report(current_user.ref_id, report_id, approve=False)
+            flash("ปฏิเสธคำร้องขอลบคอมเมนต์สำเร็จ", "info")
+        except (ValueError, PermissionError) as e:
+            flash(str(e), "danger")
+    return redirect(url_for('admin.review_deletion_queue'))

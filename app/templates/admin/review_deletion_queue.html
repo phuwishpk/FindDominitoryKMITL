@@ -1,0 +1,54 @@
+{% extends 'admin/base.html' %}
+
+{% block admin_content %}
+<h1 class="h3 fw-bold mb-4">คิวคำร้องขอลบคอมเมนต์</h1>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 35%;">คอมเมนต์</th>
+                        <th style="width: 35%;">เหตุผลจาก Owner</th>
+                        <th>ผู้ส่ง</th>
+                        <th class="text-end">การกระทำ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                    <tr>
+                        <td>
+                            <p class="mb-1">"{{ report.review.comment }}"</p>
+                            <small class="text-muted">
+                                หอพัก: <a href="{{ url_for('admin.view_property', prop_id=report.property_id) }}">{{ report.review.property.dorm_name }}</a>
+                            </small>
+                        </td>
+                        <td>
+                            <p class="mb-0 fst-italic">{{ report.reason }}</p>
+                        </td>
+                        <td>Owner #{{ report.owner_id }}</td>
+                        <td class="text-end">
+                            <form action="{{ url_for('admin.approve_review_deletion', report_id=report.id) }}" method="POST" class="d-inline">
+                                {{ empty_form.csrf_token }}
+                                <button type="submit" class="btn btn-sm btn-success">อนุมัติลบ</button>
+                            </form>
+                            <form action="{{ url_for('admin.reject_review_deletion', report_id=report.id) }}" method="POST" class="d-inline ms-1">
+                                {{ empty_form.csrf_token }}
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">ปฏิเสธ</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-5">
+                            ไม่มีคำร้องขอลบคอมเมนต์ที่รอการตรวจสอบ
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

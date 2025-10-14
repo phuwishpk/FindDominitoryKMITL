@@ -1,0 +1,46 @@
+{% extends 'owner/base.html' %}
+
+{% block owner_content %}
+<h1 class="h3 fw-bold mb-4">ประวัติการส่งคำร้องขอลบคอมเมนต์</h1>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>คอมเมนต์</th>
+                        <th>เหตุผลที่ส่ง</th>
+                        <th>สถานะ</th>
+                        <th>วันที่ส่ง</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                    <tr>
+                        <td class="small text-muted">"{{ report.review.comment|truncate(80) }}"</td>
+                        <td>{{ report.reason|truncate(100) }}</td>
+                        <td>
+                            {% if report.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">รอตรวจสอบ</span>
+                            {% elif report.status == 'approved' %}
+                                <span class="badge bg-success">อนุมัติ</span>
+                            {% elif report.status == 'rejected' %}
+                                <span class="badge bg-danger">ปฏิเสธ</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ report.created_at|to_bkk_time }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-5">
+                            ยังไม่มีประวัติการส่งคำร้อง
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

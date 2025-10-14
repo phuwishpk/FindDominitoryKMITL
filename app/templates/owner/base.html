@@ -110,7 +110,6 @@
         width: calc(100% - 260px);
     }
 
-    /* Component Overrides */
     .card {
         border: 1px solid var(--border-color);
         border-radius: 0.75rem;
@@ -144,7 +143,6 @@
     .list-group-item:hover {
         background-color: #f9fafb;
     }
-
 </style>
 
 <div class="sidebar">
@@ -161,12 +159,18 @@
                         <i data-feather="grid"></i> หน้าหลัก
                     </a>
                 </li>
+                
                 <li class="nav-item">
-                    <a class="nav-link {% if 'property' in request.endpoint and request.endpoint != 'owner.trash' %}active{% endif %}" href="{{ url_for('owner.new_property') }}">
+                    <a class="nav-link {% if request.endpoint in ['owner.new_property', 'owner.edit_property'] %}active{% endif %}" href="{{ url_for('owner.new_property') }}">
                         <i data-feather="plus-circle"></i> สร้าง/แก้ไขประกาศ
                     </a>
                 </li>
-                 <li class="nav-item">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint in ['owner.review_reports', 'owner.property_reviews'] %}active{% endif %}" href="{{ url_for('owner.review_reports') }}">
+                        <i data-feather="message-square"></i> จัดการรีวิว
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'owner.trash' %}active{% endif %}" href="{{ url_for('owner.trash') }}">
                         <i data-feather="trash-2"></i> ถังขยะ
                     </a>

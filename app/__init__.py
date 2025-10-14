@@ -15,7 +15,8 @@ from .blueprints.api import bp as api_bp
 from .repositories.sqlalchemy.user_repo_sql import SqlUserRepo
 from .repositories.sqlalchemy.property_repo_sql import SqlPropertyRepo
 from .repositories.sqlalchemy.approval_repo_sql import SqlApprovalRepo
-from .repositories.sqlalchemy.review_repo_sql import SqlReviewRepo # 💡 เพิ่ม
+from .repositories.sqlalchemy.review_repo_sql import SqlReviewRepo
+from .repositories.sqlalchemy.review_report_repo_sql import SqlReviewReportRepo # เพิ่ม
 
 from .services.auth_service import AuthService
 from .services.property_service import PropertyService
@@ -23,14 +24,16 @@ from .services.search_service import SearchService
 from .services.approval_service import ApprovalService
 from .services.upload_service import UploadService
 from .services.dashboard_service import DashboardService 
-from .services.review_service import ReviewService # 💡 เพิ่ม
+from .services.review_service import ReviewService
+from .services.review_management_service import ReviewManagementService # เพิ่ม
 
 def register_dependencies(app: Flask):
     container = {}
     container["user_repo"] = SqlUserRepo()
     container["property_repo"] = SqlPropertyRepo()
     container["approval_repo"] = SqlApprovalRepo()
-    container["review_repo"] = SqlReviewRepo() # 💡 ลงทะเบียน Review Repository
+    container["review_repo"] = SqlReviewRepo()
+    container["review_report_repo"] = SqlReviewReportRepo() # เพิ่ม
     container["upload_service"] = UploadService(app.config.get("UPLOAD_FOLDER", "uploads"))
     container["auth_service"] = AuthService(
         user_repo=container["user_repo"],
@@ -39,7 +42,12 @@ def register_dependencies(app: Flask):
     container["property_service"] = PropertyService(container["property_repo"])
     container["search_service"] = SearchService(container["property_repo"])
     container["approval_service"] = ApprovalService(container["approval_repo"], container["property_repo"])
-    container["review_service"] = ReviewService(container["review_repo"]) # 💡 ลงทะเบียน Review Service
+    container["review_service"] = ReviewService(container["review_repo"])
+    container["review_management_service"] = ReviewManagementService( # เพิ่ม
+        review_repo=container["review_repo"],
+        report_repo=container["review_report_repo"],
+        prop_repo=container["property_repo"]
+    )
     container["dashboard_service"] = DashboardService(
         user_repo=container["user_repo"],
         property_repo=container["property_repo"],
@@ -64,7 +72,6 @@ def create_app() -> Flask:
     app.jinja_env.filters['to_bkk_time'] = format_as_bangkok_time
     app.jinja_env.filters['fromjson'] = from_json_string
 
-    # --- vvv ส่วนนี้จะส่งตัวแปลภาษาไปให้ทุกหน้าเว็บ vvv ---
     @app.context_processor 
     def inject_global_vars():
         room_type_map = dict(ROOM_TYPE_CHOICES)
@@ -72,7 +79,6 @@ def create_app() -> Flask:
             empty_form=EmptyForm(),
             ROOM_TYPES=room_type_map
         )
-    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
 
     with app.app_context():
         register_dependencies(app)
@@ -99,20 +105,13 @@ def create_app() -> Flask:
     def seed_amenities():
         from app.models.property import Amenity
         from app.extensions import db
-        # ✅ รายการสิ่งอำนวยความสะดวกทั้งหมดตามที่ระบุในภาพ
         data = [
-            ("pet","อนุญาตสัตว์เลี้ยง","Pets allowed"),
-            ("ac","เครื่องปรับอากาศ","Air conditioning"),
-            ("guard","รปภ.","Security guard"),
-            ("cctv","กล้อง CCTV","CCTV"),
-            ("fridge","ตู้เย็น","Refrigerator"),
-            ("bed","เตียง","Bed"),
-            ("heater","เครื่องทำน้ำอุ่น","Water heater"),
-            ("internet","อินเทอร์เน็ต","Internet"),
-            ("tv","ทีวี","TV"),
-            ("sofa","โซฟา","Sofa"),
-            ("wardrobe","ตู้เสื้อผ้า","Wardrobe"),
-            ("desk","โต๊ะทำงาน","Desk"),
+            ("pet","อนุญาตสัตว์เลี้ยง","Pets allowed"), ("ac","เครื่องปรับอากาศ","Air conditioning"),
+            ("guard","รปภ.","Security guard"), ("cctv","กล้อง CCTV","CCTV"),
+            ("fridge","ตู้เย็น","Refrigerator"), ("bed","เตียง","Bed"),
+            ("heater","เครื่องทำน้ำอุ่น","Water heater"), ("internet","อินเทอร์เน็ต","Internet"),
+            ("tv","ทีวี","TV"), ("sofa","โซฟา","Sofa"),
+            ("wardrobe","ตู้เสื้อผ้า","Wardrobe"), ("desk","โต๊ะทำงาน","Desk"),
         ]
         for code, th, en in data:
             if not Amenity.query.filter_by(code=code).first():
@@ -131,7 +130,8 @@ def create_app() -> Flask:
 
         if not Owner.query.filter_by(email="owner@example.com").first():
             o = Owner(full_name_th="เจ้าของตัวอย่าง", citizen_id="1101700203451",
-                      email="owner@example.com", password_hash=generate_password_hash("password"))
+                      email="owner@example.com", password_hash=generate_password_hash("password"),
+                      is_active=True, approval_status='approved') # Set owner as active
             db.session.add(o); db.session.commit()
             
             p = Property(owner_id=o.id, dorm_name="ตัวอย่างหอพัก", room_type="studio",

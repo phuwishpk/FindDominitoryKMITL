@@ -1,0 +1,81 @@
+{% extends 'owner/base.html' %}
+
+{% block owner_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-0">จัดการรีวิวสำหรับ: {{ prop.dorm_name }}</h1>
+        <a href="{{ url_for('owner.dashboard') }}" class="btn btn-sm btn-outline-secondary mt-2">← กลับสู่หน้าหลัก</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        รีวิวทั้งหมด ({{ reviews|length }} รายการ)
+    </div>
+    <div class="list-group list-group-flush">
+        {% for review in reviews %}
+        <div class="list-group-item">
+            <div class="d-flex w-100 justify-content-between">
+                <div>
+                    <span class="text-warning">
+                        {% for i in range(1, 6) %}{% if i <= review.rating %}★{% else %}☆{% endif %}{% endfor %}
+                    </span>
+                    <small class="text-muted ms-2">{{ review.created_at|to_bkk_time }}</small>
+                </div>
+                <div>
+                    {% if review.is_hidden %}
+                        <span class="badge bg-danger">ถูกซ่อน</span>
+                    {% elif review.reports and review.reports|selectattr('status', 'equalto', 'pending')|list %}
+                        <span class="badge bg-warning text-dark">รอตรวจสอบ</span>
+                    {% else %}
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#reportModal-{{ review.id }}">
+                            <i data-feather="flag" style="width:14px; height:14px;" class="me-1"></i> ขอลบคอมเมนต์
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+            <p class="mb-1 mt-2" style="white-space: pre-wrap;">{{ review.comment }}</p>
+        </div>
+        {% else %}
+        <div class="list-group-item text-center p-5">
+            <p class="text-muted">ยังไม่มีรีวิวสำหรับหอพักนี้</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% for review in reviews %}
+<div class="modal fade" id="reportModal-{{ review.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">ส่งคำร้องขอลบคอมเมนต์</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('owner.request_delete_review', review_id=review.id) }}" method="POST" novalidate>
+                <div class="modal-body">
+                    {{ form.csrf_token }}
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">คอมเมนต์ที่จะแจ้งลบ:</label>
+                        <blockquote class="blockquote bg-light p-2 border rounded" style="font-size: 0.9rem;">
+                            <p class="mb-0">"{{ review.comment }}"</p>
+                        </blockquote>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.reason.label(class="form-label fw-semibold") }}
+                        {{ form.reason(class="form-control" + (" is-invalid" if form.reason.errors else ""), rows=4) }}
+                        {% for error in form.reason.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    {{ form.submit(class="btn btn-danger") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

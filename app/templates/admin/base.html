@@ -172,13 +172,6 @@
         border-top: none;
     }
 
-    .list-group-item {
-        transition: background-color 0.2s ease;
-    }
-    .list-group-item:hover {
-        background-color: #f9fafb;
-    }
-
 </style>
 
 <div class="sidebar">
@@ -199,7 +192,7 @@
                 <li class="nav-item my-2"><hr class="mx-2" style="border-color: var(--border-color);"></li>
 
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint in ['admin.queue', 'admin.review_property', 'admin.review'] %}active{% endif %}" href="{{ url_for('admin.queue') }}">
+                    <a class="nav-link {% if request.endpoint in ['admin.queue', 'admin.review_property'] %}active{% endif %}" href="{{ url_for('admin.queue') }}">
                         <i data-feather="inbox"></i> คิวอนุมัติหอพัก
                     </a>
                 </li>
@@ -208,7 +201,11 @@
                         <i data-feather="user-check"></i> คิวอนุมัติ Owner
                     </a>
                 </li>
-
+                <li class="nav-item">
+                    <a class="nav-link {% if 'review' in request.endpoint %}active{% endif %}" href="{{ url_for('admin.review_deletion_queue') }}">
+                        <i data-feather="message-square"></i> คิวลบคอมเมนต์
+                    </a>
+                </li>
                 <li class="nav-item my-2"><hr class="mx-2" style="border-color: var(--border-color);"></li>
 
                 <li class="nav-item">
