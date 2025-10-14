@@ -2,22 +2,28 @@
 
 {% block content %}
 <style>
-    /* --- Modern Admin Theme --- */
+    /* --- New, Modern UI for Admin/Owner --- */
     :root {
-        --admin-bg: #F4F7FC; /* พื้นหลังโดยรวม */
-        --sidebar-bg: #1A202C; /* สีเข้มสำหรับ Sidebar */
-        --sidebar-text: #A0AEC0; /* สีเทาอ่อนสำหรับข้อความ */
-        --sidebar-text-hover: #FFFFFF; /* สีขาวเมื่อโฮเวอร์ */
-        --sidebar-active-bg: #4FAAFF; /* สีน้ำเงินสำหรับลิงก์ที่ Active */
-        --sidebar-active-text: #FFFFFF;
-        --card-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        --card-hover-shadow: 0 10px 25px rgba(0,0,0,0.15); /* เพิ่มเงาเมื่อ Hover */
-        --card-border-radius: 0.75rem;
-        --primary-color: #4FAAFF; /* Primary Blue for cards/highlights */
-        --primary-rgb: 79, 170, 255;
+        --primary: #004a99; /* KMITL Blue */
+        --primary-rgb: 0, 74, 153;
+        --primary-light: #e6f0ff;
+        --secondary: #6c757d;
+        --text-dark: #1f2937;
+        --text-light: #6b7280;
+        --bg-main: #f9fafb; /* Lighter background */
+        --bg-sidebar: #ffffff;
+        --border-color: #e5e7eb;
+        --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --card-shadow-hover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     }
 
-    body.admin-body { background-color: var(--admin-bg); }
+    /* Import Kanit Font */
+    @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap');
+
+    body.admin-body, body.owner-body {
+        background-color: var(--bg-main);
+        font-family: 'Kanit', sans-serif;
+    }
 
     .sidebar {
         position: fixed;
@@ -25,36 +31,47 @@
         left: 0;
         bottom: 0;
         width: 260px;
-        background-color: var(--sidebar-bg);
-        color: var(--sidebar-text);
+        background-color: var(--bg-sidebar);
+        border-right: 1px solid var(--border-color);
         padding: 1.5rem 1rem;
         display: flex;
         flex-direction: column;
         transition: all 0.3s;
         z-index: 100;
-        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
     }
     .sidebar-header {
-        font-size: 1.5rem;
-        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        margin-bottom: 2.5rem;
+        padding: 0 0.5rem;
+    }
+    .sidebar-header .icon-wrapper {
+        background-color: var(--primary);
         color: #fff;
-        text-align: center;
-        margin-bottom: 2rem;
-        letter-spacing: 1px;
+        border-radius: 0.5rem;
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
     }
     .sidebar-header a {
-        color: inherit;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-dark);
         text-decoration: none;
         transition: color 0.2s;
     }
     .sidebar-header a:hover {
-        color: var(--sidebar-active-bg);
+        color: var(--primary);
     }
     .sidebar-nav .nav-link {
         display: flex;
         align-items: center;
-        color: var(--sidebar-text);
-        padding: 0.75rem 1rem;
+        color: var(--text-light);
+        padding: 0.8rem 1rem;
         margin-bottom: 0.5rem;
         border-radius: 0.5rem;
         font-weight: 500;
@@ -64,84 +81,113 @@
         margin-right: 1rem;
         width: 20px;
         height: 20px;
+        color: var(--text-light);
+        transition: color 0.2s;
     }
     .sidebar-nav .nav-link:hover {
-        background-color: #2d3748;
-        color: var(--sidebar-text-hover);
+        background-color: var(--primary-light);
+        color: var(--primary);
+    }
+    .sidebar-nav .nav-link:hover .feather {
+        color: var(--primary);
     }
     .sidebar-nav .nav-link.active {
-        background-color: var(--sidebar-active-bg);
-        color: var(--sidebar-active-text);
-        box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.3);
+        background-color: var(--primary);
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
     }
-    .main-content {
-        margin-left: 260px;
-        padding: 1.5rem;
-        width: calc(100% - 260px);
-    }
-    
-    .card {
-        border: none;
-        border-radius: var(--card-border-radius);
-        box-shadow: var(--card-shadow);
-        transition: box-shadow 0.2s ease-in-out;
-    }
-    
-    /* Dynamic Hover Effect for Dashboard/Queue Cards */
-    .dynamic-card { transition: all 0.2s ease-in-out; }
-    .dynamic-card:hover {
-        box-shadow: var(--card-hover-shadow);
-        transform: translateY(-2px);
+    .sidebar-nav .nav-link.active .feather {
+        color: #fff;
     }
 
-    /* สไตล์ตารางที่ทันสมัย (Card per Row) */
+    .sidebar-footer {
+        margin-top: auto;
+    }
+
+    .main-content {
+        margin-left: 260px;
+        padding: 2.5rem; /* Increased padding */
+        width: calc(100% - 260px);
+    }
+
+    /* Component Overrides */
+    .card {
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        box-shadow: var(--card-shadow);
+        transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+    }
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--card-shadow-hover);
+    }
+    .card-header {
+        background-color: #fff;
+        border-bottom: 1px solid var(--border-color);
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    .btn-primary {
+        background-color: var(--primary);
+        border-color: var(--primary);
+        transition: all 0.2s ease;
+    }
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(var(--primary-rgb), 0.25);
+    }
+
     .table-container {
         background-color: #fff;
-        border-radius: var(--card-border-radius);
+        border-radius: 0.75rem;
         box-shadow: var(--card-shadow);
-        padding: 0;
+        padding: 1rem;
+        overflow-x: auto;
     }
     .table {
         border-collapse: separate;
-        border-spacing: 0 8px; /* เว้นช่องว่างระหว่างแถว */
+        border-spacing: 0;
+        width: 100%;
     }
     .table thead th {
-        border-bottom: 2px solid #e9ecef;
+        border-bottom: 2px solid var(--border-color);
         border-top: none;
-        padding-top: 0.5rem;
-        padding-bottom: 0.5rem;
-        padding-left: 1.25rem;
-        padding-right: 1.25rem;
-    }
-    .table tbody tr {
-        background-color: #fff;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.05); /* เงาอ่อนลง */
-        border-radius: 0.5rem;
-        transition: all 0.2s ease-in-out; 
+        padding: 0.75rem 1rem;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        color: var(--text-light);
+        letter-spacing: 0.5px;
+        white-space: nowrap;
     }
     .table tbody tr:hover {
-        /* ลูกเล่นเมื่อเมาส์ชี้ */
-        transform: translateY(-2px); 
-        box-shadow: 0 6px 16px rgba(0,0,0,0.1); 
+        background-color: var(--primary-light);
     }
-    .table tbody td, .table tbody th {
-        border-top: 8px solid var(--admin-bg); /* สร้างช่องว่างระหว่างแถว */
-        border-bottom: 0;
+    .table tbody td {
+        border-top: 1px solid var(--border-color);
+        padding: 1rem 1rem;
         vertical-align: middle;
-        padding: 1rem 0.75rem;
     }
-    /* แก้ปัญหาขอบซ้ายขวาของตาราง */
-    .table tbody tr td:first-child, .table tbody tr th:first-child { border-top-left-radius: 0.5rem; border-bottom-left-radius: 0.5rem; padding-left: 1.25rem; }
-    .table tbody tr td:last-child, .table tbody tr th:last-child { border-top-right-radius: 0.5rem; border-bottom-right-radius: 0.5rem; padding-right: 1.25rem; }
+    .table tbody tr:first-child td {
+        border-top: none;
+    }
+
+    .list-group-item {
+        transition: background-color 0.2s ease;
+    }
+    .list-group-item:hover {
+        background-color: #f9fafb;
+    }
 
 </style>
 
 <div class="sidebar">
     <div class="d-flex flex-column h-100">
         <div>
-            <h1 class="sidebar-header">
+            <div class="sidebar-header">
+                <span class="icon-wrapper"><i data-feather="shield"></i></span>
                 <a href="{{ url_for('admin.dashboard') }}">Admin Panel</a>
-            </h1>
+            </div>
             
             <ul class="nav flex-column sidebar-nav">
                 <li class="nav-item">
@@ -150,7 +196,7 @@
                     </a>
                 </li>
                 
-                <li class="nav-item my-2"><hr style="border-color: #4a5568; margin-top:0; margin-bottom:0;"></li>
+                <li class="nav-item my-2"><hr class="mx-2" style="border-color: var(--border-color);"></li>
 
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint in ['admin.queue', 'admin.review_property', 'admin.review'] %}active{% endif %}" href="{{ url_for('admin.queue') }}">
@@ -163,7 +209,7 @@
                     </a>
                 </li>
 
-                <li class="nav-item my-2"><hr style="border-color: #4a5568; margin-top:0; margin-bottom:0;"></li>
+                <li class="nav-item my-2"><hr class="mx-2" style="border-color: var(--border-color);"></li>
 
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint in ['admin.properties', 'admin.view_property', 'admin.admin_edit_property', 'admin.deleted_properties'] %}active{% endif %}" href="{{ url_for('admin.properties') }}">
@@ -189,8 +235,8 @@
         </div>
         <div class="mt-auto">
              <ul class="nav flex-column sidebar-nav">
+                <li class="nav-item"><hr class="mx-2" style="border-color: var(--border-color);"></li>
                 <li class="nav-item">
-                    <hr style="border-color: #4a5568;">
                     <a class="nav-link" href="{{ url_for('public.index') }}">
                         <i data-feather="external-link"></i> ดูหน้าเว็บไซต์
                     </a>
@@ -209,9 +255,6 @@
 </div>
 
 <div class="main-content">
-    {# --- vvv บรรทัดนี้ถูกลบออกเพื่อแก้ปัญหาการแจ้งเตือนซ้ำซ้อน vvv --- #}
-    {# {% include '_shared/flashes.html' %} #}
-    {# --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ --- #}
     {% block admin_content %}{% endblock %}
 </div>
 {% endblock %}
