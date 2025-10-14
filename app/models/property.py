@@ -1,5 +1,6 @@
 from datetime import datetime
 from app.extensions import db
+from app.models.review import Review 
 
 class PropertyAmenity(db.Model):
     __tablename__ = "property_amenities"
@@ -52,7 +53,14 @@ class Property(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     deleted_at = db.Column(db.DateTime, nullable=True)
+    reviews = db.relationship(
+    "Review",  # ชื่อ Model รีวิว
+    backref="property",  # ให้ฝั่ง Review เข้าถึง property ได้
+    lazy="dynamic",  # ดึงเฉพาะเมื่อใช้ query
+    cascade="all, delete-orphan"  # ลบหอพัก -> รีวิวหายตาม
+)
 
+    reviews = db.relationship("Review", backref="property", cascade="all, delete-orphan", lazy=True)
     images = db.relationship(
         "PropertyImage",
         back_populates="property",

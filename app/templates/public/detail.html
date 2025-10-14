@@ -1,48 +1,59 @@
 {% extends 'public/public_base.html' %}
 
-
 {% block content %}
 <div class="container my-5">
     <a href="{{ url_for('public.index') }}" class="btn btn-sm btn-outline-secondary mb-3">← กลับสู่หน้าหลัก</a>
-    
-    {% if not prop %}
-    <div class="alert alert-danger">ไม่พบประกาศนี้ หรือประกาศยังไม่ได้รับการอนุมัติ</div>
-    {% else %}
 
+    {% if not prop %}
+        <div class="alert alert-danger">ไม่พบประกาศนี้ หรือประกาศยังไม่ได้รับการอนุมัติ</div>
+    {% else %}
     <div class="row">
-        
+
         <div class="col-lg-8">
             <div class="d-flex align-items-center mb-3">
                 <h1 class="mb-0">{{ prop.dorm_name }}</h1>
                 {% if prop.availability_status == 'vacant' %}
                     <span class="badge bg-success fs-6 ms-3">ห้องว่าง</span>
                 {% else %}
-                    {# --- vvv ส่วนที่แก้ไข vvv --- #}
                     <span class="badge bg-danger text-white fs-6 ms-3">ห้องเต็ม</span>
-                    {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
                 {% endif %}
             </div>
 
             <div id="propertyCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
                 <div class="carousel-inner rounded shadow-sm">
                     {% for img in prop.images %}
-                    <div class="carousel-item {% if loop.first %}active{% endif %}">
-                        <img src="/{{ img.file_path }}" class="d-block w-100" alt="{{ prop.dorm_name }}" style="height: 450px; object-fit: cover;">
-                    </div>
+                        {% set raw_path = img.file_path %}
+                        {% if raw_path.startswith('http') %}
+                            {% set img_url = raw_path %}
+                        {% elif raw_path.startswith('static/') %}
+                            {% set img_url = url_for('static', filename=raw_path.replace('static/', '')) %}
+                        {% elif raw_path.startswith('uploads/') or raw_path.startswith('/uploads/') %}
+                            {% set img_url = url_for('serve_uploads', filename=raw_path.replace('/uploads/', '').replace('uploads/', '')) %}
+                        {% else %}
+                            {% set img_url = url_for('static', filename=raw_path) %}
+                        {% endif %}
+
+                        <div class="carousel-item {% if loop.first %}active{% endif %}">
+                            <img src="{{ img_url }}" 
+                                 class="d-block w-100 property-img"
+                                 alt="{{ prop.dorm_name }}"
+                                 style="height: 450px; object-fit: cover; cursor: zoom-in;"
+                                 data-src="{{ img_url }}">
+                        </div>
                     {% else %}
-                    <div class="carousel-item active">
-                        <div class="d-flex justify-content-center align-items-center bg-light text-muted" style="height: 450px;">ไม่มีรูปภาพ</div>
-                    </div>
+                        <div class="carousel-item active">
+                            <div class="d-flex justify-content-center align-items-center bg-light text-muted" style="height: 450px;">ไม่มีรูปภาพ</div>
+                        </div>
                     {% endfor %}
                 </div>
-                
+
                 {% if prop.images|length > 1 %}
                 <button class="carousel-control-prev" type="button" data-bs-target="#propertyCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="carousel-control-prev-icon"></span>
                     <span class="visually-hidden">Previous</span>
                 </button>
                 <button class="carousel-control-next" type="button" data-bs-target="#propertyCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="carousel-control-next-icon"></span>
                     <span class="visually-hidden">Next</span>
                 </button>
                 {% endif %}
@@ -51,13 +62,13 @@
             <div class="card mb-4 shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">รายละเอียดหอพัก</h5>
-                    <p class="card-text"><strong>ประเภทห้อง:</strong> {{ ROOM_TYPES.get(prop.room_type, prop.room_type) }}</p>
-                    <p class="card-text"><strong>คำอธิบายเพิ่มเติม:</strong> {{ prop.additional_info or 'ไม่มีข้อมูลเพิ่มเติม' }}</p>
-                    
+                    <p><strong>ประเภทห้อง:</strong> {{ ROOM_TYPES.get(prop.room_type, prop.room_type) }}</p>
+                    <p><strong>คำอธิบายเพิ่มเติม:</strong> {{ prop.additional_info or 'ไม่มีข้อมูลเพิ่มเติม' }}</p>
+
                     <h6 class="mt-3">ราคาและค่าบริการ</h6>
                     <ul class="list-unstyled">
-                        <li><strong>ค่าเช่าต่อเดือน:</strong> {{ "{:,.0f}".format(prop.rent_price) if prop.rent_price is not none else 'N/A' }} บาท</li>
-                        <li><strong>เงินประกัน:</strong> {{ "{:,.0f}".format(prop.deposit_amount) if prop.deposit_amount is not none else 'N/A' }} บาท</li>
+                        <li><strong>ค่าเช่าต่อเดือน:</strong> {{ "{:,.0f}".format(prop.rent_price) if prop.rent_price else 'N/A' }} บาท</li>
+                        <li><strong>เงินประกัน:</strong> {{ "{:,.0f}".format(prop.deposit_amount) if prop.deposit_amount else 'N/A' }} บาท</li>
                         <li><strong>ค่าน้ำ/ค่าไฟ:</strong> น้ำ {{ prop.water_rate or 'N/A' }} / ไฟ {{ prop.electric_rate or 'N/A' }}</li>
                     </ul>
 
@@ -72,31 +83,114 @@
                 </div>
             </div>
 
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">รีวิวจากผู้ใช้</h5>
+
+                    {% if reviews %}
+                        <div class="mb-3">
+                            <strong>คะแนนเฉลี่ย:</strong>
+                            <span class="text-warning fs-5">
+                                {% for i in range(1,6) %}
+                                    {% if i <= avg_rating|round(0, 'floor') %}
+                                        ★
+                                    {% else %}
+                                        <span style="color:#ccc;">★</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </span>
+                            <span class="text-muted">({{ avg_rating }}/5)</span>
+                        </div>
+
+                        {% for review in reviews %}
+                        <div class="border-bottom pb-2 mb-3">
+                            <div>
+                                {% for i in range(1,6) %}
+                                    {% if i <= review.rating %}
+                                        <i class="ri-star-fill text-warning"></i>
+                                    {% else %}
+                                        <i class="ri-star-line text-muted"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <p class="mb-1">{{ review.comment }}</p>
+                            <small class="text-muted">เมื่อ {{ review.created_at.strftime('%d/%m/%Y') if review.created_at else 'N/A' }}</small>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">ยังไม่มีรีวิวสำหรับหอพักนี้</p>
+                    {% endif %}
+                    
+                    <hr>
+                    <h6>เพิ่มรีวิวของคุณ</h6>
+                    <form method="POST" action="{{ url_for('public.property_add_review', prop_id=prop.id) }}">
+                        {{ form.hidden_tag() }}
+
+                        <div class="mb-3">
+                            <label class="form-label">ให้คะแนนหอพัก</label>
+                            <div class="star-rating mb-2">
+                                {% for i in range(5, 0, -1) %}
+                                    <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}" {% if form.rating.data|int == i %}checked{% endif %}>
+                                    <label for="star{{ i }}" title="{{ i }} ดาว">★</label>
+                                {% endfor %}
+                            </div>
+                            {% for error in form.rating.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.comment.label(class="form-label") }}
+                            {{ form.comment(class="form-control" + (' is-invalid' if form.comment.errors else ''), rows=3, placeholder="เขียนรีวิวของคุณที่นี่...") }}
+                            {% for error in form.comment.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <button type="submit" class="btn btn-success">ส่งรีวิว</button>
+                    </form>
+                </div>
+            </div>
         </div>
 
         <div class="col-lg-4">
-            <div class="card sticky-top shadow-lg" style="top: 20px;">
+            <div class="card sticky-top shadow-lg" style="top: 100px;">
                 <div class="card-body">
                     <h5 class="card-title text-success">ติดต่อสอบถาม</h5>
-                    <p class="mb-2"><strong>โทรศัพท์:</strong> <a href="tel:{{ prop.contact_phone }}">{{ prop.contact_phone or 'N/A' }}</a></p>
-                    <p class="mb-2"><strong>LINE ID:</strong> {{ prop.line_id or 'N/A' }}</p>
-                    <p class="mb-2"><strong>Facebook:</strong> <a href="{{ prop.facebook_url }}" target="_blank">{{ prop.facebook_url or 'N/A' }}</a></p>
-                    
+
+                    <p><strong>โทรศัพท์:</strong> 
+                        <a href="tel:{{ prop.contact_phone }}">{{ prop.contact_phone or 'N/A' }}</a>
+                    </p>
+
+                    <p>
+                        <strong><span style="color: #00b900;">LINE ID:</span></strong>
+                        {{ prop.line_id or 'N/A' }}
+                    </p>
+
+                    <p>
+                        <strong><span style="color: #1877F2;">Facebook:</span></strong>
+                        {% if prop.facebook_url %}
+                            <a href="{{ prop.facebook_url }}" target="_blank" style="color: #1877F2; text-decoration: none;">
+                                {{ prop.facebook_url }}
+                            </a>
+                        {% else %}
+                            <span style="color: #999;">N/A</span>
+                        {% endif %}
+                    </p>
+
                     <hr>
                     <h5 class="mt-3">ตำแหน่งที่ตั้ง</h5>
-                    <p class="card-text">{{ prop.soi or 'N/A' }} ถ. {{ prop.road or 'N/A' }}</p>
-                    
+                    <p>{{ prop.soi or 'N/A' }} ถ. {{ prop.road or 'N/A' }}</p>
+
                     <div id="map" style="height: 250px; width: 100%;" class="border rounded mb-3"></div>
-                    
-                    <div class="mt-2 text-center">
-                        {% if prop.location_pin and prop.location_pin.coordinates %}
+
+                    {% if prop.location_pin and prop.location_pin.coordinates %}
                         <a href="https://www.google.com/maps/search/?api=1&query={{ prop.location_pin.coordinates[1] }},{{ prop.location_pin.coordinates[0] }}" target="_blank" class="btn btn-sm btn-outline-success w-100">
                             เปิดใน Google Maps
                         </a>
-                        {% else %}
+                    {% else %}
                         <p class="text-danger small">ไม่มีข้อมูลพิกัด</p>
-                        {% endif %}
-                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -106,24 +200,93 @@
 {% endblock %}
 
 {% block page_scripts %}
+<style>
+.star-rating {
+    direction: rtl;
+    display: inline-flex;
+    justify-content: flex-start;
+}
+.star-rating input { display: none; }
+.star-rating label {
+    font-size: 2rem;
+    color: #ccc;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.star-rating input:checked ~ label,
+.star-rating label:hover,
+.star-rating label:hover ~ label { color: #ffcc00; }
+
+#imageLightbox {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9);
+    justify-content: center;
+    align-items: center;
+}
+#lightboxImg {
+    max-width: 90%;
+    max-height: 85%;
+    border-radius: 12px;
+    box-shadow: 0 0 25px rgba(255,255,255,0.3);
+    animation: zoomIn 0.3s ease;
+}
+@keyframes zoomIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+#imageLightbox .close {
+    position: absolute;
+    top: 20px; right: 40px;
+    color: white;
+    font-size: 40px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+#imageLightbox .close:hover { color: #ffcc00; }
+</style>
+
+<div id="imageLightbox">
+    <span class="close">×</span>
+    <img id="lightboxImg" alt="Zoomed Image">
+</div>
+
 <script>
-    {% if prop and prop.location_pin and prop.location_pin.coordinates %}
-    const lng = {{ prop.location_pin.coordinates[0] }};
-    const lat = {{ prop.location_pin.coordinates[1] }};
+// === MAP ===
+{% if prop and prop.location_pin and prop.location_pin.coordinates %}
+const lng = {{ prop.location_pin.coordinates[0] }};
+const lat = {{ prop.location_pin.coordinates[1] }};
+const map = L.map('map', { scrollWheelZoom: false }).setView([lat, lng], 16);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+L.marker([lat, lng]).addTo(map).bindPopup('<b>{{ prop.dorm_name }}</b>').openPopup();
+{% endif %}
 
-    const map = L.map('map').setView([lat, lng], 16); 
+// === LIGHTBOX ===
+const lightbox = document.getElementById('imageLightbox');
+const lightboxImg = document.getElementById('lightboxImg');
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
-
-    L.marker([lat, lng]).addTo(map)
-        .bindPopup('<b>{{ prop.dorm_name }}</b><br>พิกัดที่ปักหมุด.')
-        .openPopup();
-    
-    {% else %}
-    document.getElementById('map').innerHTML = '<div class="text-center p-5 text-muted">ไม่พบข้อมูลพิกัด</div>';
-    {% endif %}
+document.querySelectorAll('.property-img').forEach(img => {
+    img.addEventListener('click', () => {
+        lightboxImg.src = img.dataset.src || img.src;
+        lightbox.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    });
+});
+document.querySelector('#imageLightbox .close').addEventListener('click', () => {
+    lightbox.style.display = 'none';
+    document.body.style.overflow = '';
+});
+lightbox.addEventListener('click', (e) => {
+    if (e.target.id === 'imageLightbox') {
+        lightbox.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+});
 </script>
 {% endblock %}

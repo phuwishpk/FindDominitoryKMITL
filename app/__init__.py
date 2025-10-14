@@ -4,7 +4,7 @@ from .config import Config
 
 from .utils.helpers import format_as_bangkok_time, from_json_string
 from .forms.upload import EmptyForm 
-from .forms.owner import ROOM_TYPE_CHOICES # <-- เพิ่มบรรทัดนี้
+from .forms.owner import ROOM_TYPE_CHOICES 
 
 from .blueprints.public import bp as public_bp
 from .blueprints.owner import bp as owner_bp
@@ -15,6 +15,7 @@ from .blueprints.api import bp as api_bp
 from .repositories.sqlalchemy.user_repo_sql import SqlUserRepo
 from .repositories.sqlalchemy.property_repo_sql import SqlPropertyRepo
 from .repositories.sqlalchemy.approval_repo_sql import SqlApprovalRepo
+from .repositories.sqlalchemy.review_repo_sql import SqlReviewRepo # 💡 เพิ่ม
 
 from .services.auth_service import AuthService
 from .services.property_service import PropertyService
@@ -22,12 +23,14 @@ from .services.search_service import SearchService
 from .services.approval_service import ApprovalService
 from .services.upload_service import UploadService
 from .services.dashboard_service import DashboardService 
+from .services.review_service import ReviewService # 💡 เพิ่ม
 
 def register_dependencies(app: Flask):
     container = {}
     container["user_repo"] = SqlUserRepo()
     container["property_repo"] = SqlPropertyRepo()
     container["approval_repo"] = SqlApprovalRepo()
+    container["review_repo"] = SqlReviewRepo() # 💡 ลงทะเบียน Review Repository
     container["upload_service"] = UploadService(app.config.get("UPLOAD_FOLDER", "uploads"))
     container["auth_service"] = AuthService(
         user_repo=container["user_repo"],
@@ -36,6 +39,7 @@ def register_dependencies(app: Flask):
     container["property_service"] = PropertyService(container["property_repo"])
     container["search_service"] = SearchService(container["property_repo"])
     container["approval_service"] = ApprovalService(container["approval_repo"], container["property_repo"])
+    container["review_service"] = ReviewService(container["review_repo"]) # 💡 ลงทะเบียน Review Service
     container["dashboard_service"] = DashboardService(
         user_repo=container["user_repo"],
         property_repo=container["property_repo"],
@@ -95,13 +99,20 @@ def create_app() -> Flask:
     def seed_amenities():
         from app.models.property import Amenity
         from app.extensions import db
+        # ✅ รายการสิ่งอำนวยความสะดวกทั้งหมดตามที่ระบุในภาพ
         data = [
-            ("pet","อนุญาตสัตว์เลี้ยง","Pets allowed"),("ac","เครื่องปรับอากาศ","Air conditioning"),
-            ("guard","รปภ.","Security guard"),("cctv","กล้อง CCTV","CCTV"),
-            ("fridge","ตู้เย็น","Refrigerator"),("bed","เตียง","Bed"),
-            ("heater","เครื่องทำน้ำอุ่น","Water heater"),("internet","อินเทอร์เน็ต","Internet"),
-            ("tv","ทีวี","TV"),("sofa","โซฟา","Sofa"),
-            ("wardrobe","ตู้เสื้อผ้า","Wardrobe"),("desk","โต๊ะทำงาน","Desk"),
+            ("pet","อนุญาตสัตว์เลี้ยง","Pets allowed"),
+            ("ac","เครื่องปรับอากาศ","Air conditioning"),
+            ("guard","รปภ.","Security guard"),
+            ("cctv","กล้อง CCTV","CCTV"),
+            ("fridge","ตู้เย็น","Refrigerator"),
+            ("bed","เตียง","Bed"),
+            ("heater","เครื่องทำน้ำอุ่น","Water heater"),
+            ("internet","อินเทอร์เน็ต","Internet"),
+            ("tv","ทีวี","TV"),
+            ("sofa","โซฟา","Sofa"),
+            ("wardrobe","ตู้เสื้อผ้า","Wardrobe"),
+            ("desk","โต๊ะทำงาน","Desk"),
         ]
         for code, th, en in data:
             if not Amenity.query.filter_by(code=code).first():
