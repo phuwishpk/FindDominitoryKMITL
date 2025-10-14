@@ -5,17 +5,17 @@ from app.models.property import Amenity, Property # <-- เพิ่มการ
 @bp.get("/")
 def index():
     """
-    (แก้ไข) แสดงหน้าหลักโดยดึงข้อมูลหอพักที่อัปเดตล่าสุด 4 รายการ
+    (แก้ไข) แสดงหน้าหลักโดยดึงข้อมูลหอพักที่อัปเดตล่าสุด 8 รายการ
     """
     svc = current_app.extensions["container"]["search_service"]
     
     # --- ส่วนที่แก้ไข ---
     # เราจะส่ง filter 'sort' เพื่อบอกให้ repository เรียงข้อมูลตามวันที่อัปเดตล่าสุด
-    # และกำหนด per_page เป็น 4 เพื่อดึงแค่ 4 รายการ
+    # และกำหนด per_page เป็น 8 เพื่อดึงแค่ 8 รายการ
     filters = { 
         "sort": "updated_at_desc" 
     }
-    per_page = 4
+    per_page = 8
     # --- สิ้นสุดการแก้ไข ---
     
     result = svc.search(filters, page=1, per_page=per_page) 
@@ -71,10 +71,10 @@ def search():
     # --- 4. Render Template ---
     return render_template(
         "public/search.html", 
-        amenities=all_amenities,      # สำหรับ Checkbox
-        filters=filters,              # สำหรับ pre-fill ฟอร์ม
+        amenities=all_amenities,       # สำหรับ Checkbox
+        filters=filters,               # สำหรับ pre-fill ฟอร์ม
         amenities_list=amenities_list, # สำหรับ pre-check checkboxes
-        **result_data                 # ส่งผลการค้นหา (items, page, total, etc.)
+        **result_data                  # ส่งผลการค้นหา (items, page, total, etc.)
     )
 
 @bp.get("/property/<int:prop_id>")
@@ -85,3 +85,8 @@ def property_detail(prop_id: int):
     if not prop or prop.workflow_status != 'approved':
         return render_template("public/detail.html", prop=None), 404
     return render_template("public/detail.html", prop=prop)
+
+@bp.get("/contact")
+def contact():
+    """แสดงหน้าติดต่อเรา"""
+    return render_template("public/contact.html")
