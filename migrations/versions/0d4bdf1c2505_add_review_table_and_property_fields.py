@@ -1,7 +1,7 @@
 """add review table and property fields
 
 Revision ID: 0d4bdf1c2505
-Revises: b2c3d4e5f6a7
+Revises: 77650a36f034
 Create Date: 2025-10-13 02:29:08.921178
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '0d4bdf1c2505'
-down_revision = 'b2c3d4e5f6a7'
+down_revision = '77650a36f034'
 branch_labels = None
 depends_on = None
 
