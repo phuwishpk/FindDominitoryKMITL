@@ -2,9 +2,9 @@ from flask import render_template, request, current_app, redirect, url_for, flas
 from flask_login import current_user
 from . import bp
 from app.forms.review import ReviewForm
-from app.models.review import Review
-from app.extensions import db
-from app.models.property import Amenity, Property
+# ลบ: from app.models.review import Review 
+# ลบ: from app.extensions import db
+from app.models.property import Amenity, Property # ลบ Property เพราะไม่ได้ใช้ตรงๆ
 
 
 @bp.get("/")
@@ -29,23 +29,28 @@ def property_add_review(prop_id):
     repo = current_app.extensions["container"]["property_repo"]
     prop = repo.get(prop_id)
 
+    # หากหอพักไม่ได้รับการอนุมัติหรือไม่พบ ให้ Redirect กลับไปที่หน้า Detail ซึ่งจะจัดการ 404 เอง
     if not prop or prop.workflow_status != 'approved':
-        return render_template("public/detail.html", prop=None), 404
+        return redirect(url_for("public.property_detail", prop_id=prop_id))
 
     form = ReviewForm()
 
     if form.validate_on_submit():
-        review = Review(
+        review_svc = current_app.extensions["container"]["review_service"]
+        
+        # 💡 แก้ไข: ใช้ current_user.ref_id (int) สำหรับ user_id 
+        user_ref_id = current_user.ref_id if current_user.is_authenticated else None
+
+        review_svc.add_review(
             property_id=prop_id,
-            rating=form.rating.data,
+            user_id=user_ref_id,
             comment=form.comment.data,
-            user_id=current_user.id if current_user.is_authenticated else None
+            # rating เป็น string จาก form ต้องแปลงเป็น int ก่อนส่งเข้า service
+            rating=int(form.rating.data) 
         )
-        db.session.add(review)
-        db.session.commit()
         flash("รีวิวของคุณถูกบันทึกแล้ว", "success")
 
-    # ✅ กลับไปหน้าเดิม (อย่า render ตรงนี้ เพราะเราต้องดึงข้อมูลใหม่ใน property_detail)
+    # ✅ กลับไปหน้าเดิม
     return redirect(url_for("public.property_detail", prop_id=prop_id))
 
 
@@ -58,9 +63,12 @@ def property_detail(prop_id: int):
     if not prop or prop.workflow_status != 'approved':
         return render_template("public/detail.html", prop=None), 404
 
-    # ✅ ดึงรีวิวทั้งหมด + คำนวณคะแนนเฉลี่ย
-    reviews = Review.query.filter_by(property_id=prop_id).order_by(Review.created_at.desc()).all()
-    avg_rating = round(sum(r.rating for r in reviews) / len(reviews), 1) if reviews else 0.0
+    # 💡 แก้ไข: ใช้ ReviewService ดึงรีวิวและคะแนนเฉลี่ย
+    review_svc = current_app.extensions["container"]["review_service"]
+    reviews_data = review_svc.get_reviews_and_average_rating(prop_id)
+    
+    reviews = reviews_data["reviews"]
+    avg_rating = reviews_data["average_rating"]
 
     # ✅ สร้างฟอร์มใหม่ทุกครั้ง
     form = ReviewForm()
