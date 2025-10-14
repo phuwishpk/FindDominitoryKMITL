@@ -117,7 +117,7 @@
             <div class="col-md-6">
                 <div class="form-floating">
                     {{ form.password(class="form-control form-control-custom" + (" is-invalid" if form.password.errors else ""), placeholder="รหัสผ่าน") }}
-                    <label for="password">รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)</label>
+                    <label for="password">รหัสผ่าน</label>
                 </div>
                 {% if form.password.errors %}<div class="invalid-feedback-custom">{% for error in form.password.errors %}{{ error }}{% endfor %}</div>{% endif %}
             </div>
