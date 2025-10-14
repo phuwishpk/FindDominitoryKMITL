@@ -69,10 +69,10 @@ class SqlPropertyRepo:
             codes_list = [c.strip() for c in codes.split(',') if c.strip()]
             if codes_list:
                 q = (q.join(PropertyAmenity, PropertyAmenity.property_id == Property.id)
-                       .join(Amenity, Amenity.id == PropertyAmenity.amenity_id)
-                       .filter(Amenity.code.in_(codes_list))
-                       .group_by(Property.id)
-                       .having(func.count(func.distinct(Amenity.code)) == len(codes_list)))
+                      .join(Amenity, Amenity.id == PropertyAmenity.amenity_id)
+                      .filter(Amenity.code.in_(codes_list))
+                      .group_by(Property.id)
+                      .having(func.count(func.distinct(Amenity.code)) == len(codes_list)))
         
         # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
         return q
@@ -108,3 +108,19 @@ class SqlPropertyRepo:
         ).filter(
             Property.road.isnot(None), Property.road != ''
         ).group_by(Property.road).order_by(func.count(Property.id).desc()).limit(limit).all()
+
+    # --- vvv ส่วนที่แก้ไข: เพิ่มฟังก์ชันที่ขาดหายไป vvv ---
+    def get_property_counts_by_room_type(self, limit: int = 5):
+        """นับจำนวนหอพักตามประเภทห้อง (room_type)"""
+        return db.session.query(
+            Property.room_type, func.count(Property.id).label('count')
+        ).filter(
+            Property.room_type.isnot(None), Property.room_type != ''
+        ).group_by(Property.room_type).order_by(func.count(Property.id).desc()).limit(limit).all()
+    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
+
+    def get_property_counts_by_workflow_status(self):
+        """นับจำนวนหอพักในแต่ละสถานะ (workflow_status)"""
+        return db.session.query(
+            Property.workflow_status, func.count(Property.id).label('count')
+        ).filter(Property.deleted_at.is_(None)).group_by(Property.workflow_status).all()
