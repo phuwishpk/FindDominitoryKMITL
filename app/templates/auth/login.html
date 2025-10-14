@@ -53,9 +53,6 @@
         font-size: 1.5rem;
     }
 
-    /* --- Modern Role Selector --- */
-    /* REMOVED .role-selector CSS */
-
     /* --- Form Fields --- */
     .form-control-custom {
         background-color: rgba(243, 244, 246, 0.7);
@@ -122,8 +119,6 @@
 
     <form method="post" novalidate id="login-form">
         {{ form.csrf_token }}
-        {# REMOVED: {{ form.role(id='role-input', class_='d-none') }} #}
-        {# REMOVED: Role Selector DIV #}
 
         <div class="mb-3">
             {{ form.username(class_='form-control form-control-custom', placeholder='ชื่อผู้ใช้') }}
@@ -143,6 +138,10 @@
         <div class="d-grid mb-3">
             <button type="submit" class="btn btn-submit-custom">เข้าสู่ระบบ</button>
         </div>
+
+        <div class="d-grid mb-3">
+            <a href="{{ url_for('public.index') }}" class="btn btn-outline-secondary">ย้อนกลับสู่หน้าหลัก</a>
+        </div>
         
         <div class="text-center" id="signup-link-wrapper">
             <a class="btn-register-link" href="{{ url_for('auth.owner_register') }}">
@@ -152,8 +151,4 @@
     </form>
 </div>
 
-{% endblock %}
-
-{% block page_scripts %}
-{# REMOVED: JavaScript Role Switcher #}
 {% endblock %}
