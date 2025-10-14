@@ -26,6 +26,25 @@ class DashboardService:
             "data": [item.count for item in pie_data_query]
         }
 
+    def get_room_type_pie_chart_data(self) -> dict:
+        """ดึงข้อมูลสำหรับ Pie Chart (Top 5 ประเภทห้อง)"""
+        pie_data_query = self.property_repo.get_property_counts_by_room_type(limit=5)
+        return {
+            "labels": [item.room_type for item in pie_data_query],
+            "data": [item.count for item in pie_data_query]
+        }
+
+    def get_workflow_status_chart_data(self) -> dict:
+        """ดึงข้อมูลสำหรับ Bar Chart (สถานะประกาศทั้งหมด)"""
+        status_counts = self.property_repo.get_property_counts_by_workflow_status()
+        status_map = {
+            'draft': 'แบบร่าง', 'submitted': 'รออนุมัติ',
+            'approved': 'อนุมัติแล้ว', 'rejected': 'ถูกปฏิเสธ'
+        }
+        labels = [status_map.get(s.workflow_status, s.workflow_status) for s in status_counts]
+        data = [s.count for s in status_counts]
+        return {"labels": labels, "data": data}
+
     def get_line_chart_data(self) -> dict:
         """ดึงข้อมูลสำหรับ Line Chart (6 เดือนล่าสุด)"""
         labels, owner_data, prop_data = [], OrderedDict(), OrderedDict()
@@ -38,7 +57,6 @@ class DashboardService:
             prop_data[month_key] = self.property_repo.count_properties_by_month(month_date)
         
         return {
-            "labels": labels,
-            "owners": list(owner_data.values()),
+            "labels": labels, "owners": list(owner_data.values()),
             "properties": list(prop_data.values())
         }
