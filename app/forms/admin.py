@@ -61,3 +61,4 @@ class AdminEditPropertyForm(FlaskForm):
     submit = SubmitField('บันทึกข้อมูลหอพัก')
 # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
 # ดึงจาก dev-jek
+# ดึงมาอีกรอบ
