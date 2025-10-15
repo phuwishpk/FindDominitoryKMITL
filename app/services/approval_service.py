@@ -29,7 +29,8 @@ class ApprovalService:
 
     def approve_property(self, admin_id: int, prop_id: int, note: str | None = None) -> None:
         prop = self.property_repo.get(prop_id)
-        if not prop: raise ValueError("Property not found")
+        if not prop:
+            raise ValueError("Property not found")
 
         prop.workflow_status = "approved"
         approval_request = self.approval_repo.get_pending_request(prop_id)
@@ -51,7 +52,8 @@ class ApprovalService:
 
     def reject_property(self, admin_id: int, prop_id: int, note: str | None = None) -> None:
         prop = self.property_repo.get(prop_id)
-        if not prop: raise ValueError("Property not found")
+        if not prop:
+            raise ValueError("Property not found")
 
         prop.workflow_status = "rejected"
         approval_request = self.approval_repo.get_pending_request(prop_id)
