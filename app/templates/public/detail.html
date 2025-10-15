@@ -1,309 +1,192 @@
-{% extends 'public/public_base.html' %}
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Dorm Finder{% endblock %}</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.11.0/dist/geosearch.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tiny-slider/2.9.4/tiny-slider.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap" rel="stylesheet">
 
-{% block content %}
-<div class="container my-5">
-    <a href="{{ url_for('public.index') }}" class="btn btn-sm btn-outline-secondary mb-3">← กลับสู่หน้าหลัก</a>
-
-    {% if not prop %}
-        <div class="alert alert-danger">ไม่พบประกาศนี้ หรือประกาศยังไม่ได้รับการอนุมัติ</div>
-    {% else %}
-    <div class="row">
-
-        <div class="col-lg-8">
-            <div class="d-flex align-items-center mb-3">
-                <h1 class="mb-0">{{ prop.dorm_name }}</h1>
-                {% if prop.availability_status == 'vacant' %}
-                    <span class="badge bg-success fs-6 ms-3">ห้องว่าง</span>
-                {% else %}
-                    <span class="badge bg-danger text-white fs-6 ms-3">ห้องเต็ม</span>
-                {% endif %}
-            </div>
-
-            <div id="propertyCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
-                <div class="carousel-inner rounded shadow-sm">
-                    {% for img in prop.images %}
-                        {% set raw_path = img.file_path %}
-                        {% if raw_path.startswith('http') %}
-                            {% set img_url = raw_path %}
-                        {% elif raw_path.startswith('static/') %}
-                            {% set img_url = url_for('static', filename=raw_path.replace('static/', '')) %}
-                        {% elif raw_path.startswith('uploads/') or raw_path.startswith('/uploads/') %}
-                            {% set img_url = url_for('serve_uploads', filename=raw_path.replace('/uploads/', '').replace('uploads/', '')) %}
-                        {% else %}
-                            {% set img_url = url_for('static', filename=raw_path) %}
-                        {% endif %}
-
-                        <div class="carousel-item {% if loop.first %}active{% endif %}">
-                            <img src="{{ img_url }}" 
-                                 class="d-block w-100 property-img"
-                                 alt="{{ prop.dorm_name }}"
-                                 style="height: 450px; object-fit: cover; cursor: zoom-in;"
-                                 data-src="{{ img_url }}">
-                        </div>
-                    {% else %}
-                        <div class="carousel-item active">
-                            <div class="d-flex justify-content-center align-items-center bg-light text-muted" style="height: 450px;">ไม่มีรูปภาพ</div>
-                        </div>
-                    {% endfor %}
-                </div>
-
-                {% if prop.images|length > 1 %}
-                <button class="carousel-control-prev" type="button" data-bs-target="#propertyCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon"></span>
-                    <span class="visually-hidden">Previous</span>
-                </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#propertyCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon"></span>
-                    <span class="visually-hidden">Next</span>
-                </button>
-                {% endif %}
-            </div>
-
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">รายละเอียดหอพัก</h5>
-                    <p><strong>ประเภทห้อง:</strong> {{ ROOM_TYPES.get(prop.room_type, prop.room_type) }}</p>
-                    <p><strong>คำอธิบายเพิ่มเติม:</strong> {{ prop.additional_info or 'ไม่มีข้อมูลเพิ่มเติม' }}</p>
-
-                    <h6 class="mt-3">ราคาและค่าบริการ</h6>
-                    <ul class="list-unstyled">
-                        <li><strong>ค่าเช่าต่อเดือน:</strong> {{ "{:,.0f}".format(prop.rent_price) if prop.rent_price else 'N/A' }} บาท</li>
-                        <li><strong>เงินประกัน:</strong> {{ "{:,.0f}".format(prop.deposit_amount) if prop.deposit_amount else 'N/A' }} บาท</li>
-                        <li><strong>ค่าน้ำ/ค่าไฟ:</strong> น้ำ {{ prop.water_rate or 'N/A' }} / ไฟ {{ prop.electric_rate or 'N/A' }}</li>
-                    </ul>
-
-                    <h6 class="mt-3">สิ่งอำนวยความสะดวก</h6>
-                    {% if prop.amenities.all() %}
-                        {% for amenity in prop.amenities %}
-                            <span class="badge bg-info text-dark me-2 mb-1">{{ amenity.label_th }}</span>
-                        {% endfor %}
-                    {% else %}
-                        <p>ไม่พบข้อมูลสิ่งอำนวยความสะดวก</p>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">รีวิวจากผู้ใช้</h5>
-
-                    {% if reviews %}
-                        <div class="mb-3">
-                            <strong>คะแนนเฉลี่ย:</strong>
-                            <span class="text-warning fs-5">
-                                {% for i in range(1,6) %}
-                                    {% if i <= avg_rating|round(0, 'floor') %}
-                                        ★
-                                    {% else %}
-                                        <span style="color:#ccc;">★</span>
-                                    {% endif %}
-                                {% endfor %}
-                            </span>
-                            <span class="text-muted">({{ avg_rating }}/5)</span>
-                        </div>
-
-                        {% for review in reviews %}
-                        <div class="border-bottom pb-2 mb-3">
-                            <div>
-                                {% for i in range(1,6) %}
-                                    {% if i <= review.rating %}
-                                        <i class="ri-star-fill text-warning"></i>
-                                    {% else %}
-                                        <i class="ri-star-line text-muted"></i>
-                                    {% endif %}
-                                {% endfor %}
-                            </div>
-                            <p class="mb-1">{{ review.comment }}</p>
-                            <small class="text-muted">เมื่อ {{ review.created_at|to_bkk_time }}</small>
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                        <p class="text-muted">ยังไม่มีรีวิวสำหรับหอพักนี้</p>
-                    {% endif %}
-                    
-                    <hr>
-                    <h6>เพิ่มรีวิวของคุณ</h6>
-                    <form method="POST" action="{{ url_for('public.property_add_review', prop_id=prop.id) }}" id="review-form">
-                        {{ form.hidden_tag() }}
-
-                        <div class="mb-3">
-                            <label class="form-label">ให้คะแนนหอพัก</label>
-                            <div class="star-rating mb-2">
-                                {% for i in range(5, 0, -1) %}
-                                    <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}" {% if form.rating.data|int == i %}checked{% endif %}>
-                                    <label for="star{{ i }}" title="{{ i }} ดาว">★</label>
-                                {% endfor %}
-                            </div>
-                            {% for error in form.rating.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-
-                        <div class="mb-3">
-                            {{ form.comment.label(class="form-label") }}
-                            {{ form.comment(class="form-control" + (' is-invalid' if form.comment.errors else ''), rows=3, placeholder="เขียนรีวิวของคุณที่นี่...") }}
-                            {% for error in form.comment.errors %}
-                                <div class="invalid-feedback d-block">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                        
-                        <button type="submit" class="btn btn-success">ส่งรีวิว</button>
-                        <button type="button" class="btn btn-outline-secondary" id="cancel-review-btn">ยกเลิก</button>
-                        </form>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card sticky-top shadow-lg" style="top: 100px;">
-                <div class="card-body">
-                    <h5 class="card-title text-success">ติดต่อสอบถาม</h5>
-
-                    <p><strong>โทรศัพท์:</strong> 
-                        <a href="tel:{{ prop.contact_phone }}">{{ prop.contact_phone or 'N/A' }}</a>
-                    </p>
-
-                    <p>
-                        <strong><span style="color: #00b900;">LINE ID:</span></strong>
-                        {{ prop.line_id or 'N/A' }}
-                    </p>
-
-                    <p>
-                        <strong><span style="color: #1877F2;">Facebook:</span></strong>
-                        {% if prop.facebook_url %}
-                            <a href="{{ prop.facebook_url }}" target="_blank" style="color: #1877F2; text-decoration: none;">
-                                {{ prop.facebook_url }}
-                            </a>
-                        {% else %}
-                            <span style="color: #999;">N/A</span>
-                        {% endif %}
-                    </p>
-
-                    <hr>
-                    <h5 class="mt-3">ตำแหน่งที่ตั้ง</h5>
-                    <p>{{ prop.soi or 'N/A' }} ถ. {{ prop.road or 'N/A' }}</p>
-
-                    <div id="map" style="height: 250px; width: 100%;" class="border rounded mb-3"></div>
-
-                    {% if prop.location_pin and prop.location_pin.coordinates %}
-                        <a href="http://googleusercontent.com/maps/google.com/0{{ prop.location_pin.coordinates[1] }},{{ prop.location_pin.coordinates[0] }}" target="_blank" class="btn btn-sm btn-outline-success w-100">
-                            เปิดใน Google Maps
-                        </a>
-                    {% else %}
-                        <p class="text-danger small">ไม่มีข้อมูลพิกัด</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-</div>
-{% endblock %}
-
-{% block page_scripts %}
-<style>
-.star-rating {
-    direction: rtl;
-    display: inline-flex;
-    justify-content: flex-start;
-}
-.star-rating input { display: none; }
-.star-rating label {
-    font-size: 2rem;
-    color: #ccc;
-    cursor: pointer;
-    transition: color 0.2s;
-}
-.star-rating input:checked ~ label,
-.star-rating label:hover,
-.star-rating label:hover ~ label { color: #ffcc00; }
-
-#imageLightbox {
-    display: none;
-    position: fixed;
-    z-index: 2000;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.9);
-    justify-content: center;
-    align-items: center;
-}
-#lightboxImg {
-    max-width: 90%;
-    max-height: 85%;
-    border-radius: 12px;
-    box-shadow: 0 0 25px rgba(255,255,255,0.3);
-    animation: zoomIn 0.3s ease;
-}
-@keyframes zoomIn {
-    from { transform: scale(0.8); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
-#imageLightbox .close {
-    position: absolute;
-    top: 20px; right: 40px;
-    color: white;
-    font-size: 40px;
-    cursor: pointer;
-    transition: color 0.2s;
-}
-#imageLightbox .close:hover { color: #ffcc00; }
-</style>
-
-<div id="imageLightbox">
-    <span class="close">×</span>
-    <img id="lightboxImg" alt="Zoomed Image">
-</div>
-
-<script>
-// === MAP ===
-{% if prop and prop.location_pin and prop.location_pin.coordinates %}
-const lng = {{ prop.location_pin.coordinates[0] }};
-const lat = {{ prop.location_pin.coordinates[1] }};
-const map = L.map('map', { scrollWheelZoom: false }).setView([lat, lng], 16);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '© OpenStreetMap contributors'
-}).addTo(map);
-L.marker([lat, lng]).addTo(map).bindPopup('<b>{{ prop.dorm_name }}</b>').openPopup();
-{% endif %}
-
-// === LIGHTBOX ===
-const lightbox = document.getElementById('imageLightbox');
-const lightboxImg = document.getElementById('lightboxImg');
-
-document.querySelectorAll('.property-img').forEach(img => {
-    img.addEventListener('click', () => {
-        lightboxImg.src = img.dataset.src || img.src;
-        lightbox.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-    });
-});
-document.querySelector('#imageLightbox .close').addEventListener('click', () => {
-    lightbox.style.display = 'none';
-    document.body.style.overflow = '';
-});
-lightbox.addEventListener('click', (e) => {
-    if (e.target.id === 'imageLightbox') {
-        lightbox.style.display = 'none';
-        document.body.style.overflow = '';
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/miranda_styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom_styles.css') }}"> <style>
+    /* ------------------- GLOBAL ------------------- */
+    :root {
+      --nav-h: 120px; /* ความสูง navbar ใช้สำหรับ offset sticky */
     }
-});
 
-// === CANCEL/RESET REVIEW FORM ===
-const cancelReviewBtn = document.getElementById('cancel-review-btn');
-if (cancelReviewBtn) {
-    cancelReviewBtn.addEventListener('click', function() {
-        // Reset star rating
-        const starRadios = document.querySelectorAll('input[name="rating"]');
-        starRadios.forEach(radio => radio.checked = false);
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Kanit', sans-serif;
+    }
 
-        // Reset comment textarea
-        const commentTextarea = document.getElementById('comment');
-        if (commentTextarea) {
-            commentTextarea.value = '';
-        }
+    /* ------------------- NAVBAR ------------------- */
+    .navbar-custom {
+      background-color: #004a99;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      padding: 0.75rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 1050; /* Z-index สูงกว่า element ทั่วไป แต่ไม่จำเป็นต้องใช้ !important */
+    }
+
+    /* NEW: ย้ายสไตล์โลโก้มาที่นี่ */
+    .navbar-brand-logo {
+        height: 100px;
+    }
+
+    .navbar-custom .navbar-nav .nav-link {
+      color: white;
+      font-size: 1.6rem;
+      font-weight: 500;
+      margin-right: 3rem;
+    }
+
+    .navbar-custom .navbar-nav .nav-link.active,
+    .navbar-custom .navbar-nav .nav-link:hover {
+      color: #ffd700;
+    }
+
+    /* ปุ่ม hamburger icon สีขาว */
+    .navbar-toggler {
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+    .navbar-toggler-icon {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255,255,255,0.9)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    }
+
+    .btn-login-custom {
+      background-color: #004a99;
+      color: white;
+      border: 1px solid white;
+      padding: 0.5rem 1.5rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .btn-login-custom:hover {
+      background-color: #ffd700;
+      color: #004a99;
+      border-color: #ffd700;
+    }
+
+    /* ------------------- FOOTER ------------------- */
+    .footer-custom {
+      background-color: #054ba7ff;
+      color: white;
+    }
+    .footer-custom a {
+      color: white;
+    }
+    .footer-custom a:hover {
+      color: #f0f0f0;
+    }
+
+    /* ------------------- MAP / STICKY ------------------- */
+    .sticky-avoid-navbar {
+      top: calc(var(--nav-h) + 12px); /* เอา !important ออก */
+    }
+
+    /* REMOVED: ลบ z-index ของ Leaflet ที่บังคับเป็น 0 ออก */
+    /* ถ้ามีปัญหาการซ้อนทับกันจริงๆ ค่อยๆ แก้ไขเป็นกรณีไป */
+
+    /* ------------------- FONT ------------------- */
+    /* REMOVED: เอา !important ออก */
+    .header__container h1,
+    .section__header, .feature-card h5, .feature-card p,
+    .room-specs p, .room-description h4, .room-description p,
+    .room-tab-btn {
+      font-family: 'Kanit', sans-serif;
+    }
+  </style>
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+
+  <nav class="navbar navbar-expand-lg navbar-custom">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand" href="{{ url_for('public.index') }}">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="FindDormitory Logo" class="navbar-brand-logo">
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNavbar">
+        <ul class="navbar-nav me-auto ms-md-3 mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'public.index' %}active{% endif %}" href="{{ url_for('public.index') }}">หน้าหลัก</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'public.search' %}active{% endif %}" href="{{ url_for('public.search') }}">ค้นหาหอพัก</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'public.contact' %}active{% endif %}" href="{{ url_for('public.contact') }}">ติดต่อเรา</a>
+          </li>
+        </ul>
+
+        <div class="nav-buttons d-flex align-items-center gap-2">
+          {% if current_user.is_authenticated %}
+            {% if current_user.role == 'admin' %}
+              <a class="btn btn-primary btn-sm" href="{{ url_for('admin.dashboard') }}">Admin Panel</a>
+            {% elif current_user.role == 'owner' %}
+              <a class="btn btn-primary btn-sm" href="{{ url_for('owner.dashboard') }}">Owner Dashboard</a>
+            {% endif %}
+            <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
+              {{ empty_form.csrf_token }} 
+              <button type="submit" class="btn btn-outline-light btn-sm">Logout</button>
+            </form>
+          {% else %}
+            <a class="btn btn-login-custom" href="{{ url_for('auth.login') }}">Login</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="flex-grow-1">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="py-4 mt-auto footer-custom">
+    <div class="container">
+      <div class="row align-items-center justify-content-between flex-column flex-sm-row">
+        <div class="col-auto"><div class="small m-0">Copyright &copy; FindDormitoryKMITL 2025</div></div>
+        <div class="col-auto">
+          <a class="small" href=#"{{ url_for('public.privacy') }}">Privacy</a>
+          <span class="mx-1">&middot;</span>
+          <a class="small" href=#"{{ url_for('public.terms') }}">Terms</a>
+          <span class="mx-1">&middot;</span>
+          <a class="small" href=#"{{ url_for('public.contact') }}">Contact</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script src="https://unpkg.com/scrollreveal"></script>
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      feather.replace();
     });
-}
-</script>
-{% endblock %}
+  </script>
+
+  <script src="{{ url_for('static', filename='js/miranda_main.js') }}"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet-geosearch@3.11.0/dist/geosearch.umd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tiny-slider/2.9.2/min/tiny-slider.js"></script>
+
+  {% block page_scripts %}{% endblock %}
+</body>
+</html>
