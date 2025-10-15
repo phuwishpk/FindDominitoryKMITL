@@ -125,10 +125,8 @@
             <a class="nav-link {% if request.endpoint == 'public.search' %}active{% endif %}" href="{{ url_for('public.search') }}">ค้นหาหอพัก</a>
           </li>
           <li class="nav-item">
-            <!-- --- vvv [แก้ไข] เปลี่ยน href ให้ลิงก์ไปที่หน้า history vvv --- -->
             <a class="nav-link {% if request.endpoint == 'public.history' %}active{% endif %}" href="{{ url_for('public.history') }}">ประวัติการเข้าชม</a>
-            <!-- --- ^^^ สิ้นสุดการแก้ไข ^^^ --- -->
-          </li>
+            </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'public.contact' %}active{% endif %}" href="{{ url_for('public.contact') }}">ติดต่อเรา</a>
           </li>
@@ -155,10 +153,7 @@
 
   <main class="flex-grow-1">
     {% block content %}{% endblock %}
-    <!-- --- vvv [ลบ] ส่วนแสดงผล "หอพักที่เพิ่งเข้าชม" ออกจากไฟล์นี้ vvv --- -->
-    <!-- ส่วนนี้ถูกย้ายไปที่ history.html แล้ว -->
-    <!-- --- ^^^ สิ้นสุดการลบ ^^^ --- -->
-  </main>
+    </main>
 
   <footer class="py-4 mt-auto footer-custom">
     <div class="container">
