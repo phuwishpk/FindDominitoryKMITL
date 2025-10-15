@@ -11,13 +11,14 @@ def app():
     app.config.update({
         "TESTING": True,
         "WTF_CSRF_ENABLED": False,
-        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:", # ใช้ DB ใน Memory เพื่อความเร็ว
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "LIMITER_ENABLED": False, # <-- เพิ่มบรรทัดนี้เพื่อปิด Rate Limit ตอนเทส
     })
 
     with app.app_context():
-        _db.create_all() # สร้างตารางทั้งหมดใน DB สำหรับเทส
+        _db.create_all()
         yield app
-        _db.drop_all() # ลบตารางทั้งหมดหลังเทสเสร็จ
+        _db.drop_all()
 
 @pytest.fixture
 def client(app):
