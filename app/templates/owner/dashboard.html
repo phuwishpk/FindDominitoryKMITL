@@ -53,11 +53,9 @@
 
             <div class="d-flex align-items-center mt-2 mt-md-0">
                 {% if p.workflow_status in ['draft', 'rejected'] %}
-                {# vvv [แก้ไข] เปลี่ยนปุ่ม submit เป็น button ที่เรียก modal vvv #}
                 <button type="button" class="btn btn-sm btn-info text-white me-2" data-bs-toggle="modal" data-bs-target="#submitModal-{{ p.id }}">
                     <i data-feather="send" style="width:16px; height: 16px;" class="me-1"></i> ส่งอนุมัติ
                 </button>
-                {# ^^^ สิ้นสุดการแก้ไข ^^^ #}
                 {% endif %}
 
                 <a href="{{ url_for('owner.property_reviews', prop_id=p.id) }}" class="btn btn-sm btn-outline-primary me-2">
@@ -82,7 +80,7 @@
   </div>
 </div>
 
-{# --- vvv [เพิ่ม] Modal สำหรับยืนยันการส่งอนุมัติ vvv --- #}
+{# Modal สำหรับยืนยันการส่งอนุมัติ #}
 {% for p in props %}
 {% if p.workflow_status in ['draft', 'rejected'] %}
 <div class="modal fade" id="submitModal-{{ p.id }}" tabindex="-1">
@@ -107,7 +105,6 @@
 </div>
 {% endif %}
 {% endfor %}
-{# --- ^^^ สิ้นสุดการเพิ่ม Modal ^^^ --- #}
 
 {# Modals for Deleting #}
 {% for p in props %}
