@@ -36,6 +36,23 @@
         transform: translateY(-5px);
         box-shadow: 0 8px 25px rgba(0,0,0,0.08);
     }
+    
+    /* vvv เพิ่ม: ปรับขนาดฟอร์มในมือถือ vvv */
+    @media (max-width: 576px) {
+        .search-hero {
+            padding: 2rem 0.5rem;
+        }
+        .input-group-lg > .form-control,
+        .input-group-lg > .btn {
+            font-size: 1rem;
+            padding: 0.5rem 0.75rem;
+        }
+        .input-group-lg > :not(:first-child):not(.dropdown-menu):not(.form-floating) {
+            border-top-left-radius: 0.375rem;
+            border-bottom-left-radius: 0.375rem;
+        }
+    }
+    /* ^^^ สิ้นสุดการแก้ไข ^^^ */
 </style>
 
 <div class="search-hero text-center">
@@ -50,10 +67,10 @@
                     <input type="text" class="form-control" name="q" placeholder="ค้นหาตามชื่อหอพัก..." aria-label="Search" value="{{ filters.q or '' }}">
                     <button class="btn btn-search-custom" type="submit">
                         <i data-feather="search" class="align-middle"></i>
-                        <span class="align-middle">ค้นหา</span>
+                        <span class="align-middle d-none d-sm-inline">ค้นหา</span>
                     </button>
                     <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
-                        <i data-feather="filter" class="align-middle me-1"></i> ตัวกรอง
+                        <i data-feather="filter" class="align-middle me-sm-1"></i> <span class="d-none d-sm-inline">ตัวกรอง</span>
                     </button>
                 </div>
 
@@ -70,14 +87,14 @@
                             </div>
                             <div class="col-md-12">
                                 <label for="room_type" class="form-label">ประเภทห้อง</label>
-                                <select class="form-select" id="room_type" name="room_type">
+                                <select class="form-select form-select-lg" id="room_type" name="room_type">
                                     <option value="" {% if not filters.room_type_select %}selected{% endif %}>ทั้งหมด</option>
                                     <option value="standard" {% if filters.room_type_select == 'standard' %}selected{% endif %}>ห้องธรรมดา</option>
                                     <option value="studio" {% if filters.room_type_select == 'studio' %}selected{% endif %}>ห้องสตูดิโอ</option>
                                     <option value="suite" {% if filters.room_type_select == 'suite' %}selected{% endif %}>ห้องชุด</option>
                                     <option value="other" {% if filters.room_type_select == 'other' %}selected{% endif %}>อื่นๆ</option>
                                 </select>
-                            </div>
+                                </div>
                             <div class="col-md-12 {% if filters.room_type_select != 'other' %}d-none{% endif %}" id="other_room_type_wrapper">
                                 <label for="other_room_type" class="form-label">ระบุประเภทห้องอื่นๆ</label>
                                 <input type="text" class="form-control" id="other_room_type" name="other_room_type" value="{{ filters.other_room_type or '' }}">
@@ -106,7 +123,7 @@
                     </div>
                 </div>
             </form>
-            {# --- ^^^ สิ้นสุดฟอร์มที่แก้ไข ^^^ --- #}
+            {# --- ^^^ สิ้นสุดฟอร์มที่แก้ไข ^^^ #}
         </div>
     </div>
 </div>
@@ -177,7 +194,7 @@
                         <a class="page-link" href="{{ url_for('public.search', page=page_num, **filters) }}">{{ page_num }}</a>
                     </li>
                 {% elif page_num == 1 or page_num == pages %}
-                     <li class="page-item disabled"><span class="page-link">...</span></li>
+                     <li class="page-item disabled"><span class="page-link">…</span></li>
                 {% endif %}
             {% endfor %}
             
