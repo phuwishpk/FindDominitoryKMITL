@@ -1,5 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.extensions import db
+from flask import current_app
+from itsdangerous import URLSafeTimedSerializer as Serializer
 
 class Owner(db.Model):
     __tablename__ = "owners"
@@ -10,9 +12,7 @@ class Owner(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     full_name_th = db.Column(db.String(120), nullable=False)
-    # --- vvv เพิ่มฟิลด์นี้ vvv ---
-    full_name_en = db.Column(db.String(120), nullable=True) # ตั้งเป็น nullable=True ถ้าไม่บังคับกรอก
-    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+    full_name_en = db.Column(db.String(120), nullable=True)
     citizen_id = db.Column(db.String(13), unique=True, nullable=False)
     occupancy_notice_pdf = db.Column(db.String(255))
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -25,7 +25,23 @@ class Owner(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    deleted_at = db.Column(db.DateTime, nullable=True) # สำหรับ Soft Delete
+    deleted_at = db.Column(db.DateTime, nullable=True)
+
+    # --- vvv เพิ่ม 2 ฟังก์ชันนี้เข้ามา vvv ---
+    def get_reset_token(self, expires_sec=1800):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        return s.dumps({'owner_id': self.id})
+
+    @staticmethod
+    def verify_reset_token(token, expires_sec=1800):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token, max_age=expires_sec)
+            owner_id = data.get('owner_id')
+        except:
+            return None
+        return Owner.query.get(owner_id)
+    # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
 
     def __repr__(self) -> str:
         return f"<Owner id={self.id} email={self.email!r}>"
