@@ -2,7 +2,13 @@
 
 {% block content %}
 <div class="container my-5">
-    <a href="{{ url_for('public.index') }}" class="btn btn-sm btn-outline-secondary mb-3">← กลับสู่หน้าหลัก</a>
+    {# --- vvv [แก้ไข] ตรวจสอบ referrer เพื่อสร้างลิงก์ย้อนกลับแบบไดนามิก vvv --- #}
+    {% if 'owner/review-reports' in request.referrer %}
+        <a href="{{ url_for('owner.review_reports') }}" class="btn btn-sm btn-outline-secondary mb-3">← กลับสู่ประวัติคำร้อง</a>
+    {% else %}
+        <a href="{{ request.referrer or url_for('public.index') }}" class="btn btn-sm btn-outline-secondary mb-3">← กลับ</a>
+    {% endif %}
+    {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
 
     {% if not prop %}
         <div class="alert alert-danger">ไม่พบประกาศนี้ หรือประกาศยังไม่ได้รับการอนุมัติ</div>
