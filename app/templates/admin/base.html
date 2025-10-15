@@ -2,7 +2,7 @@
 
 {% block content %}
 <style>
-    /* --- New, Modern UI for Admin/Owner --- */
+    /* --- CSS เดิม --- */
     :root {
         --primary: #004a99; /* KMITL Blue */
         --primary-rgb: 0, 74, 153;
@@ -10,21 +10,17 @@
         --secondary: #6c757d;
         --text-dark: #1f2937;
         --text-light: #6b7280;
-        --bg-main: #f9fafb; /* Lighter background */
+        --bg-main: #f9fafb;
         --bg-sidebar: #ffffff;
         --border-color: #e5e7eb;
         --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         --card-shadow-hover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     }
-
-    /* Import Kanit Font */
     @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap');
-
     body.admin-body, body.owner-body {
         background-color: var(--bg-main);
         font-family: 'Kanit', sans-serif;
     }
-
     .sidebar {
         position: fixed;
         top: 0;
@@ -36,143 +32,94 @@
         padding: 1.5rem 1rem;
         display: flex;
         flex-direction: column;
-        transition: all 0.3s;
-        z-index: 100;
+        transition: transform 0.3s ease-in-out;
+        z-index: 1040;
     }
     .sidebar-header {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.75rem;
-        margin-bottom: 2.5rem;
-        padding: 0 0.5rem;
+        display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+        margin-bottom: 2.5rem; padding: 0 0.5rem;
     }
     .sidebar-header .icon-wrapper {
-        background-color: var(--primary);
-        color: #fff;
-        border-radius: 0.5rem;
-        width: 36px;
-        height: 36px;
-        display: inline-flex;
-        justify-content: center;
-        align-items: center;
+        background-color: var(--primary); color: #fff; border-radius: 0.5rem;
+        width: 36px; height: 36px; display: inline-flex; justify-content: center; align-items: center;
     }
-    .sidebar-header a {
-        font-size: 1.25rem;
+    .sidebar-header a { font-size: 1.25rem; font-weight: 600; color: var(--text-dark); text-decoration: none; transition: color 0.2s; }
+    .sidebar-header a:hover { color: var(--primary); }
+    .sidebar-nav .nav-link {
+        display: flex; align-items: center; color: var(--text-light); padding: 0.8rem 1rem;
+        margin-bottom: 0.5rem; border-radius: 0.5rem; font-weight: 500; transition: background-color 0.2s, color 0.2s;
+    }
+    .sidebar-nav .nav-link .feather { margin-right: 1rem; width: 20px; height: 20px; color: var(--text-light); transition: color 0.2s; }
+    .sidebar-nav .nav-link:hover { background-color: var(--primary-light); color: var(--primary); }
+    .sidebar-nav .nav-link:hover .feather { color: var(--primary); }
+    .sidebar-nav .nav-link.active { background-color: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3); }
+    .sidebar-nav .nav-link.active .feather { color: #fff; }
+    .sidebar-footer { margin-top: auto; }
+    .main-content { margin-left: 260px; padding: 2.5rem; width: calc(100% - 260px); transition: margin-left 0.3s ease-in-out; }
+    .card { border: 1px solid var(--border-color); border-radius: 0.75rem; box-shadow: var(--card-shadow); transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out; }
+    .card:hover { transform: translateY(-2px); box-shadow: var(--card-shadow-hover); }
+    .card-header { background-color: #fff; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-dark); }
+    .btn-primary { background-color: var(--primary); border-color: var(--primary); transition: all 0.2s ease; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(var(--primary-rgb), 0.25); }
+
+    /* --- vvv CSS ใหม่สำหรับ Responsive vvv --- */
+    .mobile-header {
+        display: none; /* ซ่อนในจอใหญ่ */
+        align-items: center;
+        padding: 0.75rem 1.5rem;
+        background-color: var(--bg-sidebar);
+        border-bottom: 1px solid var(--border-color);
+        z-index: 1030;
+    }
+    .mobile-header-brand {
         font-weight: 600;
         color: var(--text-dark);
         text-decoration: none;
-        transition: color 0.2s;
     }
-    .sidebar-header a:hover {
-        color: var(--primary);
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0,0,0,0.5);
+        display: none;
+        z-index: 1039;
     }
-    .sidebar-nav .nav-link {
-        display: flex;
-        align-items: center;
-        color: var(--text-light);
-        padding: 0.8rem 1rem;
-        margin-bottom: 0.5rem;
-        border-radius: 0.5rem;
-        font-weight: 500;
-        transition: background-color 0.2s, color 0.2s;
-    }
-    .sidebar-nav .nav-link .feather {
-        margin-right: 1rem;
-        width: 20px;
-        height: 20px;
-        color: var(--text-light);
-        transition: color 0.2s;
-    }
-    .sidebar-nav .nav-link:hover {
-        background-color: var(--primary-light);
-        color: var(--primary);
-    }
-    .sidebar-nav .nav-link:hover .feather {
-        color: var(--primary);
-    }
-    .sidebar-nav .nav-link.active {
-        background-color: var(--primary);
-        color: #fff;
-        box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
-    }
-    .sidebar-nav .nav-link.active .feather {
-        color: #fff;
+    .sidebar-overlay.is-active {
+        display: block;
     }
 
-    .sidebar-footer {
-        margin-top: auto;
+    /* Media Query สำหรับหน้าจอเล็กกว่า 992px (Tablet และ Mobile) */
+    @media (max-width: 991.98px) {
+        .mobile-header {
+            display: flex;
+        }
+        .sidebar {
+            transform: translateX(-100%);
+        }
+        .sidebar.is-open {
+            transform: translateX(0);
+        }
+        .main-content {
+            margin-left: 0;
+            width: 100%;
+            padding: 1.5rem; /* ลด padding ในจอเล็ก */
+        }
+        body {
+            padding-top: 61px; /* กันที่สำหรับ mobile-header */
+        }
     }
-
-    .main-content {
-        margin-left: 260px;
-        padding: 2.5rem; /* Increased padding */
-        width: calc(100% - 260px);
-    }
-
-    /* Component Overrides */
-    .card {
-        border: 1px solid var(--border-color);
-        border-radius: 0.75rem;
-        box-shadow: var(--card-shadow);
-        transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
-    }
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--card-shadow-hover);
-    }
-    .card-header {
-        background-color: #fff;
-        border-bottom: 1px solid var(--border-color);
-        font-weight: 600;
-        color: var(--text-dark);
-    }
-
-    .btn-primary {
-        background-color: var(--primary);
-        border-color: var(--primary);
-        transition: all 0.2s ease;
-    }
-    .btn-primary:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 10px rgba(var(--primary-rgb), 0.25);
-    }
-
-    .table-container {
-        background-color: #fff;
-        border-radius: 0.75rem;
-        box-shadow: var(--card-shadow);
-        padding: 1rem;
-        overflow-x: auto;
-    }
-    .table {
-        border-collapse: separate;
-        border-spacing: 0;
-        width: 100%;
-    }
-    .table thead th {
-        border-bottom: 2px solid var(--border-color);
-        border-top: none;
-        padding: 0.75rem 1rem;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        color: var(--text-light);
-        letter-spacing: 0.5px;
-        white-space: nowrap;
-    }
-    .table tbody tr:hover {
-        background-color: var(--primary-light);
-    }
-    .table tbody td {
-        border-top: 1px solid var(--border-color);
-        padding: 1rem 1rem;
-        vertical-align: middle;
-    }
-    .table tbody tr:first-child td {
-        border-top: none;
-    }
-
+    /* --- ^^^ สิ้นสุด CSS ใหม่ ^^^ --- */
 </style>
+
+<header class="mobile-header sticky-top">
+    <button class="btn btn-light me-3" id="sidebar-toggle-btn">
+        <i data-feather="menu"></i>
+    </button>
+    <a href="{{ url_for('admin.dashboard') }}" class="mobile-header-brand">Admin Panel</a>
+</header>
+<div class="sidebar-overlay"></div>
 
 <div class="sidebar">
     <div class="d-flex flex-column h-100">
@@ -254,4 +201,30 @@
 <div class="main-content">
     {% block admin_content %}{% endblock %}
 </div>
+{% endblock %}
+
+{% block page_scripts %}
+{{ super() }}
+<script>
+    // --- JavaScript ใหม่สำหรับ Responsive Sidebar ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarToggle = document.getElementById('sidebar-toggle-btn');
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.sidebar-overlay');
+
+        function closeSidebar() {
+            sidebar.classList.remove('is-open');
+            overlay.classList.remove('is-active');
+        }
+
+        if (sidebarToggle && sidebar && overlay) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('is-open');
+                overlay.classList.toggle('is-active');
+            });
+
+            overlay.addEventListener('click', closeSidebar);
+        }
+    });
+</script>
 {% endblock %}
