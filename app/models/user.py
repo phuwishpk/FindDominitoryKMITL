@@ -38,7 +38,7 @@ class Owner(db.Model):
         try:
             data = s.loads(token, max_age=expires_sec)
             owner_id = data.get('owner_id')
-        except:
+        except Exception:
             return None
         return Owner.query.get(owner_id)
     # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---

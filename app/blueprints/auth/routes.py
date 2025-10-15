@@ -66,7 +66,8 @@ def owner_register():
 def login():
     if not Admin.query.filter_by(username="admin").first():
         a = Admin(username="admin", password_hash=generate_password_hash("admin"), display_name="Administrator")
-        db.session.add(a); db.session.commit()
+        db.session.add(a)
+        db.session.commit()
 
     form = CombinedLoginForm()
     
@@ -89,7 +90,7 @@ def login():
                 svc.login_owner(owner)
                 return redirect(url_for("owner.dashboard"))
             
-            if not owner.is_active: 
+            if not owner.is_active:
                 flash("บัญชีของคุณยังไม่ได้รับการอนุมัติจากผู้ดูแลระบบ", "warning")
                 return render_template("auth/login.html", form=form)
 
