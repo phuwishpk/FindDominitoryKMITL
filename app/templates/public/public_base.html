@@ -40,7 +40,24 @@
     /* NEW: ย้ายสไตล์โลโก้มาที่นี่ */
     .navbar-brand-logo {
         height: 100px;
+        /* vvv ส่วนที่แก้ไข vvv */
+        transition: height 0.3s ease;
     }
+
+    /* สไตล์สำหรับจอเล็ก (Mobile) */
+    @media (max-width: 768px) {
+        .navbar-brand-logo {
+            height: 60px; /* ลดขนาดโลโก้ในจอเล็ก */
+        }
+        .navbar-custom .navbar-nav .nav-link {
+            font-size: 1.2rem; /* ลดขนาดเมนูในจอเล็ก */
+        }
+        .btn-login-custom {
+            font-size: 1rem; /* ลดขนาดปุ่ม Login ในจอเล็ก */
+            padding: 0.4rem 1rem;
+        }
+    }
+    /* ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ */
 
     .navbar-custom .navbar-nav .nav-link {
       color: white;
@@ -95,11 +112,7 @@
       top: calc(var(--nav-h) + 12px); /* เอา !important ออก */
     }
 
-    /* REMOVED: ลบ z-index ของ Leaflet ที่บังคับเป็น 0 ออก */
-    /* ถ้ามีปัญหาการซ้อนทับกันจริงๆ ค่อยๆ แก้ไขเป็นกรณีไป */
-
     /* ------------------- FONT ------------------- */
-    /* REMOVED: เอา !important ออก */
     .header__container h1,
     .section__header, .feature-card h5, .feature-card p,
     .room-specs p, .room-description h4, .room-description p,
@@ -116,11 +129,11 @@
       <a class="navbar-brand" href="{{ url_for('public.index') }}">
         <img src="{{ url_for('static', filename='logo.png') }}" alt="FindDormitory Logo" class="navbar-brand-logo">
       </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
 
-      <div class="collapse navbar-collapse" id="mainNavbar">
+      <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto ms-md-3 mb-2 mb-lg-0">
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'public.index' %}active{% endif %}" href="{{ url_for('public.index') }}">หน้าหลัก</a>
