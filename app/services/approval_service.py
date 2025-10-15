@@ -1,3 +1,5 @@
+# app/services/approval_service.py
+
 from app.models.property import Property
 from app.models.approval import ApprovalRequest, AuditLog
 from app.repositories.interfaces.approval_repo import IApprovalRepo
@@ -17,20 +19,19 @@ class ApprovalService:
         prop.workflow_status = "submitted"
         approval_request = ApprovalRequest(property_id=property_id, owner_id=owner_id, status="pending")
         
-        # --- vvv ส่วนที่แก้ไข vvv ---
         log_entry = AuditLog.log(
             actor_type="owner", actor_id=owner_id,
             action="submit_approval", property_id=property_id,
         )
         db.session.add(log_entry)
-        # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
 
         self.approval_repo.add_request(approval_request)
         self.property_repo.save(prop)
 
     def approve_property(self, admin_id: int, prop_id: int, note: str | None = None) -> None:
         prop = self.property_repo.get(prop_id)
-        if not prop: raise ValueError("Property not found")
+        if not prop:
+            raise ValueError("Property not found") # <-- แก้ไขที่นี่
 
         prop.workflow_status = "approved"
         approval_request = self.approval_repo.get_pending_request(prop_id)
@@ -39,20 +40,19 @@ class ApprovalService:
             approval_request.note = note
             self.approval_repo.update_request(approval_request)
 
-        # --- vvv ส่วนที่แก้ไข vvv ---
         log_entry = AuditLog.log(
             actor_type="admin", actor_id=admin_id,
             action="approve_property", property_id=prop_id,
             meta={"note": note},
         )
         db.session.add(log_entry)
-        # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
 
         self.property_repo.save(prop)
 
     def reject_property(self, admin_id: int, prop_id: int, note: str | None = None) -> None:
         prop = self.property_repo.get(prop_id)
-        if not prop: raise ValueError("Property not found")
+        if not prop:
+            raise ValueError("Property not found") # <-- แก้ไขที่นี่
 
         prop.workflow_status = "rejected"
         approval_request = self.approval_repo.get_pending_request(prop_id)
@@ -61,14 +61,12 @@ class ApprovalService:
             approval_request.note = note
             self.approval_repo.update_request(approval_request)
         
-        # --- vvv ส่วนที่แก้ไข vvv ---
         log_entry = AuditLog.log(
             actor_type="admin", actor_id=admin_id,
             action="reject_property", property_id=prop_id,
             meta={"note": note},
         )
         db.session.add(log_entry)
-        # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
         
         self.property_repo.save(prop)
 

@@ -1,3 +1,5 @@
+# app/__init__.py
+
 from flask import Flask, send_from_directory
 from .extensions import db, migrate, login_manager, babel_ext, limiter, csrf 
 from .config import Config
@@ -132,17 +134,20 @@ def create_app() -> Flask:
             o = Owner(full_name_th="เจ้าของตัวอย่าง", citizen_id="1101700203451",
                       email="owner@example.com", password_hash=generate_password_hash("password"),
                       is_active=True, approval_status='approved') # Set owner as active
-            db.session.add(o); db.session.commit()
+            db.session.add(o)
+            db.session.commit()
             
             p = Property(owner_id=o.id, dorm_name="ตัวอย่างหอพัก", room_type="studio",
                          rent_price=6500, 
                          location_pin=location_pin_data, 
                          workflow_status=Property.WORKFLOW_APPROVED)
-            db.session.add(p); db.session.commit()
+            db.session.add(p)
+            db.session.commit()
             
         if not Admin.query.filter_by(username="admin").first():
             a = Admin(username="admin", password_hash=generate_password_hash("admin"), display_name="Administrator")
-            db.session.add(a); db.session.commit()
+            db.session.add(a)
+            db.session.commit()
         print("Seeded sample data ✅")
 
     return app
