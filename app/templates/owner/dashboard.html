@@ -4,9 +4,6 @@
 <div class="d-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 fw-bold mb-0">ภาพรวมหอพัก</h1>
   <div>
-    <a class="btn btn-outline-secondary" href="{{ url_for('owner.trash') }}">
-      <i data-feather="trash-2" class="me-1" style="width:16px;"></i> ถังขยะ
-    </a>
     <a class="btn btn-primary ms-2" href="{{ url_for('owner.new_property') }}">
       <i data-feather="plus" class="me-1" style="width:16px;"></i> สร้างประกาศใหม่
     </a>
@@ -19,67 +16,56 @@
   </div>
   <div class="list-group list-group-flush">
     {% for p in props %}
-    <div class="list-group-item d-flex justify-content-between align-items-center">
-      <div class="flex-grow-1">
+    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
+      <div class="flex-grow-1 me-3 mb-2 mb-md-0">
         <a href="{{ url_for('owner.edit_property', prop_id=p.id) }}" class="text-decoration-none text-dark fw-semibold">{{ p.dorm_name }}</a>
-        <div class="small text-muted d-flex align-items-center">
-          <span>สถานะ:</span>
+        <div class="small text-muted d-flex align-items-center mt-1 flex-wrap">
+          <span class="me-3">สถานะ:
             {% if p.workflow_status == 'approved' %}
-                <span class="badge bg-success-subtle text-success-emphasis rounded-pill ms-2">อนุมัติแล้ว</span>
+                <span class="badge bg-success-subtle text-success-emphasis rounded-pill ms-1">อนุมัติแล้ว</span>
             {% elif p.workflow_status == 'submitted' %}
-                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill ms-2">รออนุมัติ</span>
+                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill ms-1">รออนุมัติ</span>
             {% elif p.workflow_status == 'rejected' %}
-                <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill ms-2">ถูกปฏิเสธ</span>
+                <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill ms-1">ถูกปฏิเสธ</span>
                 {% if rejected_notes.get(p.id) %}
                 <button type="button" class="btn btn-link p-0 ms-1" data-bs-toggle="modal" data-bs-target="#rejectionNoteModal-{{ p.id }}" title="ดูเหตุผลการปฏิเสธ">
                     <i data-feather="alert-circle" class="text-danger" style="width:16px; height:16px;"></i>
                 </button>
                 {% endif %}
             {% else %}
-                <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill ms-2">แบบร่าง</span>
+                <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill ms-1">แบบร่าง</span>
             {% endif %}
+          </span>
 
-          <span class="ms-3">สถานะห้อง:
+          <span>สถานะห้อง:
             {% if p.availability_status == 'vacant' %}
-              <span class="badge bg-success-subtle text-success-emphasis rounded-pill">ห้องว่าง</span>
+              <span class="badge bg-success-subtle text-success-emphasis rounded-pill ms-1">ห้องว่าง</span>
             {% else %}
-              <span class="badge bg-danger text-white rounded-pill">ห้องเต็ม</span>
+              <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill ms-1">ห้องเต็ม</span>
             {% endif %}
           </span>
         </div>
       </div>
 
-      <div class="d-flex align-items-center">
-        <form method="post" action="{{ url_for('owner.toggle_availability', prop_id=p.id) }}" class="d-inline-block me-2" title="สลับสถานะห้องว่าง/เต็ม">
-          {{ submit_form.csrf_token }}
-          <button type="submit" class="btn btn-sm btn-outline-secondary">
-            {% if p.availability_status == 'vacant' %}
-              <i data-feather="moon" style="width:16px;"></i> ตั้งเป็น "ห้องเต็ม"
-            {% else %}
-              <i data-feather="sun" style="width:16px;"></i> ตั้งเป็น "ห้องว่าง"
-            {% endif %}
-          </button>
-        </form>
-
-        {% if p.workflow_status == 'draft' or p.workflow_status == 'rejected' %}
-        <form method="post" action="{{ url_for('owner.submit_for_approval', prop_id=p.id) }}" class="d-inline-block me-2" onsubmit="return confirm('คุณต้องการส่งประกาศนี้เพื่อขออนุมัติใช่หรือไม่?');">
-          {{ submit_form.csrf_token }}
-          <button class="btn btn-sm btn-outline-info">ส่งอนุมัติ</button>
-        </form>
-        {% endif %}
-        <a href="{{ url_for('owner.edit_property', prop_id=p.id) }}" class="btn btn-sm btn-outline-secondary">
-            <i data-feather="edit-2" style="width:16px;"></i> แก้ไข
+      <div class="d-flex align-items-center mt-2 mt-md-0">
+        <a href="{{ url_for('owner.property_reviews', prop_id=p.id) }}" class="btn btn-sm btn-outline-primary me-2">
+            <i data-feather="message-square" style="width:16px; height: 16px;" class="me-1"></i> ดูรีวิว
+        </a>
+        <a href="{{ url_for('owner.edit_property', prop_id=p.id) }}" class="btn btn-sm btn-outline-secondary me-2">
+            <i data-feather="edit-2" style="width:16px; height: 16px;" class="me-1"></i> แก้ไข
         </a>
 
-        <button type="button" class="btn btn-sm btn-outline-danger ms-2" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ p.id }}" title="ลบประกาศ">
-            <i data-feather="trash" style="width:16px;"></i> ลบ
+        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ p.id }}" title="ย้ายไปถังขยะ">
+            <i data-feather="trash" style="width:16px; height: 16px;"></i>
         </button>
 
       </div>
     </div>
     {% else %}
     <div class="list-group-item text-center text-muted p-5">
-      ยังไม่มีประกาศ
+        <i data-feather="home" class="mb-3" style="width: 48px; height: 48px;"></i>
+        <h5 class="mb-0">ยังไม่มีประกาศหอพัก</h5>
+        <p class="small">คลิก "สร้างประกาศใหม่" เพื่อเริ่มต้น</p>
     </div>
     {% endfor %}
   </div>
@@ -90,13 +76,13 @@
 <div class="modal fade" id="deleteModal-{{ p.id }}" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">ยืนยันการลบ</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header"><h5 class="modal-title">ยืนยันการย้ายไปถังขยะ</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">คุณต้องการย้ายประกาศ <strong>"{{ p.dorm_name }}"</strong> ไปยังถังขยะใช่หรือไม่?</div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
         <form action="{{ url_for('owner.delete_property', prop_id=p.id) }}" method="POST">
             {{ delete_form.csrf_token }}
-            <button type="submit" class="btn btn-danger">ยืนยันการลบ</button>
+            <button type="submit" class="btn btn-danger">ยืนยัน</button>
         </form>
       </div>
     </div>
@@ -104,22 +90,20 @@
 </div>
 {% endfor %}
 
-{# --- vvv Modals สำหรับแสดงเหตุผลการปฏิเสธ vvv --- #}
+{# Modals for Rejection Notes #}
 {% for p in props %}
   {% if p.workflow_status == 'rejected' and rejected_notes.get(p.id) %}
-  <div class="modal fade" id="rejectionNoteModal-{{ p.id }}" tabindex="-1" aria-labelledby="rejectionNoteModalLabel-{{ p.id }}" aria-hidden="true">
+  <div class="modal fade" id="rejectionNoteModal-{{ p.id }}" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="rejectionNoteModalLabel-{{ p.id }}">เหตุผลการปฏิเสธ: {{ p.dorm_name }}</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <h5 class="modal-title">เหตุผลการปฏิเสธ: {{ p.dorm_name }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          {# --- vvv ส่วนที่แก้ไข vvv --- #}
           <blockquote class="blockquote bg-light p-3 rounded" style="word-wrap: break-word; font-size: 0.95rem;">
             <p class="mb-0">{{ rejected_notes.get(p.id) }}</p>
           </blockquote>
-          {# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
         </div>
         <div class="modal-footer">
           <a href="{{ url_for('owner.edit_property', prop_id=p.id) }}" class="btn btn-primary">ไปที่หน้าแก้ไข</a>
@@ -130,6 +114,5 @@
   </div>
   {% endif %}
 {% endfor %}
-{# --- ^^^ สิ้นสุดการแก้ไข ^^^ --- #}
 
 {% endblock %}

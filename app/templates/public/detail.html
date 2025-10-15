@@ -123,7 +123,7 @@
                     
                     <hr>
                     <h6>เพิ่มรีวิวของคุณ</h6>
-                    <form method="POST" action="{{ url_for('public.property_add_review', prop_id=prop.id) }}">
+                    <form method="POST" action="{{ url_for('public.property_add_review', prop_id=prop.id) }}" id="review-form">
                         {{ form.hidden_tag() }}
 
                         <div class="mb-3">
@@ -146,9 +146,10 @@
                                 <div class="invalid-feedback d-block">{{ error }}</div>
                             {% endfor %}
                         </div>
-
+                        
                         <button type="submit" class="btn btn-success">ส่งรีวิว</button>
-                    </form>
+                        <button type="button" class="btn btn-outline-secondary" id="cancel-review-btn">ยกเลิก</button>
+                        </form>
                 </div>
             </div>
         </div>
@@ -185,7 +186,7 @@
                     <div id="map" style="height: 250px; width: 100%;" class="border rounded mb-3"></div>
 
                     {% if prop.location_pin and prop.location_pin.coordinates %}
-                        <a href="https://www.google.com/maps/search/?api=1&query={{ prop.location_pin.coordinates[1] }},{{ prop.location_pin.coordinates[0] }}" target="_blank" class="btn btn-sm btn-outline-success w-100">
+                        <a href="http://googleusercontent.com/maps/google.com/0{{ prop.location_pin.coordinates[1] }},{{ prop.location_pin.coordinates[0] }}" target="_blank" class="btn btn-sm btn-outline-success w-100">
                             เปิดใน Google Maps
                         </a>
                     {% else %}
@@ -288,5 +289,23 @@ lightbox.addEventListener('click', (e) => {
         document.body.style.overflow = '';
     }
 });
+
+// === vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ===
+// === CANCEL/RESET REVIEW FORM ===
+const cancelReviewBtn = document.getElementById('cancel-review-btn');
+if (cancelReviewBtn) {
+    cancelReviewBtn.addEventListener('click', function() {
+        // Reset star rating
+        const starRadios = document.querySelectorAll('input[name="rating"]');
+        starRadios.forEach(radio => radio.checked = false);
+
+        // Reset comment textarea
+        const commentTextarea = document.getElementById('comment');
+        if (commentTextarea) {
+            commentTextarea.value = '';
+        }
+    });
+}
+// === ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ===
 </script>
 {% endblock %}

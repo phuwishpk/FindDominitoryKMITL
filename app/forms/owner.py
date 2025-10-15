@@ -1,7 +1,5 @@
-# phuwishpk/finddominitorykmitl/FindDominitoryKMITL-owner-improvements/app/forms/owner.py
-
 from flask_wtf import FlaskForm
-from wtforms import StringField, FloatField, IntegerField, HiddenField, TextAreaField, SelectField, MultipleFileField
+from wtforms import StringField, FloatField, IntegerField, HiddenField, TextAreaField, SelectField, MultipleFileField, SubmitField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional, URL, ValidationError
 from app.utils.validation import validate_image_file
 from flask import request
@@ -66,3 +64,12 @@ class PropertyForm(FlaskForm):
                  self.images.errors.append('กรุณาอัปโหลดรูปภาพอย่างน้อย 1 รูป')
                  is_valid = False
         return is_valid
+
+# --- vvv เพิ่มคลาสฟอร์มใหม่นี้เข้าไป vvv ---
+class RequestReviewDeletionForm(FlaskForm):
+    reason = TextAreaField(
+        'เหตุผลในการขอลบ',
+        validators=[DataRequired("กรุณาระบุเหตุผล"), Length(min=10, max=500)],
+        render_kw={"placeholder": "เช่น เป็นสแปม, ใช้คำหยาบคาย, ไม่เกี่ยวกับหอพัก..."}
+    )
+    submit = SubmitField('ส่งคำร้องขอ')
