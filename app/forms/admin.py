@@ -1,7 +1,7 @@
 # app/forms/admin.py
 from flask_wtf import FlaskForm
 from wtforms import TextAreaField, SubmitField, StringField, BooleanField, SelectField
-from wtforms.validators import DataRequired, Length, Email, Optional, Regexp
+from wtforms.validators import DataRequired, Length, Optional, Regexp
 
 class RejectForm(FlaskForm):
     """

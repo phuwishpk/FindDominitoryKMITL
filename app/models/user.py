@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from app.extensions import db
 from flask import current_app
 from itsdangerous import URLSafeTimedSerializer as Serializer
