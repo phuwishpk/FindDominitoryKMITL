@@ -1,6 +1,5 @@
 # app/services/approval_service.py
 
-from app.models.property import Property
 from app.models.approval import ApprovalRequest, AuditLog
 from app.repositories.interfaces.approval_repo import IApprovalRepo
 from app.repositories.interfaces.property_repo import IPropertyRepo
