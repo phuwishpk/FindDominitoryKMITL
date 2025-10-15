@@ -6,41 +6,30 @@
     <a href="{{ url_for('owner.dashboard') }}" class="btn btn-sm btn-outline-secondary">← กลับสู่หน้าหลัก</a>
 </div>
 
-<div class="table-responsive">
-    <table class="table align-middle">
-        <thead>
-            <tr>
-                <th scope="col">ID</th>
-                <th scope="col">ชื่อหอพัก</th>
-                <th scope="col">วันที่ลบ</th>
-                <th scope="col" class="text-end">การกระทำ</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for prop in pagination.items %}
-            <tr>
-                <th scope="row">{{ prop.id }}</th>
-                <td>{{ prop.dorm_name }}</td>
-                <td>{{ prop.deleted_at|to_bkk_time }}</td>
-                <td class="text-end">
-                    <button type="button" class="btn btn-sm btn-outline-success me-1" data-bs-toggle="modal" data-bs-target="#restoreModal-{{ prop.id }}">
-                        กู้คืน
-                    </button>
-                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ prop.id }}">
-                        ลบถาวร
-                    </button>
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="4" class="text-center text-muted py-5 card">
-                    <i data-feather="trash-2" class="mb-3" style="width: 48px; height: 48px;"></i>
-                    <h5 class="mb-0">ถังขยะว่าง</h5>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="card">
+    <div class="list-group list-group-flush">
+        {% for prop in pagination.items %}
+        <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap p-3">
+            <div class="me-3 mb-2 mb-md-0">
+                <span class="fw-semibold text-dark">{{ prop.dorm_name }}</span>
+                <small class="d-block text-muted">ลบเมื่อ: {{ prop.deleted_at|to_bkk_time }}</small>
+            </div>
+            <div class="d-flex align-items-center mt-2 mt-md-0">
+                <button type="button" class="btn btn-sm btn-outline-success me-2" data-bs-toggle="modal" data-bs-target="#restoreModal-{{ prop.id }}">
+                    <i data-feather="rotate-ccw" style="width:16px;" class="me-1"></i> กู้คืน
+                </button>
+                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ prop.id }}">
+                    <i data-feather="trash-2" style="width:16px;" class="me-1"></i> ลบถาวร
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <div class="list-group-item text-center text-muted p-5">
+            <i data-feather="trash-2" class="mb-3" style="width: 48px; height: 48px;"></i>
+            <h5 class="mb-0">ถังขยะว่าง</h5>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 
 {% if pagination.pages > 1 %}

@@ -2,7 +2,6 @@
 
 {% block content %}
 <style>
-    /* --- New, Modern UI for Admin/Owner --- */
     :root {
         --primary: #004a99; /* KMITL Blue */
         --primary-rgb: 0, 74, 153;
@@ -10,21 +9,17 @@
         --secondary: #6c757d;
         --text-dark: #1f2937;
         --text-light: #6b7280;
-        --bg-main: #f9fafb; /* Lighter background */
+        --bg-main: #f9fafb;
         --bg-sidebar: #ffffff;
         --border-color: #e5e7eb;
         --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         --card-shadow-hover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     }
-
-    /* Import Kanit Font */
     @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap');
-
     body.admin-body, body.owner-body {
         background-color: var(--bg-main);
         font-family: 'Kanit', sans-serif;
     }
-
     .sidebar {
         position: fixed;
         top: 0;
@@ -36,8 +31,8 @@
         padding: 1.5rem 1rem;
         display: flex;
         flex-direction: column;
-        transition: all 0.3s;
-        z-index: 100;
+        transition: transform 0.3s ease-in-out;
+        z-index: 1040;
     }
     .sidebar-header {
         display: flex;
@@ -99,17 +94,15 @@
     .sidebar-nav .nav-link.active .feather {
         color: #fff;
     }
-
     .sidebar-footer {
         margin-top: auto;
     }
-
     .main-content {
         margin-left: 260px;
         padding: 2.5rem;
         width: calc(100% - 260px);
+        transition: margin-left 0.3s ease-in-out;
     }
-
     .card {
         border: 1px solid var(--border-color);
         border-radius: 0.75rem;
@@ -126,7 +119,6 @@
         font-weight: 600;
         color: var(--text-dark);
     }
-
     .btn-primary {
         background-color: var(--primary);
         border-color: var(--primary);
@@ -136,14 +128,69 @@
         transform: translateY(-1px);
         box-shadow: 0 4px 10px rgba(var(--primary-rgb), 0.25);
     }
-
     .list-group-item {
         transition: background-color 0.2s ease;
     }
     .list-group-item:hover {
         background-color: #f9fafb;
     }
+
+    /* --- CSS ใหม่สำหรับ Responsive --- */
+    .mobile-header {
+        display: none; /* ซ่อนในจอใหญ่ */
+        align-items: center;
+        padding: 0.75rem 1.5rem;
+        background-color: var(--bg-sidebar);
+        border-bottom: 1px solid var(--border-color);
+        z-index: 1030;
+    }
+    .mobile-header-brand {
+        font-weight: 600;
+        color: var(--text-dark);
+        text-decoration: none;
+    }
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0,0,0,0.5);
+        display: none;
+        z-index: 1039;
+    }
+    .sidebar-overlay.is-active {
+        display: block;
+    }
+
+    @media (max-width: 991.98px) {
+        .mobile-header {
+            display: flex;
+        }
+        .sidebar {
+            transform: translateX(-100%);
+        }
+        .sidebar.is-open {
+            transform: translateX(0);
+        }
+        .main-content {
+            margin-left: 0;
+            width: 100%;
+            padding: 1.5rem;
+        }
+        body {
+            padding-top: 61px;
+        }
+    }
 </style>
+
+<header class="mobile-header sticky-top">
+    <button class="btn btn-light me-3" id="sidebar-toggle-btn">
+        <i data-feather="menu"></i>
+    </button>
+    <a href="{{ url_for('owner.dashboard') }}" class="mobile-header-brand">จัดการหอพัก</a>
+</header>
+<div class="sidebar-overlay"></div>
 
 <div class="sidebar">
     <div class="d-flex flex-column h-100">
@@ -161,13 +208,13 @@
                 </li>
                 
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint in ['owner.new_property', 'owner.edit_property'] %}active{% endif %}" href="{{ url_for('owner.new_property') }}">
-                        <i data-feather="plus-circle"></i> สร้าง/แก้ไขประกาศ
+                    <a class="nav-link {% if request.endpoint == 'owner.new_property' %}active{% endif %}" href="{{ url_for('owner.new_property') }}">
+                        <i data-feather="plus-circle"></i> สร้างประกาศใหม่
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint in ['owner.review_reports', 'owner.property_reviews'] %}active{% endif %}" href="{{ url_for('owner.review_reports') }}">
-                        <i data-feather="message-square"></i> จัดการรีวิว
+                    <a class="nav-link {% if request.endpoint == 'owner.review_reports' %}active{% endif %}" href="{{ url_for('owner.review_reports') }}">
+                        <i data-feather="flag"></i> ประวัติคำร้องขอลบ
                     </a>
                 </li>
                 <li class="nav-item">
@@ -201,4 +248,31 @@
 <div class="main-content">
     {% block owner_content %}{% endblock %}
 </div>
+{% endblock %}
+
+
+{% block page_scripts %}
+{{ super() }}
+<script>
+    // --- JavaScript ใหม่สำหรับ Responsive Sidebar ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarToggle = document.getElementById('sidebar-toggle-btn');
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.sidebar-overlay');
+
+        function closeSidebar() {
+            sidebar.classList.remove('is-open');
+            overlay.classList.remove('is-active');
+        }
+
+        if (sidebarToggle && sidebar && overlay) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('is-open');
+                overlay.classList.toggle('is-active');
+            });
+
+            overlay.addEventListener('click', closeSidebar);
+        }
+    });
+</script>
 {% endblock %}

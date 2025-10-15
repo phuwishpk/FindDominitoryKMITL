@@ -83,8 +83,17 @@
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.3);
     }
-    .btn-login-link { color: var(--text-color-light); font-weight: 500; }
-    .btn-login-link strong { color: var(--primary-color); font-weight: 600; }
+    .btn-back-link {
+        color: var(--text-color-light);
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 1.5rem;
+        transition: color 0.2s;
+    }
+    .btn-back-link:hover {
+        color: var(--primary-color);
+    }
 </style>
 
 <div class="register-card">
@@ -168,7 +177,9 @@
         </div>
         
         <div class="text-center">
-            <a class="btn-login-link" href="{{ url_for('auth.login') }}">Already have an account? <strong>Sign In</strong></a>
+            <a href="{{ url_for('auth.login') }}" class="btn-back-link">
+                <i data-feather="arrow-left" style="width:14px; vertical-align: middle;"></i> ย้อนกลับไปหน้า Login
+            </a>
         </div>
     </form>
 </div>
