@@ -14,8 +14,6 @@
         --border-color: #e5e7eb;
         --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         --card-shadow-hover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-        /* กำหนดความสูงของ Mobile Header */
-        --mobile-header-height: 61px;
     }
     @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap');
     body.admin-body, body.owner-body {
@@ -189,7 +187,7 @@
             padding: 1.5rem;
         }
         body {
-            padding-top: var(--mobile-header-height);
+            padding-top: 61px;
         }
     }
 </style>
@@ -209,14 +207,14 @@
                 <span class="icon-wrapper"><i data-feather="home"></i></span>
                 <a href="{{ url_for('owner.dashboard') }}">จัดการหอพัก</a>
             </div>
-
+            
             <ul class="nav flex-column sidebar-nav">
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'owner.dashboard' %}active{% endif %}" href="{{ url_for('owner.dashboard') }}">
                         <i data-feather="grid"></i> หน้าหลัก
                     </a>
                 </li>
-
+                
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'owner.new_property' %}active{% endif %}" href="{{ url_for('owner.new_property') }}">
                         <i data-feather="plus-circle"></i> สร้างประกาศใหม่

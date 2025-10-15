@@ -11,7 +11,7 @@ class DashboardService:
         self.user_repo = user_repo
         self.property_repo = property_repo
         self.approval_repo = approval_repo
-        self.review_report_repo = review_report_repo
+        self.review_report_repo = review_report_repo # เพิ่มบรรทัดนี้
 
     def get_stats(self) -> dict:
         """รวบรวมสถิติหลักของระบบ"""
@@ -24,7 +24,7 @@ class DashboardService:
             "total_properties": self.property_repo.count_active_properties(),
             "pending_properties": len(self.approval_repo.get_pending_properties()),
             "pending_owners": len(self.user_repo.get_pending_owners()),
-            "pending_review_reports": pending_reports_count
+            "pending_review_reports": pending_reports_count # เพิ่มค่านี้
         }
 
     def get_pie_chart_data(self) -> dict:

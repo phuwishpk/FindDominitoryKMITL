@@ -1,5 +1,3 @@
-# app/models/user.py
-
 from datetime import datetime
 from app.extensions import db
 from flask import current_app

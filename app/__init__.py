@@ -1,5 +1,3 @@
-# app/__init__.py
-
 from flask import Flask, send_from_directory
 from .extensions import db, migrate, login_manager, babel_ext, limiter, csrf
 from .config import Config
@@ -28,8 +26,9 @@ from .services.upload_service import UploadService
 from .services.dashboard_service import DashboardService
 from .services.review_service import ReviewService
 from .services.review_management_service import ReviewManagementService
+# --- vvv [1] เพิ่มการ import HistoryService vvv ---
 from .services.history_service import HistoryService
-
+# --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
 
 def register_dependencies(app: Flask):
     container = {}
@@ -55,10 +54,11 @@ def register_dependencies(app: Flask):
     container["dashboard_service"] = DashboardService(
         user_repo=container["user_repo"],
         property_repo=container["property_repo"],
-        approval_repo=container["approval_repo"],
-        review_report_repo=container["review_report_repo"]
+        approval_repo=container["approval_repo"]
     )
+    # --- vvv [2] เพิ่มการลงทะเบียน HistoryService vvv ---
     container["history_service"] = HistoryService(container["property_repo"])
+    # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
     
     if not hasattr(app, "extensions"):
         app.extensions = {}
@@ -80,10 +80,12 @@ def create_app() -> Flask:
 
     @app.context_processor
     def inject_global_vars():
+        # --- vvv [3] แก้ไข context processor เพื่อเพิ่มข้อมูล recently_viewed vvv ---
         history_service = app.extensions["container"].get("history_service")
         recently_viewed = []
         if history_service:
             recently_viewed = history_service.get_viewed_properties()
+        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
         room_type_map = dict(ROOM_TYPE_CHOICES)
         
@@ -119,18 +121,12 @@ def create_app() -> Flask:
         from app.models.property import Amenity
         from app.extensions import db
         data = [
-            ("pet", "อนุญาตสัตว์เลี้ยง", "Pets allowed"),
-            ("ac", "เครื่องปรับอากาศ", "Air conditioning"),
-            ("guard", "รปภ.", "Security guard"),
-            ("cctv", "กล้อง CCTV", "CCTV"),
-            ("fridge", "ตู้เย็น", "Refrigerator"),
-            ("bed", "เตียง", "Bed"),
-            ("heater", "เครื่องทำน้ำอุ่น", "Water heater"),
-            ("internet", "อินเทอร์เน็ต", "Internet"),
-            ("tv", "ทีวี", "TV"),
-            ("sofa", "โซฟา", "Sofa"),
-            ("wardrobe", "ตู้เสื้อผ้า", "Wardrobe"),
-            ("desk", "โต๊ะทำงาน", "Desk"),
+            ("pet","อนุญาตสัตว์เลี้ยง","Pets allowed"), ("ac","เครื่องปรับอากาศ","Air conditioning"),
+            ("guard","รปภ.","Security guard"), ("cctv","กล้อง CCTV","CCTV"),
+            ("fridge","ตู้เย็น","Refrigerator"), ("bed","เตียง","Bed"),
+            ("heater","เครื่องทำน้ำอุ่น","Water heater"), ("internet","อินเทอร์เน็ต","Internet"),
+            ("tv","ทีวี","TV"), ("sofa","โซฟา","Sofa"),
+            ("wardrobe","ตู้เสื้อผ้า","Wardrobe"), ("desk","โต๊ะทำงาน","Desk"),
         ]
         for code, th, en in data:
             if not Amenity.query.filter_by(code=code).first():
@@ -144,13 +140,13 @@ def create_app() -> Flask:
         from app.models.property import Property
         from app.extensions import db
         from werkzeug.security import generate_password_hash
-
+        
         location_pin_data = {"type": "Point", "coordinates": [100.7758, 13.7292]}
 
         if not Owner.query.filter_by(email="owner@example.com").first():
             o = Owner(full_name_th="เจ้าของตัวอย่าง", citizen_id="1101700203451",
                       email="owner@example.com", password_hash=generate_password_hash("password"),
-                      is_active=True, approval_status='approved')
+                      is_active=True, approval_status='approved') # Set owner as active
             db.session.add(o)
             db.session.commit()
             

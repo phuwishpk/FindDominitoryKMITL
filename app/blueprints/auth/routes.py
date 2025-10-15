@@ -1,5 +1,3 @@
-# app/blueprints/auth/routes.py
-
 from flask import render_template, redirect, url_for, flash, current_app, session
 from flask_login import login_required, current_user
 from . import bp
@@ -85,7 +83,7 @@ def login():
                 svc.login_owner(owner)
                 return redirect(url_for("owner.dashboard"))
             
-            if not owner.is_active: 
+            if not owner.is_active:
                 flash("บัญชีของคุณยังไม่ได้รับการอนุมัติจากผู้ดูแลระบบ", "warning")
                 return render_template("auth/login.html", form=form)
 
