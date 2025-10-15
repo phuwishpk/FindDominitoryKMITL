@@ -1,3 +1,4 @@
+import json
 from app.models.property import Property, Amenity
 from .location_service import LocationDataHandler
 

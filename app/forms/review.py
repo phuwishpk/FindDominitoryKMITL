@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import TextAreaField, SelectField, SubmitField
-from wtforms.validators import DataRequired
+from wtforms.validators import DataRequired, NumberRange
 
 class ReviewForm(FlaskForm):
     rating = SelectField(

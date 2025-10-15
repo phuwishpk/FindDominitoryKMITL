@@ -1,6 +1,8 @@
 # app/services/review_service.py
 
 from app.models.review import Review
+from app.extensions import db
+from sqlalchemy import func
 
 class ReviewService:
     def __init__(self, review_repo):

@@ -1,14 +1,13 @@
-# app/services/dashboard_service.py
-
 from collections import OrderedDict
 from datetime import datetime, timedelta
+from sqlalchemy import func
+from app.models import Property, Owner
 
 class DashboardService:
-    def __init__(self, user_repo, property_repo, approval_repo, review_report_repo):
+    def __init__(self, user_repo, property_repo, approval_repo):
         self.user_repo = user_repo
         self.property_repo = property_repo
         self.approval_repo = approval_repo
-        self.review_report_repo = review_report_repo
 
     def get_stats(self) -> dict:
         """รวบรวมสถิติหลักของระบบ"""

@@ -1,5 +1,6 @@
 from datetime import datetime
 from app.extensions import db
+from app.models.review import Review 
 
 class PropertyAmenity(db.Model):
     __tablename__ = "property_amenities"

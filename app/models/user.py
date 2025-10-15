@@ -1,6 +1,4 @@
-# app/models/user.py
-
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.extensions import db
 from flask import current_app
 from itsdangerous import URLSafeTimedSerializer as Serializer
@@ -29,6 +27,7 @@ class Owner(db.Model):
     
     deleted_at = db.Column(db.DateTime, nullable=True)
 
+    # --- vvv เพิ่ม 2 ฟังก์ชันนี้เข้ามา vvv ---
     def get_reset_token(self, expires_sec=1800):
         s = Serializer(current_app.config['SECRET_KEY'])
         return s.dumps({'owner_id': self.id})
@@ -39,9 +38,10 @@ class Owner(db.Model):
         try:
             data = s.loads(token, max_age=expires_sec)
             owner_id = data.get('owner_id')
-        except Exception: # <-- แก้ไขที่นี่
+        except:
             return None
         return Owner.query.get(owner_id)
+    # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
 
     def __repr__(self) -> str:
         return f"<Owner id={self.id} email={self.email!r}>"

@@ -7,6 +7,7 @@ from app.models.user import Owner
 from app.models.approval import AuditLog
 from app.forms.upload import EmptyForm
 from app.forms.admin import RejectForm, AdminEditOwnerForm, AmenityForm, AdminEditPropertyForm
+from sqlalchemy import func, or_
 from datetime import datetime
 
 @bp.route("/")
