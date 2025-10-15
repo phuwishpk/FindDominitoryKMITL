@@ -2,8 +2,6 @@
 
 from collections import OrderedDict
 from datetime import datetime, timedelta
-from sqlalchemy import func
-from app.models import Property
 
 class DashboardService:
     # แก้ไข: เพิ่ม review_report_repo เข้าไปใน __init__
