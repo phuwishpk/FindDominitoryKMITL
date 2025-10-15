@@ -1,10 +1,10 @@
 from flask import Flask, send_from_directory
-from .extensions import db, migrate, login_manager, babel_ext, limiter, csrf 
+from .extensions import db, migrate, login_manager, babel_ext, limiter, csrf
 from .config import Config
 
 from .utils.helpers import format_as_bangkok_time, from_json_string
-from .forms.upload import EmptyForm 
-from .forms.owner import ROOM_TYPE_CHOICES 
+from .forms.upload import EmptyForm
+from .forms.owner import ROOM_TYPE_CHOICES
 
 from .blueprints.public import bp as public_bp
 from .blueprints.owner import bp as owner_bp
@@ -16,16 +16,16 @@ from .repositories.sqlalchemy.user_repo_sql import SqlUserRepo
 from .repositories.sqlalchemy.property_repo_sql import SqlPropertyRepo
 from .repositories.sqlalchemy.approval_repo_sql import SqlApprovalRepo
 from .repositories.sqlalchemy.review_repo_sql import SqlReviewRepo
-from .repositories.sqlalchemy.review_report_repo_sql import SqlReviewReportRepo # เพิ่ม
+from .repositories.sqlalchemy.review_report_repo_sql import SqlReviewReportRepo
 
 from .services.auth_service import AuthService
 from .services.property_service import PropertyService
 from .services.search_service import SearchService
 from .services.approval_service import ApprovalService
 from .services.upload_service import UploadService
-from .services.dashboard_service import DashboardService 
+from .services.dashboard_service import DashboardService
 from .services.review_service import ReviewService
-from .services.review_management_service import ReviewManagementService # เพิ่ม
+from .services.review_management_service import ReviewManagementService
 
 def register_dependencies(app: Flask):
     container = {}
@@ -33,7 +33,7 @@ def register_dependencies(app: Flask):
     container["property_repo"] = SqlPropertyRepo()
     container["approval_repo"] = SqlApprovalRepo()
     container["review_repo"] = SqlReviewRepo()
-    container["review_report_repo"] = SqlReviewReportRepo() # เพิ่ม
+    container["review_report_repo"] = SqlReviewReportRepo()
     container["upload_service"] = UploadService(app.config.get("UPLOAD_FOLDER", "uploads"))
     container["auth_service"] = AuthService(
         user_repo=container["user_repo"],
@@ -43,7 +43,7 @@ def register_dependencies(app: Flask):
     container["search_service"] = SearchService(container["property_repo"])
     container["approval_service"] = ApprovalService(container["approval_repo"], container["property_repo"])
     container["review_service"] = ReviewService(container["review_repo"])
-    container["review_management_service"] = ReviewManagementService( # เพิ่ม
+    container["review_management_service"] = ReviewManagementService(
         review_repo=container["review_repo"],
         report_repo=container["review_report_repo"],
         prop_repo=container["property_repo"]
@@ -53,7 +53,7 @@ def register_dependencies(app: Flask):
         property_repo=container["property_repo"],
         approval_repo=container["approval_repo"]
     )
-    
+
     if not hasattr(app, "extensions"):
         app.extensions = {}
     app.extensions["container"] = container
@@ -72,7 +72,7 @@ def create_app() -> Flask:
     app.jinja_env.filters['to_bkk_time'] = format_as_bangkok_time
     app.jinja_env.filters['fromjson'] = from_json_string
 
-    @app.context_processor 
+    @app.context_processor
     def inject_global_vars():
         room_type_map = dict(ROOM_TYPE_CHOICES)
         return dict(
@@ -105,13 +105,20 @@ def create_app() -> Flask:
     def seed_amenities():
         from app.models.property import Amenity
         from app.extensions import db
+        # ✅ รายการสิ่งอำนวยความสะดวกทั้งหมด
         data = [
-            ("pet","อนุญาตสัตว์เลี้ยง","Pets allowed"), ("ac","เครื่องปรับอากาศ","Air conditioning"),
-            ("guard","รปภ.","Security guard"), ("cctv","กล้อง CCTV","CCTV"),
-            ("fridge","ตู้เย็น","Refrigerator"), ("bed","เตียง","Bed"),
-            ("heater","เครื่องทำน้ำอุ่น","Water heater"), ("internet","อินเทอร์เน็ต","Internet"),
-            ("tv","ทีวี","TV"), ("sofa","โซฟา","Sofa"),
-            ("wardrobe","ตู้เสื้อผ้า","Wardrobe"), ("desk","โต๊ะทำงาน","Desk"),
+            ("pet", "อนุญาตสัตว์เลี้ยง", "Pets allowed"),
+            ("ac", "เครื่องปรับอากาศ", "Air conditioning"),
+            ("guard", "รปภ.", "Security guard"),
+            ("cctv", "กล้อง CCTV", "CCTV"),
+            ("fridge", "ตู้เย็น", "Refrigerator"),
+            ("bed", "เตียง", "Bed"),
+            ("heater", "เครื่องทำน้ำอุ่น", "Water heater"),
+            ("internet", "อินเทอร์เน็ต", "Internet"),
+            ("tv", "ทีวี", "TV"),
+            ("sofa", "โซฟา", "Sofa"),
+            ("wardrobe", "ตู้เสื้อผ้า", "Wardrobe"),
+            ("desk", "โต๊ะทำงาน", "Desk"),
         ]
         for code, th, en in data:
             if not Amenity.query.filter_by(code=code).first():
@@ -125,21 +132,21 @@ def create_app() -> Flask:
         from app.models.property import Property
         from app.extensions import db
         from werkzeug.security import generate_password_hash
-        
+
         location_pin_data = {"type": "Point", "coordinates": [100.7758, 13.7292]}
 
         if not Owner.query.filter_by(email="owner@example.com").first():
             o = Owner(full_name_th="เจ้าของตัวอย่าง", citizen_id="1101700203451",
                       email="owner@example.com", password_hash=generate_password_hash("password"),
-                      is_active=True, approval_status='approved') # Set owner as active
+                      is_active=True, approval_status='approved')
             db.session.add(o); db.session.commit()
-            
+
             p = Property(owner_id=o.id, dorm_name="ตัวอย่างหอพัก", room_type="studio",
-                         rent_price=6500, 
-                         location_pin=location_pin_data, 
+                         rent_price=6500,
+                         location_pin=location_pin_data,
                          workflow_status=Property.WORKFLOW_APPROVED)
             db.session.add(p); db.session.commit()
-            
+
         if not Admin.query.filter_by(username="admin").first():
             a = Admin(username="admin", password_hash=generate_password_hash("admin"), display_name="Administrator")
             db.session.add(a); db.session.commit()
