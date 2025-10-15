@@ -16,7 +16,7 @@ from .repositories.sqlalchemy.user_repo_sql import SqlUserRepo
 from .repositories.sqlalchemy.property_repo_sql import SqlPropertyRepo
 from .repositories.sqlalchemy.approval_repo_sql import SqlApprovalRepo
 from .repositories.sqlalchemy.review_repo_sql import SqlReviewRepo
-from .repositories.sqlalchemy.review_report_repo_sql import SqlReviewReportRepo # เพิ่ม
+from .repositories.sqlalchemy.review_report_repo_sql import SqlReviewReportRepo
 
 from .services.auth_service import AuthService
 from .services.property_service import PropertyService
@@ -25,7 +25,10 @@ from .services.approval_service import ApprovalService
 from .services.upload_service import UploadService
 from .services.dashboard_service import DashboardService 
 from .services.review_service import ReviewService
-from .services.review_management_service import ReviewManagementService # เพิ่ม
+from .services.review_management_service import ReviewManagementService
+# --- vvv [1] เพิ่มการ import HistoryService vvv ---
+from .services.history_service import HistoryService
+# --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
 
 def register_dependencies(app: Flask):
     container = {}
@@ -33,7 +36,7 @@ def register_dependencies(app: Flask):
     container["property_repo"] = SqlPropertyRepo()
     container["approval_repo"] = SqlApprovalRepo()
     container["review_repo"] = SqlReviewRepo()
-    container["review_report_repo"] = SqlReviewReportRepo() # เพิ่ม
+    container["review_report_repo"] = SqlReviewReportRepo()
     container["upload_service"] = UploadService(app.config.get("UPLOAD_FOLDER", "uploads"))
     container["auth_service"] = AuthService(
         user_repo=container["user_repo"],
@@ -43,7 +46,7 @@ def register_dependencies(app: Flask):
     container["search_service"] = SearchService(container["property_repo"])
     container["approval_service"] = ApprovalService(container["approval_repo"], container["property_repo"])
     container["review_service"] = ReviewService(container["review_repo"])
-    container["review_management_service"] = ReviewManagementService( # เพิ่ม
+    container["review_management_service"] = ReviewManagementService(
         review_repo=container["review_repo"],
         report_repo=container["review_report_repo"],
         prop_repo=container["property_repo"]
@@ -53,6 +56,9 @@ def register_dependencies(app: Flask):
         property_repo=container["property_repo"],
         approval_repo=container["approval_repo"]
     )
+    # --- vvv [2] เพิ่มการลงทะเบียน HistoryService vvv ---
+    container["history_service"] = HistoryService(container["property_repo"])
+    # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
     
     if not hasattr(app, "extensions"):
         app.extensions = {}
@@ -74,10 +80,19 @@ def create_app() -> Flask:
 
     @app.context_processor 
     def inject_global_vars():
+        # --- vvv [3] แก้ไข context processor เพื่อเพิ่มข้อมูล recently_viewed vvv ---
+        history_service = app.extensions["container"].get("history_service")
+        recently_viewed = []
+        if history_service:
+            recently_viewed = history_service.get_viewed_properties()
+        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+
         room_type_map = dict(ROOM_TYPE_CHOICES)
+        
         return dict(
             empty_form=EmptyForm(),
-            ROOM_TYPES=room_type_map
+            ROOM_TYPES=room_type_map,
+            recently_viewed_properties=recently_viewed  # <-- ส่งตัวแปรนี้ไปให้ template
         )
 
     with app.app_context():

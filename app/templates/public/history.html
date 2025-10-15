@@ -1,0 +1,54 @@
+{% extends 'public/public_base.html' %}
+
+{% block title %}ประวัติการเข้าชม - FindDormitoryKMITL{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="display-5 fw-bold mb-4">หอพักที่เข้าชมล่าสุด</h1>
+
+    {% if recently_viewed %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for prop in recently_viewed %}
+        <div class="col">
+            <div class="card h-100 shadow-sm result-card">
+                {% set first_image = prop.images|sort(attribute='position')|first %}
+                <a href="{{ url_for('public.property_detail', prop_id=prop.id) }}">
+                    {% if first_image %}
+                    <img src="/{{ first_image.file_path }}" class="card-img-top" alt="{{ prop.dorm_name }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                    <div class="d-flex justify-content-center align-items-center bg-light text-muted" style="height: 200px;">
+                        <i data-feather="image" style="width: 48px; height: 48px;"></i>
+                    </div>
+                    {% endif %}
+                </a>
+                <div class="card-body">
+                    <h5 class="card-title text-truncate">
+                        <a href="{{ url_for('public.property_detail', prop_id=prop.id) }}" class="text-decoration-none text-dark">{{ prop.dorm_name }}</a>
+                    </h5>
+                    <p class="card-text text-muted small">
+                        {{ prop.soi or 'N/A' }}, ถ. {{ prop.road or 'N/A' }}
+                    </p>
+                    <h4 class="card-text text-primary fw-bold">
+                        {{ "{:,.0f}".format(prop.rent_price) if prop.rent_price is not none else 'N/A' }} <span class="small text-muted fw-normal">บาท/เดือน</span>
+                    </h4>
+                </div>
+                <div class="card-footer bg-white border-0 pb-3">
+                    {% if prop.availability_status == 'vacant' %}
+                        <span class="badge bg-success-subtle text-success-emphasis rounded-pill">ห้องว่าง</span>
+                    {% else %}
+                        <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill">ห้องเต็ม</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center p-5 border rounded bg-light">
+        <i data-feather="eye-off" class="mb-3 text-muted" style="width: 48px; height: 48px;"></i>
+        <h5 class="mb-0">ยังไม่มีประวัติการเข้าชม</h5>
+        <p class="text-muted">หอพักที่คุณเข้าชมจะปรากฏที่นี่</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -45,6 +45,11 @@ def property_detail(prop_id: int):
     if not prop or prop.workflow_status != 'approved':
         return render_template("public/detail.html", prop=None), 404
     
+    # --- vvv ส่วนที่เพิ่มเข้ามาสำหรับบันทึกประวัติการเข้าชม vvv ---
+    history_svc = current_app.extensions["container"]["history_service"]
+    history_svc.add_viewed_property(prop_id)
+    # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
+
     review_svc = current_app.extensions["container"]["review_service"]
     reviews_data = review_svc.get_reviews_and_average_rating(prop_id)
     
