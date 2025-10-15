@@ -1,12 +1,12 @@
+# app/services/dashboard_service.py
+
 from collections import OrderedDict
 from datetime import datetime, timedelta
 from sqlalchemy import func
-from app.models import Property, Owner
-from app.models.review_report import ReviewReport
-from app.extensions import db
+from app.models import Property
 
 class DashboardService:
-    # FIXED: Added review_report_repo to __init__
+    # แก้ไข: เพิ่ม review_report_repo เข้าไปใน __init__
     def __init__(self, user_repo, property_repo, approval_repo, review_report_repo):
         self.user_repo = user_repo
         self.property_repo = property_repo
@@ -15,7 +15,7 @@ class DashboardService:
 
     def get_stats(self) -> dict:
         """รวบรวมสถิติหลักของระบบ"""
-        # FIXED: Using the injected repository method to get pending reports count
+        # แก้ไข: เพิ่มการนับจำนวนรีวิวที่รออนุมัติ
         pending_reports = self.review_report_repo.get_pending_reports()
         pending_reports_count = len(pending_reports)
         

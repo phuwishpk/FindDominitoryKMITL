@@ -3,7 +3,6 @@
 from datetime import datetime
 from app.models.review import Review
 from app.models.review_report import ReviewReport
-from app.models.property import Property
 from app.models.approval import AuditLog
 from app.extensions import db
 

@@ -10,7 +10,6 @@ from app.forms.owner import PropertyForm, RequestReviewDeletionForm
 from app.forms.upload import UploadImageForm, ReorderImagesForm, EmptyForm
 from app.models.property import Property, PropertyImage, Amenity
 from app.models.approval import ApprovalRequest, AuditLog
-from app.models.review import Review
 from app.extensions import owner_required, db
 
 try:

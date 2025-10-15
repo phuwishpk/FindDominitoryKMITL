@@ -1,3 +1,5 @@
+# app/__init__.py
+
 from flask import Flask, send_from_directory
 from .extensions import db, migrate, login_manager, babel_ext, limiter, csrf
 from .config import Config
@@ -26,7 +28,6 @@ from .services.upload_service import UploadService
 from .services.dashboard_service import DashboardService
 from .services.review_service import ReviewService
 from .services.review_management_service import ReviewManagementService
-# --- [1] เพิ่มการ import HistoryService ---
 from .services.history_service import HistoryService
 
 
@@ -51,14 +52,12 @@ def register_dependencies(app: Flask):
         report_repo=container["review_report_repo"],
         prop_repo=container["property_repo"]
     )
-    # FIXED: Added review_report_repo to DashboardService
     container["dashboard_service"] = DashboardService(
         user_repo=container["user_repo"],
         property_repo=container["property_repo"],
         approval_repo=container["approval_repo"],
         review_report_repo=container["review_report_repo"]
     )
-    # --- [2] เพิ่มการลงทะเบียน HistoryService ---
     container["history_service"] = HistoryService(container["property_repo"])
     
     if not hasattr(app, "extensions"):
@@ -81,7 +80,6 @@ def create_app() -> Flask:
 
     @app.context_processor
     def inject_global_vars():
-        # --- [3] แก้ไข context processor เพื่อเพิ่มข้อมูล recently_viewed ---
         history_service = app.extensions["container"].get("history_service")
         recently_viewed = []
         if history_service:
@@ -92,7 +90,7 @@ def create_app() -> Flask:
         return dict(
             empty_form=EmptyForm(),
             ROOM_TYPES=room_type_map,
-            recently_viewed_properties=recently_viewed  # <-- ส่งตัวแปรนี้ไปให้ template
+            recently_viewed_properties=recently_viewed
         )
 
     with app.app_context():
@@ -120,7 +118,6 @@ def create_app() -> Flask:
     def seed_amenities():
         from app.models.property import Amenity
         from app.extensions import db
-        # ✅ รายการสิ่งอำนวยความสะดวกทั้งหมด
         data = [
             ("pet", "อนุญาตสัตว์เลี้ยง", "Pets allowed"),
             ("ac", "เครื่องปรับอากาศ", "Air conditioning"),
@@ -154,18 +151,20 @@ def create_app() -> Flask:
             o = Owner(full_name_th="เจ้าของตัวอย่าง", citizen_id="1101700203451",
                       email="owner@example.com", password_hash=generate_password_hash("password"),
                       is_active=True, approval_status='approved')
-            db.session.add(o); db.session.commit()
-
+            db.session.add(o)
+            db.session.commit()
+            
             p = Property(owner_id=o.id, dorm_name="ตัวอย่างหอพัก", room_type="studio",
                          rent_price=6500,
                          location_pin=location_pin_data,
                          workflow_status=Property.WORKFLOW_APPROVED)
-            db.session.add(p); db.session.commit()
-
+            db.session.add(p)
+            db.session.commit()
+            
         if not Admin.query.filter_by(username="admin").first():
             a = Admin(username="admin", password_hash=generate_password_hash("admin"), display_name="Administrator")
-            db.session.add(a); db.session.commit()
+            db.session.add(a)
+            db.session.commit()
         print("Seeded sample data ✅")
 
     return app
-
