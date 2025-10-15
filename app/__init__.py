@@ -48,10 +48,12 @@ def register_dependencies(app: Flask):
         report_repo=container["review_report_repo"],
         prop_repo=container["property_repo"]
     )
+    # FIXED: Added review_report_repo to DashboardService
     container["dashboard_service"] = DashboardService(
         user_repo=container["user_repo"],
         property_repo=container["property_repo"],
-        approval_repo=container["approval_repo"]
+        approval_repo=container["approval_repo"],
+        review_report_repo=container["review_report_repo"]
     )
     
     if not hasattr(app, "extensions"):
