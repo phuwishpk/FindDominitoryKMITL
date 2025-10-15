@@ -1,19 +1,30 @@
+# app/services/dashboard_service.py
+
 from collections import OrderedDict
 from datetime import datetime, timedelta
+from sqlalchemy import func
+from app.models import Property
 
 class DashboardService:
-    def __init__(self, user_repo, property_repo, approval_repo):
+    # แก้ไข: เพิ่ม review_report_repo เข้าไปใน __init__
+    def __init__(self, user_repo, property_repo, approval_repo, review_report_repo):
         self.user_repo = user_repo
         self.property_repo = property_repo
         self.approval_repo = approval_repo
+        self.review_report_repo = review_report_repo
 
     def get_stats(self) -> dict:
         """รวบรวมสถิติหลักของระบบ"""
+        # แก้ไข: เพิ่มการนับจำนวนรีวิวที่รออนุมัติ
+        pending_reports = self.review_report_repo.get_pending_reports()
+        pending_reports_count = len(pending_reports)
+        
         return {
             "total_owners": self.user_repo.count_active_owners(),
             "total_properties": self.property_repo.count_active_properties(),
             "pending_properties": len(self.approval_repo.get_pending_properties()),
-            "pending_owners": len(self.user_repo.get_pending_owners())
+            "pending_owners": len(self.user_repo.get_pending_owners()),
+            "pending_review_reports": pending_reports_count
         }
 
     def get_pie_chart_data(self) -> dict:
