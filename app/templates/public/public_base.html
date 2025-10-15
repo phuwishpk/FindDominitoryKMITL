@@ -142,6 +142,11 @@
             <a class="nav-link {% if request.endpoint == 'public.search' %}active{% endif %}" href="{{ url_for('public.search') }}">ค้นหาหอพัก</a>
           </li>
           <li class="nav-item">
+            <!-- --- vvv [แก้ไข] เปลี่ยน href ให้ลิงก์ไปที่หน้า history vvv --- -->
+            <a class="nav-link {% if request.endpoint == 'public.history' %}active{% endif %}" href="{{ url_for('public.history') }}">ประวัติการเข้าชม</a>
+            <!-- --- ^^^ สิ้นสุดการแก้ไข ^^^ --- -->
+          </li>
+          <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'public.contact' %}active{% endif %}" href="{{ url_for('public.contact') }}">ติดต่อเรา</a>
           </li>
         </ul>
@@ -167,6 +172,9 @@
 
   <main class="flex-grow-1">
     {% block content %}{% endblock %}
+    <!-- --- vvv [ลบ] ส่วนแสดงผล "หอพักที่เพิ่งเข้าชม" ออกจากไฟล์นี้ vvv --- -->
+    <!-- ส่วนนี้ถูกย้ายไปที่ history.html แล้ว -->
+    <!-- --- ^^^ สิ้นสุดการลบ ^^^ --- -->
   </main>
 
   <footer class="py-4 mt-auto footer-custom">
@@ -174,11 +182,11 @@
       <div class="row align-items-center justify-content-between flex-column flex-sm-row">
         <div class="col-auto"><div class="small m-0">Copyright &copy; FindDormitoryKMITL 2025</div></div>
         <div class="col-auto">
-          <a class="small" href=#"{{ url_for('public.privacy') }}">Privacy</a>
+          <a class="small" href="#">Privacy</a>
           <span class="mx-1">&middot;</span>
-          <a class="small" href=#"{{ url_for('public.terms') }}">Terms</a>
+          <a class="small" href="#">Terms</a>
           <span class="mx-1">&middot;</span>
-          <a class="small" href=#"{{ url_for('public.contact') }}">Contact</a>
+          <a class="small" href="#">Contact</a>
         </div>
       </div>
     </div>
