@@ -58,6 +58,10 @@ def property_detail(prop_id: int):
 
     if not prop or prop.workflow_status != 'approved':
         return render_template("public/detail.html", prop=None), 404
+    
+    # บันทึกประวัติการเข้าชม
+    history_svc = current_app.extensions["container"]["history_service"]
+    history_svc.add_viewed_property(prop_id)
 
     review_svc = current_app.extensions["container"]["review_service"]
     reviews_data = review_svc.get_reviews_and_average_rating(prop_id)
@@ -118,6 +122,11 @@ def search():
         **result_data
     )
 
+# ✅ แสดงหน้าประวัติการเข้าชม (GET)
+@bp.get("/history")
+def history():
+    """แสดงหน้าประวัติการเข้าชม"""
+    return render_template("public/history.html")
 
 # ✅ แสดงหน้าติดต่อเรา (GET)
 @bp.get("/contact")

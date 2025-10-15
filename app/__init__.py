@@ -26,6 +26,9 @@ from .services.upload_service import UploadService
 from .services.dashboard_service import DashboardService
 from .services.review_service import ReviewService
 from .services.review_management_service import ReviewManagementService
+# --- [1] เพิ่มการ import HistoryService ---
+from .services.history_service import HistoryService
+
 
 def register_dependencies(app: Flask):
     container = {}
@@ -53,7 +56,9 @@ def register_dependencies(app: Flask):
         property_repo=container["property_repo"],
         approval_repo=container["approval_repo"]
     )
-
+    # --- [2] เพิ่มการลงทะเบียน HistoryService ---
+    container["history_service"] = HistoryService(container["property_repo"])
+    
     if not hasattr(app, "extensions"):
         app.extensions = {}
     app.extensions["container"] = container
@@ -74,10 +79,18 @@ def create_app() -> Flask:
 
     @app.context_processor
     def inject_global_vars():
+        # --- [3] แก้ไข context processor เพื่อเพิ่มข้อมูล recently_viewed ---
+        history_service = app.extensions["container"].get("history_service")
+        recently_viewed = []
+        if history_service:
+            recently_viewed = history_service.get_viewed_properties()
+
         room_type_map = dict(ROOM_TYPE_CHOICES)
+        
         return dict(
             empty_form=EmptyForm(),
-            ROOM_TYPES=room_type_map
+            ROOM_TYPES=room_type_map,
+            recently_viewed_properties=recently_viewed  # <-- ส่งตัวแปรนี้ไปให้ template
         )
 
     with app.app_context():
@@ -153,3 +166,4 @@ def create_app() -> Flask:
         print("Seeded sample data ✅")
 
     return app
+
