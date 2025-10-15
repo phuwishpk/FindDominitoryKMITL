@@ -86,6 +86,12 @@
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.3);
     }
+    .register-section {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(209, 213, 219, 0.5);
+        text-align: center;
+    }
     .btn-register-link {
         color: var(--text-color-light);
         font-weight: 500;
@@ -93,6 +99,17 @@
     .btn-register-link strong {
         color: var(--primary-color);
         font-weight: 600;
+    }
+    .btn-back-link {
+        color: var(--text-color-light);
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 1.5rem;
+        transition: color 0.2s;
+    }
+    .btn-back-link:hover {
+        color: var(--primary-color);
     }
 </style>
 
@@ -125,13 +142,18 @@
         <div class="d-grid mb-3">
             <button type="submit" class="btn btn-submit-custom">เข้าสู่ระบบ</button>
         </div>
-        
-        <div class="text-center" id="signup-link-wrapper">
-            <a class="btn-register-link" href="{{ url_for('auth.owner_register') }}">
-                ไม่มีบัญชีใช่หรือไม่? <strong>สมัคร Owner</strong>
-            </a>
-        </div>
     </form>
-</div>
 
+    <div class="register-section">
+        <a class="btn-register-link" href="{{ url_for('auth.owner_register') }}">
+            ไม่มีบัญชีใช่หรือไม่? <strong>สมัคร Owner</strong>
+        </a>
+    </div>
+
+    <div class="text-center">
+        <a href="{{ url_for('public.index') }}" class="btn-back-link">
+            <i data-feather="arrow-left" style="width:14px; vertical-align: middle;"></i> กลับสู่หน้าหลัก
+        </a>
+    </div>
+</div>
 {% endblock %}
