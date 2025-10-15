@@ -1,6 +1,6 @@
-# .github/workflows/ci.yml
+# .github/workflows/ci-cd.yml
 
-name: Python CI/CD Workflow
+name: 'Build, Test, and Deploy'
 
 on:
   push:
@@ -9,29 +9,62 @@ on:
     branches: [ "project-improvement" ]
 
 jobs:
-  build:
+  # Job 1: ตรวจสอบคุณภาพโค้ดด้วย Linter
+  lint:
+    name: '🎨 Linting'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version-file: '.python-version'
-        cache: 'pip'
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install flake8
-    - name: Lint with flake8
-      run: |
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+      - name: '⬇️ Check out code'
+        uses: actions/checkout@v4
 
-  deploy:
-    needs: build
+      - name: '🐍 Set up Python'
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: '.python-version'
+          cache: 'pip'
+
+      - name: '⚙️ Install dependencies'
+        run: pip install ruff # Ruff เป็น Linter ที่ใหม่และเร็วกว่า flake8 มาก
+
+      - name: '🔎 Run Ruff Linter'
+        run: ruff check .
+
+  # Job 2: รันเทสอัตโนมัติ (ทดสอบบน Python หลายเวอร์ชัน)
+  test:
+    name: '🧪 Testing'
     runs-on: ubuntu-latest
+    needs: lint # รอให้ Lint ผ่านก่อนค่อยเริ่ม Test
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"] # ทดสอบบน Python 2 เวอร์ชันตามที่ Readme ระบุ
+
+    steps:
+      - name: '⬇️ Check out code'
+        uses: actions/checkout@v4
+
+      - name: '🐍 Set up Python ${{ matrix.python-version }}'
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: '⚙️ Install dependencies'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest # ติดตั้ง Library สำหรับการ Test
+
+      - name: '🔬 Run Pytest'
+        run: pytest # คำสั่งรันเทส (ต้องมีไฟล์เทสในโปรเจกต์)
+
+  # Job 3: Deploy ไปยัง Render
+  deploy:
+    name: '🚀 Deploy to Render'
+    runs-on: ubuntu-latest
+    # รอให้ทั้ง lint และ test ผ่านก่อน
+    needs: [lint, test]
+    # ทำงานเฉพาะตอน push เข้า branch หลักเท่านั้น
     if: github.event_name == 'push'
     steps:
-      - name: Trigger Render Deploy
-        # ✅ ปลอดภัยแล้ว: เรียกใช้ URL จาก Secret ที่เก็บไว้
+      - name: ' TRIGGER DEPLOY '
         run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
