@@ -1,0 +1,43 @@
+# .github/workflows/ci.yml
+
+name: Python CI Workflow
+
+# ทริกเกอร์: ทำงานเมื่อมีการ push หรือ pull request ไปยัง branch 'project-improvement' เท่านั้น
+on:
+  push:
+    branches: [ "project-improvement" ]
+  pull_request:
+    branches: [ "project-improvement" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. เช็คเอาท์โค้ดจาก Repository ของเรา
+    - uses: actions/checkout@v4
+
+    # 2. ตั้งค่า Python ตามเวอร์ชันที่ระบุในไฟล์ .python-version
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version-file: '.python-version'
+        cache: 'pip' # ทำ Cache ให้ pip เพื่อให้ติดตั้งครั้งถัดไปเร็วขึ้น
+
+    # 3. ติดตั้ง Dependencies จาก requirements.txt
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install flake8  # ติดตั้ง linter แยกต่างหาก
+
+    # 4. Linting ด้วย flake8 เพื่อตรวจสอบคุณภาพโค้ด
+    - name: Lint with flake8
+      run: |
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+    # 5. รันเทส (ขั้นตอนสำหรับอนาคต)
+    # - name: Test with pytest
+    #   run: |
+    #     pip install pytest
+    #     pytest
