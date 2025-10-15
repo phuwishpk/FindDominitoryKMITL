@@ -5,6 +5,7 @@ from app.forms.auth import OwnerRegisterForm, CombinedLoginForm, ForgotPasswordF
 from app.forms.upload import EmptyForm
 from app.models.user import Owner, Admin
 from werkzeug.security import generate_password_hash
+from app.extensions import db # <<< เพิ่ม import db
 
 # --- vvv เพิ่ม import สำหรับส่งอีเมล vvv ---
 import smtplib
@@ -26,16 +27,17 @@ def send_reset_email(owner):
     
     try:
         with smtplib.SMTP(current_app.config['MAIL_SERVER'], current_app.config['MAIL_PORT']) as server:
-            # --- vvv ส่วนที่แก้ไข ---
             # ตรวจสอบการตั้งค่าก่อนเรียกใช้ starttls และ login
             if current_app.config['MAIL_USE_TLS']:
                 server.starttls()
             if current_app.config['MAIL_USERNAME']:
                 server.login(current_app.config['MAIL_USERNAME'], current_app.config['MAIL_PASSWORD'])
-            # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
             server.send_message(msg)
     except Exception as e:
         current_app.logger.error(f"Failed to send email: {e}")
+        
+    # <<< ส่วนที่ 1: เพิ่มการคืนค่า token
+    return token
 # --- ^^^ สิ้นสุดฟังก์ชันส่งอีเมล ^^^ ---
 
 
@@ -64,7 +66,6 @@ def owner_register():
 def login():
     if not Admin.query.filter_by(username="admin").first():
         a = Admin(username="admin", password_hash=generate_password_hash("admin"), display_name="Administrator")
-        from app.extensions import db
         db.session.add(a); db.session.commit()
 
     form = CombinedLoginForm()
@@ -114,9 +115,11 @@ def reset_password_request():
     if form.validate_on_submit():
         owner = Owner.query.filter_by(email=form.email.data).first()
         if owner:
-            send_reset_email(owner)
-            flash('อีเมลสำหรับรีเซ็ตรหัสผ่านได้ถูกส่งไปแล้ว กรุณาตรวจสอบกล่องจดหมายของคุณ', 'info')
-            return redirect(url_for('auth.login'))
+            # --- vvv ส่วนที่ 2: แก้ไขการเรียกใช้และ Redirect vvv ---
+            token = send_reset_email(owner) # รับค่า token ที่ถูกส่งคืนมา
+            flash('(Token ถูกสร้างแล้ว) เปลี่ยนรหัสผ่านและยืนยันได้เลย', 'info')
+            return redirect(url_for('auth.reset_password', token=token)) # Redirect พร้อมส่ง token ไปด้วย
+            # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
         else:
             flash('ไม่พบอีเมลนี้ในระบบ กรุณาตรวจสอบอีกครั้ง', 'warning')
     return render_template('auth/forgot_password_request.html', form=form)
