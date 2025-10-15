@@ -2,6 +2,7 @@
 
 import pytest
 from app import create_app
+from app.extensions import db as _db
 
 @pytest.fixture
 def app():
@@ -9,9 +10,14 @@ def app():
     app = create_app()
     app.config.update({
         "TESTING": True,
-        "WTF_CSRF_ENABLED": False, # ปิด CSRF token ในโหมดเทส
+        "WTF_CSRF_ENABLED": False,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:", # ใช้ DB ใน Memory เพื่อความเร็ว
     })
-    yield app
+
+    with app.app_context():
+        _db.create_all() # สร้างตารางทั้งหมดใน DB สำหรับเทส
+        yield app
+        _db.drop_all() # ลบตารางทั้งหมดหลังเทสเสร็จ
 
 @pytest.fixture
 def client(app):
