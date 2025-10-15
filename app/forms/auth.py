@@ -1,7 +1,7 @@
 # app/forms/auth.py
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, FileField, BooleanField
+from wtforms import StringField, PasswordField, FileField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, Email, Length, Optional, EqualTo, Regexp
 from wtforms import ValidationError
 from app.utils.validation import is_valid_citizen_id, validate_pdf_file
@@ -22,12 +22,10 @@ class OwnerRegisterForm(FlaskForm):
     ])
     citizen_id = StringField('เลขบัตรประชาชน', validators=[DataRequired(), Length(min=13, max=13)])
     
-    # --- vvv ส่วนที่แก้ไข (เบอร์โทรศัพท์) vvv ---
     phone = StringField('เบอร์โทร', validators=[
         Optional(),
         Regexp(r'^(\d{10}|-)$', message='กรุณากรอกเบอร์โทรศัพท์ 10 หลัก หรือใส่เครื่องหมาย - หากไม่มี')
     ])
-    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
     
     occupancy_pdf = FileField('หนังสือแจ้งมีผู้เข้าพัก (PDF)', validators=[Optional()])
 
@@ -52,3 +50,23 @@ class CombinedLoginForm(FlaskForm):
     username = StringField('อีเมล', validators=[DataRequired(), Length(max=120)])
     password = PasswordField('รหัสผ่าน', validators=[DataRequired(), Length(min=3, max=128)])
     remember = BooleanField('จำการเข้าสู่ระบบ')
+
+# --- vvv เพิ่ม 2 คลาสนี้เข้ามา vvv ---
+class ForgotPasswordForm(FlaskForm):
+    email = StringField('อีเมล', validators=[
+        DataRequired("กรุณากรอกอีเมล"),
+        Email(message="รูปแบบอีเมลไม่ถูกต้อง")
+    ])
+    submit = SubmitField('ส่งคำขอรีเซ็ตรหัสผ่าน')
+
+class ResetPasswordForm(FlaskForm):
+    password = PasswordField('รหัสผ่านใหม่', validators=[
+        DataRequired(),
+        Length(min=6, message="รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร")
+    ])
+    confirm_password = PasswordField('ยืนยันรหัสผ่านใหม่', validators=[
+        DataRequired(),
+        EqualTo('password', message='รหัสผ่านต้องตรงกัน')
+    ])
+    submit = SubmitField('เปลี่ยนรหัสผ่าน')
+# --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---

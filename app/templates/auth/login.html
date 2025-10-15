@@ -136,7 +136,7 @@
                 {{ form.remember(class_='form-check-input', id='remember') }}
                 <label class="form-check-label small" for="remember">จำการเข้าสู่ระบบ</label>
             </div>
-            <a href="#" id="forgot-password-link" class="small text-decoration-none" style="display: none;">ลืมรหัสผ่าน?</a>
+            <a href="{{ url_for('auth.reset_password_request') }}" id="forgot-password-link" class="small text-decoration-none">ลืมรหัสผ่าน?</a>
         </div>
 
         <div class="d-grid mb-3">
