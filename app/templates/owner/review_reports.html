@@ -9,7 +9,7 @@
             <table class="table align-middle">
                 <thead>
                     <tr>
-                        <th>คอมเมนต์</th>
+                        <th style="width: 40%;">คอมเมนต์และหอพัก</th>
                         <th>เหตุผลที่ส่ง</th>
                         <th>สถานะ</th>
                         <th>วันที่ส่ง</th>
@@ -18,7 +18,17 @@
                 <tbody>
                     {% for report in reports %}
                     <tr>
-                        <td class="small text-muted">"{{ report.review.comment|truncate(80) }}"</td>
+                        <td>
+                            <p class="mb-1 fst-italic">"{{ report.review.comment|truncate(80) }}"</p>
+                            <small class="text-muted">
+                                จากหอพัก: 
+                                {% if report.review and report.review.property %}
+                                    <a href="{{ url_for('public.property_detail', prop_id=report.review.property.id) }}" target="_blank">{{ report.review.property.dorm_name }} <i data-feather="external-link" style="width:12px;"></i></a>
+                                {% else %}
+                                    <span class="text-danger">(หอพักถูกลบไปแล้ว)</span>
+                                {% endif %}
+                            </small>
+                        </td>
                         <td>{{ report.reason|truncate(100) }}</td>
                         <td>
                             {% if report.status == 'pending' %}

@@ -8,6 +8,14 @@
     </a>
 </div>
 
+{% if prop %}
+<div class="alert alert-info d-flex align-items-center" role="alert">
+  <i data-feather="edit-2" class="me-2" style="width:20px; height:20px;"></i>
+  <div>
+    คุณกำลังอยู่ในโหมดแก้ไขสำหรับ: <strong>{{ prop.dorm_name }}</strong>
+  </div>
+</div>
+{% endif %}
 
 {% if prop and prop.workflow_status == 'rejected' and approval_note %}
 <div class="alert alert-danger">
@@ -43,6 +51,13 @@
           <div class="mb-3">
             <label class="form-label">ประเภทห้อง</label>
             {{ form.room_type(class_='form-select' + (' is-invalid' if form.room_type.errors else ''), id='room_type_select') }}
+            {% if form.room_type.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.room_type.errors %}
+                  <span>{{ error }}</span>
+                {% endfor %}
+              </div>
+            {% endif %}
           </div>
           <div class="mb-3" id="other_room_type_container" style="display: none;">
             <label class="form-label">ระบุประเภทห้อง</label>

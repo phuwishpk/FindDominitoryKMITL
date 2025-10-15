@@ -114,7 +114,7 @@
                                 {% endfor %}
                             </div>
                             <p class="mb-1">{{ review.comment }}</p>
-                            <small class="text-muted">เมื่อ {{ review.created_at.strftime('%d/%m/%Y') if review.created_at else 'N/A' }}</small>
+                            <small class="text-muted">เมื่อ {{ review.created_at|to_bkk_time }}</small>
                         </div>
                         {% endfor %}
                     {% else %}
@@ -261,7 +261,7 @@
 const lng = {{ prop.location_pin.coordinates[0] }};
 const lat = {{ prop.location_pin.coordinates[1] }};
 const map = L.map('map', { scrollWheelZoom: false }).setView([lat, lng], 16);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap contributors'
 }).addTo(map);
@@ -290,7 +290,6 @@ lightbox.addEventListener('click', (e) => {
     }
 });
 
-// === vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ===
 // === CANCEL/RESET REVIEW FORM ===
 const cancelReviewBtn = document.getElementById('cancel-review-btn');
 if (cancelReviewBtn) {
@@ -306,6 +305,5 @@ if (cancelReviewBtn) {
         }
     });
 }
-// === ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ===
 </script>
 {% endblock %}

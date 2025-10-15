@@ -1,6 +1,8 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, FloatField, IntegerField, HiddenField, TextAreaField, SelectField, MultipleFileField, SubmitField
-from wtforms.validators import DataRequired, Length, NumberRange, Optional, URL, ValidationError
+# vvv [แก้ไข] เก็บบรรทัดนี้ไว้ เพราะมี Regexp ที่เราต้องการ vvv
+from wtforms.validators import DataRequired, Length, NumberRange, Optional, URL, ValidationError, Regexp
+# ^^^ สิ้นสุดการแก้ไข ^^^
 from app.utils.validation import validate_image_file
 from flask import request
 
@@ -26,7 +28,10 @@ class PropertyForm(FlaskForm):
         validators=[Optional(), Length(max=100, message="ประเภทห้องต้องมีความยาวไม่เกิน 100 ตัวอักษร")]
     )
     rent_price = IntegerField("ค่าเช่า", validators=[DataRequired("กรุณากรอกค่าเช่า"), NumberRange(min=0)])
-    contact_phone = StringField("เบอร์โทร", validators=[DataRequired("กรุณากรอกเบอร์โทรติดต่อ"), Length(max=20)])
+    contact_phone = StringField("เบอร์โทร", validators=[
+        DataRequired("กรุณากรอกเบอร์โทรติดต่อ"),
+        Regexp(r'^\d{10}$', message='กรุณากรอกเบอร์โทรศัพท์ 10 หลักให้ถูกต้อง')
+    ])
     line_id = StringField("LINE ID", validators=[Optional(), Length(max=80)])
     facebook_url = StringField("Facebook", validators=[Optional(), Length(max=255)])
     water_rate = FloatField("ค่าน้ำ", validators=[DataRequired("กรุณากรอกค่าน้ำ"), NumberRange(min=0)])
@@ -65,7 +70,6 @@ class PropertyForm(FlaskForm):
                  is_valid = False
         return is_valid
 
-# --- vvv เพิ่มคลาสฟอร์มใหม่นี้เข้าไป vvv ---
 class RequestReviewDeletionForm(FlaskForm):
     reason = TextAreaField(
         'เหตุผลในการขอลบ',

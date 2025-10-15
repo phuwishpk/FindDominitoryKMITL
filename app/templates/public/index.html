@@ -165,11 +165,8 @@
       transform: translateY(-50%) scale(1);
   }
 
-  /* --- vvv CSS ที่แก้ไขแล้ว --- */
-  /* อ้างอิงปุ่มจาก attribute แทน id */
   .slider-controls button[data-controls="prev"] { left: 0px; } 
   .slider-controls button[data-controls="next"] { right: 0px; }
-  /* --- ^^^ สิ้นสุดการแก้ไข CSS ^^^ --- */
  
   @media (max-width: 1200px) {
     .slider-controls button[data-controls="prev"] { left: 0; }
@@ -195,7 +192,7 @@
   </div>
 </header>
 
-{# --- Feature Section (เหมือนเดิม) --- #}
+{# --- Feature Section --- #}
 <section class="feature-section">
   <div class="container">
     <div class="text-center">
@@ -210,7 +207,7 @@
   </div>
 </section>
 
-{# --- Room Finder Section (เหมือนเดิม) --- #}
+{# --- Room Finder Section --- #}
 <section class="room-finder-section">
   <div class="container text-center">
     <p class="section__subheader">ตัวอย่างห้องพัก</p>
@@ -275,11 +272,13 @@
 
     </div>
     {% else %}
-    <div class="text-center py-5 card">
-        <i data-feather="home" class="text-muted mb-3" style="width: 48px; height: 48px;"></i>
-        <h4>ยังไม่มีประกาศหอพักในระบบ</h4>
+    {# vvv นี่คือส่วนที่แก้ไขแล้ว vvv #}
+    <div class="d-flex flex-column align-items-center justify-content-center text-center p-5 my-5 bg-light rounded-3">
+        <i data-feather="home" class="text-muted mb-4" style="width: 64px; height: 64px; stroke-width: 1.5;"></i>
+        <h3 class="fw-bold text-body-secondary">ยังไม่มีประกาศหอพักในระบบ</h3>
         <p class="text-muted">กรุณากลับมาตรวจสอบอีกครั้งในภายหลัง</p>
     </div>
+    {# ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ #}
     {% endif %}
 </section>
 
@@ -307,8 +306,7 @@
     sr.reveal('.room-finder-section', { delay: 300 });
     sr.reveal('.container.py-5', { delay: 300 });
 
-    // --- vvv JavaScript สำหรับ Slider ที่แก้ไขแล้ว vvv ---
-    // หน่วงเวลาการทำงานของสคริปต์ Slider เพื่อรอให้ Feather Icons ทำงานเสร็จก่อน
+    // --- JavaScript สำหรับ Slider ---
     setTimeout(function() {
         if (typeof feather !== 'undefined') {
             feather.replace();
@@ -330,7 +328,6 @@
             });
         }
     }, 100); 
-    // --- ^^^ สิ้นสุดการแก้ไข JavaScript ^^^ ---
   });
 </script>
 {% endblock %}
