@@ -11,7 +11,7 @@ from app.forms.upload import UploadImageForm, ReorderImagesForm, EmptyForm
 from app.models.property import Property, PropertyImage, Amenity
 from app.models.approval import ApprovalRequest, AuditLog
 from app.models.review import Review
-from app.extensions import owner_required, db
+from app.extensions import owner_required, db, socketio # <<< แก้ไข: เพิ่ม socketio
 
 try:
     from app.services.policies.property_policy import PropertyPolicy
@@ -138,6 +138,11 @@ def edit_property(prop_id: int):
                 for img in images_to_delete:
                     db.session.delete(img)
         prop_svc.update(current_user.ref_id, prop_id, form_data)
+        
+        # --- vvv เพิ่ม Real-Time Emit: แก้ไข Property โดย Owner vvv ---
+        socketio.emit('property_updated', {'id': prop_id, 'status': prop.workflow_status}, namespace='/') 
+        # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+        
         flash("อัปเดตข้อมูลแล้ว", "success")
         if "save_and_exit" in request.form:
             return redirect(url_for("owner.dashboard"))
@@ -218,6 +223,14 @@ def submit_for_approval(prop_id: int):
     try:
         approval_svc.submit_property(property_id=prop_id, owner_id=current_user.ref_id)
         flash("ส่งประกาศเพื่อขออนุมัติแล้ว", "success")
+
+        # --- vvv เพิ่ม Real-Time Emit: ส่งขออนุมัติ VVV ---
+        # สัญญาณสำหรับหน้า Public/Owner 
+        socketio.emit('property_updated', {'id': prop_id, 'status': 'submitted'}, namespace='/')
+        # สัญญาณสำหรับ Admin Dashboard
+        socketio.emit('admin_dashboard_update', {'type': 'queue_change'}, namespace='/') 
+        # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+
     except ValueError as e:
         flash(f"ไม่สามารถส่งประกาศได้: {str(e)}", "danger")
     return redirect(url_for("owner.dashboard"))
@@ -242,6 +255,11 @@ def toggle_availability(prop_id: int):
         new_status_th = "ห้องว่าง"
     db.session.commit()
     flash(f"เปลี่ยนสถานะของ '{prop.dorm_name}' เป็น '{new_status_th}' เรียบร้อยแล้ว", "success")
+
+    # --- vvv เพิ่ม Real-Time Emit: เปลี่ยนสถานะว่าง/เต็ม VVV ---
+    socketio.emit('property_updated', {'id': prop_id, 'status': prop.workflow_status, 'availability': prop.availability_status}, namespace='/')
+    # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+
     return redirect(url_for("owner.dashboard"))
 
 @bp.post("/property/<int:prop_id>/delete")
@@ -258,6 +276,11 @@ def delete_property(prop_id: int):
     prop.deleted_at = datetime.utcnow()
     db.session.add(AuditLog.log("owner", current_user.ref_id, "soft_delete_property", prop_id))
     db.session.commit()
+    
+    # --- vvv เพิ่ม Real-Time Emit: ลบหอพัก (Soft Delete) VVV ---
+    socketio.emit('property_updated', {'id': prop_id, 'status': 'deleted'}, namespace='/')
+    # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+    
     flash(f"ย้ายประกาศ '{prop.dorm_name}' ไปยังถังขยะแล้ว", "success")
     return redirect(url_for('owner.dashboard'))
 
@@ -292,6 +315,11 @@ def restore_property(prop_id: int):
     prop.deleted_at = None
     db.session.add(AuditLog.log("owner", current_user.ref_id, "restore_property", prop_id))
     db.session.commit()
+    
+    # --- vvv เพิ่ม Real-Time Emit: กู้คืนหอพัก VVV ---
+    socketio.emit('property_updated', {'id': prop_id, 'status': prop.workflow_status}, namespace='/')
+    # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+    
     flash(f"กู้คืนประกาศ '{prop.dorm_name}' สำเร็จ", "success")
     return redirect(url_for('owner.trash'))
 
@@ -310,6 +338,11 @@ def permanently_delete_property(prop_id: int):
     db.session.add(AuditLog.log("owner", current_user.ref_id, "permanent_delete_property", meta={"deleted_name": dorm_name, "property_id": prop_id}))
     db.session.delete(prop)
     db.session.commit()
+    
+    # --- vvv เพิ่ม Real-Time Emit: ลบหอพักถาวร VVV ---
+    socketio.emit('property_updated', {'id': prop_id, 'status': 'deleted_permanently'}, namespace='/')
+    # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+    
     flash(f"ลบประกาศ '{dorm_name}' ออกจากระบบอย่างถาวรแล้ว", "success")
     return redirect(url_for('owner.trash'))
 
@@ -352,6 +385,11 @@ def request_delete_review(review_id: int):
                 reason=form.reason.data
             )
             flash("ส่งคำร้องขอลบคอมเมนต์สำเร็จแล้ว", "success")
+            
+            # --- vvv เพิ่ม Real-Time Emit: ส่งคำร้องลบคอมเมนต์ VVV ---
+            socketio.emit('admin_dashboard_update', {'type': 'review_queue_change'}, namespace='/')
+            # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+            
         except (PermissionError, ValueError) as e:
             flash(str(e), "danger")
     else:

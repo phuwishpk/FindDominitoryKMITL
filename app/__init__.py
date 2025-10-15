@@ -1,5 +1,5 @@
 from flask import Flask, send_from_directory
-from .extensions import db, migrate, login_manager, babel_ext, limiter, csrf 
+from .extensions import db, migrate, login_manager, babel_ext, limiter, csrf, socketio # <<< แก้ไข: เพิ่ม socketio
 from .config import Config
 
 from .utils.helpers import format_as_bangkok_time, from_json_string
@@ -68,6 +68,10 @@ def create_app() -> Flask:
     babel_ext.init_app(app)
     limiter.init_app(app)
     csrf.init_app(app)
+    
+    # --- vvv เพิ่ม: ผูก SocketIO กับ App vvv ---
+    socketio.init_app(app)
+    # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
 
     app.jinja_env.filters['to_bkk_time'] = format_as_bangkok_time
     app.jinja_env.filters['fromjson'] = from_json_string

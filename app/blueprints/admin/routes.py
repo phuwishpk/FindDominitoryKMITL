@@ -1,7 +1,7 @@
 from flask import render_template, redirect, url_for, flash, current_app, request
 from flask_login import login_required, current_user
 from . import bp
-from app.extensions import admin_required, db
+from app.extensions import admin_required, db, socketio # <<< แก้ไข: เพิ่ม socketio
 from app.models.property import Property, Amenity
 from app.models.user import Owner
 from app.models.approval import AuditLog
@@ -70,6 +70,12 @@ def approve(prop_id: int):
     try:
         approval_service.approve_property(admin_id=current_user.ref_id, prop_id=prop_id, note=None)
         flash("Property approved successfully.", "success")
+        
+        # --- vvv เพิ่ม Real-Time Emit: อนุมัติหอพัก vvv ---
+        socketio.emit('property_updated', {'id': prop_id, 'status': 'approved'}, namespace='/') 
+        socketio.emit('admin_dashboard_update', {'type': 'queue_change'}, namespace='/') 
+        # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+        
     except ValueError as e:
         flash(str(e), "danger")
     return redirect(url_for("admin.queue"))
@@ -84,6 +90,12 @@ def reject(prop_id: int):
         try:
             approval_service.reject_property(admin_id=current_user.ref_id, prop_id=prop_id, note=reject_form.note.data)
             flash("Property rejected successfully.", "success")
+            
+            # --- vvv เพิ่ม Real-Time Emit: ปฏิเสธหอพัก vvv ---
+            socketio.emit('property_updated', {'id': prop_id, 'status': 'rejected'}, namespace='/')
+            socketio.emit('admin_dashboard_update', {'type': 'queue_change'}, namespace='/')
+            # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+            
         except ValueError as e:
             flash(str(e), "danger")
         return redirect(url_for("admin.queue"))
@@ -123,6 +135,11 @@ def admin_edit_property(prop_id: int):
         prop.workflow_status = form.workflow_status.data
         db.session.add(AuditLog.log("admin", current_user.ref_id, "admin_edit_property", prop_id))
         db.session.commit()
+        
+        # --- vvv เพิ่ม Real-Time Emit: แก้ไขหอพักโดย Admin vvv ---
+        socketio.emit('property_updated', {'id': prop_id, 'status': prop.workflow_status}, namespace='/') 
+        # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+        
         flash(f"อัปเดตข้อมูลหอพัก '{prop.dorm_name}' เรียบร้อยแล้ว", "success")
         return redirect(url_for('admin.properties'))
     return render_template("admin/edit_property.html", prop=prop, form=form)
@@ -138,6 +155,11 @@ def delete_property(prop_id: int):
     prop.deleted_at = datetime.utcnow()
     db.session.add(AuditLog.log("admin", current_user.ref_id, "soft_delete_property", prop_id))
     db.session.commit()
+    
+    # --- vvv เพิ่ม Real-Time Emit: ลบหอพัก (Soft Delete) vvv ---
+    socketio.emit('property_updated', {'id': prop_id, 'status': 'deleted'}, namespace='/') 
+    # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+    
     flash(f"ย้ายหอพัก '{prop.dorm_name}' ไปยังถังขยะแล้ว", "success")
     return redirect(url_for('admin.properties'))
 
@@ -162,6 +184,11 @@ def restore_property(prop_id: int):
     prop.deleted_at = None
     db.session.add(AuditLog.log("admin", current_user.ref_id, "restore_property", prop_id))
     db.session.commit()
+    
+    # --- vvv เพิ่ม Real-Time Emit: กู้คืนหอพัก vvv ---
+    socketio.emit('property_updated', {'id': prop_id, 'status': prop.workflow_status}, namespace='/') 
+    # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+    
     flash(f"กู้คืนหอพัก '{prop.dorm_name}' สำเร็จ", "success")
     return redirect(url_for('admin.deleted_properties'))
 
@@ -178,6 +205,11 @@ def permanently_delete_property(prop_id: int):
         dorm_name = prop.dorm_name
         db.session.add(AuditLog.log("admin", current_user.ref_id, "permanent_delete_property", meta={"deleted_name": dorm_name, "property_id": prop_id}))
         prop_repo.delete(prop)
+        
+        # --- vvv เพิ่ม Real-Time Emit: ลบหอพักถาวร vvv ---
+        socketio.emit('property_updated', {'id': prop_id, 'status': 'deleted_permanently'}, namespace='/') 
+        # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+        
         flash(f"ลบหอพัก '{dorm_name}' ออกจากระบบอย่างถาวรแล้ว", "success")
     else:
         flash("ไม่พบหอพักที่ต้องการลบ", "warning")
@@ -218,6 +250,11 @@ def edit_owner(owner_id: int):
                 meta={"owner_id": owner_id, "owner_name": owner.full_name_th, "details": f"Account {meta_detail}"}
             ))
             db.session.commit()
+            
+            # --- vvv เพิ่ม Real-Time Emit: เปลี่ยนสถานะ Owner vvv ---
+            socketio.emit('owner_status_changed', {'id': owner_id, 'status': action}, namespace='/')
+            # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+            
             flash(f"อัปเดตสถานะการใช้งานของ '{owner.full_name_th}' เป็น {'ใช้งานอยู่' if new_is_active else 'ไม่ใช้งาน'} เรียบร้อยแล้ว", "success")
         else:
             flash(f"ไม่มีการเปลี่ยนแปลงสถานะการใช้งานของ '{owner.full_name_th}'", "info")
@@ -258,6 +295,12 @@ def approve_owner(owner_id: int):
         db.session.add(AuditLog.log("admin", current_user.ref_id, "approve_owner", meta={"owner_id": owner_id, "owner_name": owner.full_name_th}))
         user_repo.save_owner(owner)
         flash(f"อนุมัติบัญชีของ {owner.full_name_th} สำเร็จ", "success")
+        
+        # --- vvv เพิ่ม Real-Time Emit: อนุมัติ Owner vvv ---
+        socketio.emit('owner_status_changed', {'id': owner_id, 'status': 'approved'}, namespace='/')
+        socketio.emit('admin_dashboard_update', {'type': 'owner_queue_change'}, namespace='/')
+        # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+        
     else:
         flash("ไม่สามารถดำเนินการได้", "danger")
     return redirect(url_for("admin.owner_queue"))
@@ -278,6 +321,12 @@ def reject_owner(owner_id: int):
         db.session.add(AuditLog.log("admin", current_user.ref_id, "reject_owner", meta={"owner_id": owner_id, "owner_name": owner.full_name_th}))
         user_repo.save_owner(owner)
         flash(f"ปฏิเสธบัญชีของ {owner.full_name_th} สำเร็จ", "success")
+
+        # --- vvv เพิ่ม Real-Time Emit: ปฏิเสธ Owner vvv ---
+        socketio.emit('owner_status_changed', {'id': owner_id, 'status': 'rejected'}, namespace='/')
+        socketio.emit('admin_dashboard_update', {'type': 'owner_queue_change'}, namespace='/')
+        # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+        
     else:
         flash("ไม่สามารถดำเนินการได้", "danger")
     return redirect(url_for("admin.owner_queue"))
@@ -334,6 +383,11 @@ def permanently_delete_owner(owner_id: int):
         Property.query.filter_by(owner_id=owner.id).delete(synchronize_session=False)
         db.session.add(AuditLog.log("admin", current_user.ref_id, "permanent_delete_owner", meta={"deleted_name": owner_name, "owner_id": owner_id}))
         user_repo.permanently_delete_owner(owner)
+        
+        # --- vvv เพิ่ม Real-Time Emit: ลบ Owner ถาวร vvv ---
+        socketio.emit('owner_status_changed', {'id': owner_id, 'status': 'deleted_permanently'}, namespace='/')
+        # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+        
         flash(f"ลบข้อมูล Owner '{owner_name}' และหอพักที่เกี่ยวข้องทั้งหมดออกจากระบบอย่างถาวรแล้ว", "success")
     else:
         flash("ไม่พบข้อมูล Owner", "warning")
@@ -363,6 +417,11 @@ def add_amenity():
             db.session.add(AuditLog.log("admin", current_user.ref_id, "add_amenity", meta={"code": code, "label_th": new_amenity.label_th}))
             db.session.commit()
             flash('เพิ่มสิ่งอำนวยความสะดวกใหม่เรียบร้อยแล้ว', 'success')
+            
+            # --- vvv เพิ่ม Real-Time Emit: เพิ่ม Amenity vvv ---
+            socketio.emit('master_data_updated', {'type': 'amenity_added', 'code': code}, namespace='/')
+            # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+            
     else:
         for field, errors in form.errors.items():
             for error in errors:
@@ -379,6 +438,11 @@ def edit_amenity(amenity_id: int):
         db.session.add(AuditLog.log("admin", current_user.ref_id, "edit_amenity", meta={"code": amenity.code, "label_th": amenity.label_th}))
         db.session.commit()
         flash(f"แก้ไข '{amenity.label_th}' เรียบร้อยแล้ว", "success")
+        
+        # --- vvv เพิ่ม Real-Time Emit: แก้ไข Amenity vvv ---
+        socketio.emit('master_data_updated', {'type': 'amenity_edited', 'code': amenity.code}, namespace='/')
+        # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+        
     else:
         flash('ข้อมูลที่ส่งมาไม่ถูกต้อง', 'danger')
     return redirect(url_for('admin.amenities'))
@@ -396,6 +460,11 @@ def delete_amenity(amenity_id: int):
     db.session.delete(amenity)
     db.session.commit()
     flash(f"ลบ '{label_th}' ออกจากระบบเรียบร้อยแล้ว", "success")
+    
+    # --- vvv เพิ่ม Real-Time Emit: ลบ Amenity vvv ---
+    socketio.emit('master_data_updated', {'type': 'amenity_deleted', 'code': code}, namespace='/')
+    # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+    
     return redirect(url_for('admin.amenities'))
 
 # --- Audit Logs ---
@@ -408,7 +477,7 @@ def logs():
     pagination = approval_repo.list_logs(page=page)
     return render_template("admin/logs.html", pagination=pagination)
 
-# --- vvv เพิ่ม 3 Routes นี้เข้าไปท้ายไฟล์ vvv ---
+# --- Review Deletion Queue ---
 @bp.route("/reviews/deletion-queue")
 @login_required
 @admin_required
@@ -425,8 +494,14 @@ def approve_review_deletion(report_id: int):
     if form.validate_on_submit():
         review_mgmt_svc = current_app.extensions["container"]["review_management_service"]
         try:
-            review_mgmt_svc.process_report(current_user.ref_id, report_id, approve=True)
+            report = review_mgmt_svc.process_report(current_user.ref_id, report_id, approve=True)
             flash("อนุมัติการลบคอมเมนต์สำเร็จ", "success")
+            
+            # --- vvv เพิ่ม Real-Time Emit: อนุมัติลบคอมเมนต์ vvv ---
+            if report and report.review_id:
+                socketio.emit('review_updated', {'review_id': report.review_id, 'property_id': report.property_id, 'status': 'hidden'}, namespace='/')
+            # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
+            
         except (ValueError, PermissionError) as e:
             flash(str(e), "danger")
     return redirect(url_for('admin.review_deletion_queue'))

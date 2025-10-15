@@ -107,6 +107,7 @@
 <script src="https://unpkg.com/leaflet-geosearch@3.11.0/dist/geosearch.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.js"></script>
 <script>
   // Global Toast Function, accessible from anywhere
   const toastContainer = document.querySelector('.toast-container');
@@ -118,6 +119,7 @@
           case 'success': icon = 'check-circle'; break;
           case 'danger': icon = 'x-circle'; break;
           case 'warning': icon = 'alert-triangle'; break;
+          case 'primary': icon = 'bell'; break;
       }
 
       const toastHTML = `
@@ -133,7 +135,7 @@
       toastContainer.insertAdjacentHTML('beforeend', toastHTML);
       feather.replace({ width: '1.1em', height: '1.1em' }); // Render the icon
       const toastElement = document.getElementById(toastId);
-      const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+      const toast = new bootstrap.Toast(toastElement, { delay: 10000 }); // เพิ่ม delay เป็น 10 วินาที
       toast.show();
       toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
   }
@@ -155,6 +157,103 @@
             {% endif %}
         {% endwith %}
     {% endif %}
+
+    // --- vvv เพิ่ม Real-Time Listener vvv ---
+    if (typeof io !== 'undefined') {
+        // เชื่อมต่อ SocketIO ไปยังเซิร์ฟเวอร์
+        const socket = io(); 
+        const isPublicPage = window.location.pathname === '/' || window.location.pathname.includes('/search');
+        const isAdminDashboard = window.location.pathname.includes('/admin/dashboard') || window.location.pathname.includes('/admin/queue') || window.location.pathname.includes('/admin/owner_queue');
+        const isOwnerDashboard = window.location.pathname.includes('/owner/dashboard');
+
+        // ฟังก์ชันสำหรับแจ้งเตือนและกระตุ้นการโหลดหน้าใหม่
+        function notifyAndReload(message, category = 'primary') {
+            const reloadBtn = `<button onclick="window.location.reload()" class="btn btn-sm btn-light ms-2">โหลดใหม่</button>`;
+            createToast(`${message} ${reloadBtn}`, category);
+        }
+
+        // Listener สำหรับการอัปเดตหอพักทั่วไป (Public/Owner/Admin)
+        socket.on('property_updated', function(data) {
+            let message = `📢 ประกาศ ID ${data.id} ถูกอัปเดต`;
+            let category = 'info';
+            
+            // อัปเดตข้อความตามสถานะ
+            if (data.status === 'approved') {
+                message = `🎉 ประกาศใหม่ได้รับการอนุมัติแล้ว! (ID: ${data.id})`;
+                category = 'success';
+            } else if (data.status === 'rejected') {
+                message = `❌ ประกาศ ID ${data.id} ถูกปฏิเสธ (สำหรับ Owner)`;
+                category = 'danger';
+            } else if (data.availability) {
+                const status = data.availability === 'vacant' ? 'ห้องว่าง' : 'ห้องเต็ม';
+                message = `📢 สถานะห้องพัก ID ${data.id} ถูกเปลี่ยนเป็น: ${status}`;
+                category = 'primary';
+            } else if (data.status === 'submitted') {
+                message = `🔔 มีประกาศใหม่ ID ${data.id} ส่งเข้าคิวรออนุมัติ`;
+                category = 'warning';
+            } else if (data.status === 'deleted' || data.status === 'deleted_permanently') {
+                message = `🗑️ ประกาศ ID ${data.id} ถูกลบออกจากระบบ (สำหรับ Admin/Owner)`;
+                category = 'secondary';
+            }
+
+            // แสดง Toast ทั่วไป
+            createToast(message, category);
+
+            // เงื่อนไขการแจ้งเตือนและโหลดใหม่
+            if (isPublicPage && (data.status === 'approved' || data.status === 'deleted_permanently')) {
+                notifyAndReload('พบการอัปเดตรายการหอพัก');
+            } else if (isAdminDashboard && (data.status === 'approved' || data.status === 'submitted' || data.status === 'rejected')) {
+                 notifyAndReload('พบการเปลี่ยนแปลงในคิวอนุมัติหอพัก');
+            } else if (isOwnerDashboard && (data.status === 'approved' || data.status === 'rejected' || data.availability || data.status === 'deleted' || data.status === 'deleted_permanently')) {
+                 notifyAndReload('สถานะประกาศของคุณมีการเปลี่ยนแปลง');
+            }
+        });
+        
+        // Listener สำหรับ Admin Dashboard/Queue โดยเฉพาะ
+        socket.on('admin_dashboard_update', function(data) {
+            if (isAdminDashboard) {
+                notifyAndReload('📊 มีการเปลี่ยนแปลงในคิวอนุมัติหรือสถิติ');
+            }
+        });
+
+        // Listener สำหรับ Owner Status (เช่น เมื่อ Admin อนุมัติ Owner)
+        socket.on('owner_status_changed', function(data) {
+             let message = `👤 Owner ID ${data.id} ถูกเปลี่ยนสถานะ`;
+             let category = 'primary';
+             if (data.status === 'approved') {
+                 message = `✅ Owner ใหม่ได้รับการอนุมัติแล้ว (ID: ${data.id})`;
+                 category = 'success';
+             } else if (data.status === 'rejected') {
+                 message = `❌ คำขอ Owner ID ${data.id} ถูกปฏิเสธ`;
+                 category = 'danger';
+             }
+
+             createToast(message, category);
+
+             if (isAdminDashboard) {
+                notifyAndReload('🤝 มีการเปลี่ยนแปลงในคิวอนุมัติ Owner');
+            } else if (data.status === 'approved' && !isPublicPage) {
+                 // ถ้าไม่ใช่ Admin หรือหน้า Public ให้แจ้งเตือนว่ามี Owner ใหม่เข้า
+                 createToast(`🤝 มีเจ้าของหอพักรายใหม่เข้าร่วมระบบแล้ว`, 'primary');
+            }
+        });
+        
+        // Listener สำหรับ Master Data (เช่น Amenity)
+        socket.on('master_data_updated', function(data) {
+             if (isAdminDashboard || isPublicPage) {
+                notifyAndReload('รายการสิ่งอำนวยความสะดวกมีการอัปเดต');
+            }
+        });
+        
+        // Listener สำหรับ Review
+        socket.on('review_updated', function(data) {
+             if (isAdminDashboard) {
+                notifyAndReload('รายการรีวิวถูกจัดการโดย Admin');
+            }
+        });
+        
+    }
+    // --- ^^^ สิ้นสุด Real-Time Listener ^^^
   });
 </script>
 

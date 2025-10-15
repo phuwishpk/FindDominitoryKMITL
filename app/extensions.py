@@ -6,6 +6,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_wtf import CSRFProtect
 from functools import wraps
+from flask_socketio import SocketIO, emit # <<< เพิ่ม: นำเข้า SocketIO, emit
 
 # --- SQLAlchemy Engine Imports ---
 from sqlalchemy.engine import Engine
@@ -18,6 +19,11 @@ login_manager = LoginManager()
 babel_ext = Babel() # 💡 แก้ไข: เปลี่ยนชื่อจาก babel
 limiter = Limiter(key_func=get_remote_address)
 csrf = CSRFProtect()
+
+# --- vvv เพิ่ม: SocketIO Initialization vvv ---
+# กำหนดค่า cors_allowed_origins เป็น "*" เพื่อให้รับการเชื่อมต่อจากทุกโดเมน
+socketio = SocketIO(cors_allowed_origins="*", async_mode="eventlet")
+# --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
 
 class Principal(UserMixin):
     def __init__(self, sid: str, role: str, ref_id: int):
@@ -68,35 +74,27 @@ def admin_required(f):
         return f(*args, **kwargs)
     return wrapper
 
-# --- vvv ส่วนที่แก้ไขเพื่อแก้ AttributeError vvv ---
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
     """
     เพิ่มฟังก์ชัน to_char เข้าไปใน SQLite DBAPI Connection เพื่อให้โค้ดที่ใช้ to_char
     ยังสามารถทำงานได้ในสภาพแวดล้อม SQLite (โดยใช้ strftime แทน)
     """
-    # แก้ไข: เปลี่ยนมาตรวจสอบที่ connection_record.engine.dialect.name
-    # เพื่อแก้ปัญหา AttributeError ที่เกิดขึ้นในบางเวอร์ชันของ SQLAlchemy
     try:
         is_sqlite = connection_record.engine.dialect.name == 'sqlite'
     except AttributeError:
-        # Fallback: ใช้การตรวจสอบ driver name ซึ่งปลอดภัยกว่าใน context นี้
         is_sqlite = dbapi_connection.__class__.__name__ == 'Connection'
 
     if is_sqlite:
         
         def sqlite_to_char(value, format_str):
-            # แปลงรูปแบบ 'YYYY-MM' (PostgreSQL style) เป็น '%Y-%m' (SQLite strftime style)
             sqlite_format = format_str.replace('YYYY', '%Y').replace('MM', '%m')
             
             cursor = dbapi_connection.cursor()
             try:
-                # คำสั่ง SQL ที่รันจริงบน SQLite
                 cursor.execute("SELECT strftime(?, ?)", (sqlite_format, value))
                 return cursor.fetchone()[0]
             finally:
                 cursor.close()
 
-        # สร้างฟังก์ชัน to_char ใน SQLite connection
         dbapi_connection.create_function("to_char", 2, sqlite_to_char)
-# --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
