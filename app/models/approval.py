@@ -31,7 +31,6 @@ class AuditLog(db.Model):
     def __repr__(self) -> str:
         return f"<AuditLog id={self.id} action={self.action}>"
 
-    # --- vvv ส่วนที่แก้ไข vvv ---
     @staticmethod
     def log(actor_type: str, actor_id: int, action: str, property_id: int | None = None, meta: dict | None = None):
         """
@@ -45,4 +44,3 @@ class AuditLog(db.Model):
             property_id=property_id,
             meta=json.dumps(meta) if meta else None,
         )
-    # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---

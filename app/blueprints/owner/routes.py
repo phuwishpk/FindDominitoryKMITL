@@ -1,6 +1,6 @@
 # app/blueprints/owner/routes.py
 
-from flask import render_template, request, redirect, url_for, flash, current_app
+from flask import render_template, request, redirect, url_for, flash, current_app, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy import func
 from datetime import datetime
@@ -11,7 +11,7 @@ from app.forms.upload import UploadImageForm, ReorderImagesForm, EmptyForm
 from app.models.property import Property, PropertyImage, Amenity
 from app.models.approval import ApprovalRequest, AuditLog
 from app.models.review import Review
-from app.extensions import owner_required, db, socketio # <<< แก้ไข: เพิ่ม socketio
+from app.extensions import owner_required, db
 
 try:
     from app.services.policies.property_policy import PropertyPolicy
@@ -190,27 +190,27 @@ def upload_image(prop_id: int):
 def reorder_images(prop_id: int):
     prop = Property.query.get_or_404(prop_id)
     if prop.owner_id != current_user.ref_id:
-        return redirect(url_for("owner.dashboard"))
-    form = ReorderImagesForm()
-    if not form.validate_on_submit():
-        flash("รูปแบบข้อมูลจัดเรียงไม่ถูกต้อง", "danger")
-        return redirect(url_for("owner.edit_property", prop_id=prop.id, tab="images"))
-    mapping = {}
-    for field in form.positions:
-        try:
-            img_id, pos = field.data.split(":")
-            mapping[int(img_id)] = int(pos)
-        except Exception:
-            continue
-    imgs = PropertyImage.query.filter(
-        PropertyImage.id.in_(mapping.keys()),
-        PropertyImage.property_id == prop.id
+        return jsonify({"success": False, "message": "Permission denied."}), 403
+
+    data = request.get_json()
+    image_ids = data.get('order')
+
+    if not isinstance(image_ids, list):
+        return jsonify({"success": False, "message": "Invalid data format."}), 400
+
+    images = PropertyImage.query.filter(
+        PropertyImage.property_id == prop.id,
+        PropertyImage.id.in_(image_ids)
     ).all()
-    for im in imgs:
-        im.position = mapping.get(im.id, im.position)
+
+    id_to_image_map = {img.id: img for img in images}
+
+    for i, img_id in enumerate(image_ids):
+        if img_id in id_to_image_map:
+            id_to_image_map[img_id].position = i + 1
+
     db.session.commit()
-    flash("จัดเรียงรูปแล้ว", "success")
-    return redirect(url_for("owner.edit_property", prop_id=prop.id, tab="images"))
+    return jsonify({"success": True, "message": "จัดเรียงรูปภาพสำเร็จ"})
 
 @bp.post("/property/<int:prop_id>/submit")
 @login_required
@@ -357,9 +357,7 @@ def property_reviews(prop_id: int):
     
     review_repo = current_app.extensions["container"]["review_repo"]
     
-    # --- vvv ส่วนที่แก้ไข vvv ---
-    reviews = review_repo.get_by_property_id(prop_id) # เปลี่ยนชื่อฟังก์ชัน
-    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+    reviews = review_repo.get_by_property_id(prop_id) 
     
     form = RequestReviewDeletionForm()
     

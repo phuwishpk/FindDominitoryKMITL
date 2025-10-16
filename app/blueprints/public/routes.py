@@ -45,6 +45,9 @@ def property_detail(prop_id: int):
     if not prop or prop.workflow_status != 'approved':
         return render_template("public/detail.html", prop=None), 404
     
+    history_svc = current_app.extensions["container"]["history_service"]
+    history_svc.add_viewed_property(prop_id)
+
     review_svc = current_app.extensions["container"]["review_service"]
     reviews_data = review_svc.get_reviews_and_average_rating(prop_id)
     
@@ -94,6 +97,13 @@ def search():
         **result_data
     )
 
+# --- vvv ส่วนที่เพิ่มเข้ามาใหม่สำหรับหน้า History vvv ---
+@bp.get("/history")
+def history():
+    """แสดงหน้าประวัติการเข้าชม"""
+    return render_template("public/history.html")
+# --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
+
 # ✅ แสดงหน้าติดต่อเรา (GET)
 @bp.get("/contact")
 def contact():
@@ -105,13 +115,12 @@ def contact():
 @bp.get("/privacy")
 def privacy():
     """แสดงหน้า Privacy Policy"""
-    # คุณจะต้องสร้างไฟล์ privacy.html ในโฟลเดอร์ templates/public/
     return render_template("public/privacy.html")
 
 @bp.get("/terms")
 def terms():
     """แสดงหน้า Terms of Service"""
-    # คุณจะต้องสร้างไฟล์ terms.html ในโฟลเดอร์ templates/public/
     return render_template("public/terms.html")
 
 # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
+
