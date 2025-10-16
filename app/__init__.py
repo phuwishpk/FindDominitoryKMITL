@@ -26,9 +26,7 @@ from .services.upload_service import UploadService
 from .services.dashboard_service import DashboardService
 from .services.review_service import ReviewService
 from .services.review_management_service import ReviewManagementService
-# --- vvv [1] เพิ่มการ import HistoryService vvv ---
 from .services.history_service import HistoryService
-# --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
 
 def register_dependencies(app: Flask):
     container = {}
@@ -51,14 +49,15 @@ def register_dependencies(app: Flask):
         report_repo=container["review_report_repo"],
         prop_repo=container["property_repo"]
     )
+    # --- vvv แก้ไขที่นี่ vvv ---
     container["dashboard_service"] = DashboardService(
         user_repo=container["user_repo"],
         property_repo=container["property_repo"],
-        approval_repo=container["approval_repo"]
+        approval_repo=container["approval_repo"],
+        review_report_repo=container["review_report_repo"] # เพิ่ม argument ที่ขาดไป
     )
-    # --- vvv [2] เพิ่มการลงทะเบียน HistoryService vvv ---
+    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
     container["history_service"] = HistoryService(container["property_repo"])
-    # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
     
     if not hasattr(app, "extensions"):
         app.extensions = {}
@@ -80,19 +79,17 @@ def create_app() -> Flask:
 
     @app.context_processor
     def inject_global_vars():
-        # --- vvv [3] แก้ไข context processor เพื่อเพิ่มข้อมูล recently_viewed vvv ---
         history_service = app.extensions["container"].get("history_service")
         recently_viewed = []
         if history_service:
             recently_viewed = history_service.get_viewed_properties()
-        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 
         room_type_map = dict(ROOM_TYPE_CHOICES)
         
         return dict(
             empty_form=EmptyForm(),
             ROOM_TYPES=room_type_map,
-            recently_viewed_properties=recently_viewed  # <-- ส่งตัวแปรนี้ไปให้ template
+            recently_viewed_properties=recently_viewed
         )
 
     with app.app_context():

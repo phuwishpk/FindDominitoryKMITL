@@ -82,7 +82,7 @@
     const otherRoomTypeInput = document.querySelector('[name="other_room_type"]');
     function toggleOtherRoomType() {
         if (roomTypeSelect && otherRoomTypeContainer) {
-            const isOther = roomTypeSelect.value === 'other'; // แก้ไขเป็น 'other'
+            const isOther = roomTypeSelect.value === 'other';
             otherRoomTypeContainer.style.display = isOther ? 'block' : 'none';
             if (!isOther && otherRoomTypeInput) { otherRoomTypeInput.value = ''; }
         }
@@ -94,40 +94,77 @@
         }
     });
 
+    // --- Drag and Drop for EDIT page ---
     const gallery = document.getElementById('gallery');
     if (gallery) {
         let dragEl = null;
+
+        const updatePositions = () => {
+            const orderedIds = Array.from(gallery.querySelectorAll('[draggable="true"]')).map(el => parseInt(el.dataset.imageId, 10));
+            
+            // Update badge text immediately
+            gallery.querySelectorAll('.badge').forEach((badge, index) => {
+                badge.textContent = `ลำดับ ${index + 1}`;
+            });
+            
+            // Send to server
+            const propId = gallery.dataset.propId;
+            const url = `/owner/property/${propId}/images/reorder`;
+            const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ order: orderedIds })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && typeof createToast === 'function') {
+                    createToast(data.message, 'success');
+                } else if (!data.success && typeof createToast === 'function') {
+                    createToast(data.message || 'เกิดข้อผิดพลาดในการจัดเรียง', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error reordering images:', error);
+                if (typeof createToast === 'function') {
+                    createToast('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'danger');
+                }
+            });
+        };
+
         gallery.addEventListener('dragstart', (e) => {
-            const card = e.target.closest('[draggable="true"]');
-            if (card) { dragEl = card; e.dataTransfer.effectAllowed = 'move'; }
-        });
-        gallery.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            const card = e.target.closest('[draggable="true"]');
-            if (card && card !== dragEl) {
-                const rect = card.getBoundingClientRect();
-                const next = (e.clientY - rect.top) / rect.height > 0.5;
-                gallery.insertBefore(dragEl.parentElement, next ? card.parentElement.nextSibling : card.parentElement);
+            const cardCol = e.target.closest('[draggable="true"]');
+            if (cardCol) {
+                dragEl = cardCol;
+                e.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => cardCol.classList.add('dragging'), 0);
             }
         });
-        gallery.addEventListener('dragend', () => { dragEl = null; });
-        const reorderForm = document.getElementById('reorder-form');
-        if (reorderForm) {
-            reorderForm.addEventListener('submit', () => {
-                const container = document.getElementById('positions-container');
-                container.innerHTML = '';
-                gallery.querySelectorAll('[draggable="true"]').forEach((card, index) => {
-                    const id = card.getAttribute('data-image-id');
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = `positions-${index}`;
-                    input.value = `${id}:${index + 1}`;
-                    container.appendChild(input);
-                });
-            });
-        }
+
+        gallery.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const targetCol = e.target.closest('[draggable="true"]');
+            if (targetCol && targetCol !== dragEl) {
+                const rect = targetCol.getBoundingClientRect();
+                const next = (e.clientY - rect.top) / rect.height > 0.5;
+                gallery.insertBefore(dragEl, next ? targetCol.nextSibling : targetCol);
+            }
+        });
+
+        gallery.addEventListener('dragend', (e) => {
+            if (dragEl) {
+                dragEl.classList.remove('dragging');
+                dragEl = null;
+                updatePositions();
+            }
+        });
     }
 
+    // --- Delete/Undo for EDIT page ---
     const imagesToDeleteInput = document.getElementById('images-to-delete-input');
     const imageManagementSection = document.getElementById('image-management-section');
     if (imageManagementSection && imagesToDeleteInput) {
@@ -159,18 +196,19 @@
         });
     }
 
-    // Image preview for CREATE page
+    // --- Image preview and Drag & Drop for CREATE page ---
     const imageInput = document.getElementById('image-input');
     const addImageBtn = document.getElementById('add-image-btn');
     const previewContainer = document.getElementById('image-preview-container');
     const mainForm = document.getElementById('main-property-form');
     const fileCollector = document.getElementById('image-file-list');
-    const maxImages = parseInt(mainForm.dataset.maxImages || '6', 10);
-
+    
     if (imageInput && addImageBtn && previewContainer && mainForm && fileCollector) {
+        const maxImages = parseInt(mainForm.dataset.maxImages || '6', 10);
         let fileStore = new Map();
         const storageKey = `fileStore_${window.location.pathname}`;
 
+        // --- Helper functions for session storage (to keep images on page refresh) ---
         const fileToBase64 = (file) => new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -188,11 +226,19 @@
         };
         const saveFileStore = async () => {
             const serializable = [];
-            for (const [key, file] of fileStore.entries()) {
+            document.querySelectorAll('#image-preview-container .col').forEach(col => {
+                const key = col.dataset.key;
+                const file = fileStore.get(key);
+                if (file) {
+                    serializable.push([key, file]);
+                }
+            });
+            const dataToStore = [];
+            for (const [key, file] of serializable) {
                 const base64 = await fileToBase64(file);
-                serializable.push([key, { name: file.name, data: base64 }]);
+                dataToStore.push([key, { name: file.name, data: base64 }]);
             }
-            sessionStorage.setItem(storageKey, JSON.stringify(serializable));
+            sessionStorage.setItem(storageKey, JSON.stringify(dataToStore));
         };
         const loadFileStore = () => {
             const stored = sessionStorage.getItem(storageKey);
@@ -210,12 +256,15 @@
                 }
             }
         };
+        
         const renderPreviews = () => {
             previewContainer.innerHTML = '';
             let index = 1;
             fileStore.forEach((file, key) => {
                 const col = document.createElement('div');
                 col.className = 'col';
+                col.setAttribute('draggable', 'true');
+                col.dataset.key = key;
                 col.innerHTML = `
                     <div class="card h-100">
                         <img src="${URL.createObjectURL(file)}" class="card-img-top" style="height: 150px; object-fit: cover;" alt="Preview">
@@ -226,8 +275,15 @@
                     </div>`;
                 previewContainer.appendChild(col);
             });
-            saveFileStore();
+            updatePreviewOrderIndices();
         };
+
+        const updatePreviewOrderIndices = () => {
+            document.querySelectorAll('#image-preview-container .badge').forEach((badge, index) => {
+                badge.textContent = `ลำดับ ${index + 1}`;
+            });
+        };
+
         addImageBtn.addEventListener('click', () => {
             if (imageInput.files.length > 0) {
                 for(const file of imageInput.files){
@@ -240,47 +296,77 @@
                 }
                 renderPreviews();
                 imageInput.value = '';
+                saveFileStore();
             } else {
                 alert('กรุณาเลือกไฟล์รูปภาพก่อน');
             }
         });
+
         previewContainer.addEventListener('click', (e) => {
             const removeBtn = e.target.closest('.remove-img-btn');
             if (removeBtn) {
                 const key = removeBtn.dataset.key;
                 fileStore.delete(key);
-                renderPreviews();
+                removeBtn.closest('.col').remove();
+                updatePreviewOrderIndices();
+                saveFileStore();
             }
         });
-        mainForm.addEventListener('submit', (e) => {
-            const dataTransfer = new DataTransfer();
-            fileStore.forEach(file => dataTransfer.items.add(file));
-            fileCollector.files = dataTransfer.files;
+
+        // --- Drag & Drop logic for CREATE page ---
+        let dragEl = null;
+        previewContainer.addEventListener('dragstart', (e) => {
+            const col = e.target.closest('[draggable="true"]');
+            if (col) {
+                dragEl = col;
+                e.dataTransfer.effectAllowed = 'move';
+            }
+        });
+        previewContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const targetCol = e.target.closest('[draggable="true"]');
+            if (targetCol && targetCol !== dragEl) {
+                const rect = targetCol.getBoundingClientRect();
+                const next = (e.clientY - rect.top) / rect.height > 0.5;
+                previewContainer.insertBefore(dragEl, next ? targetCol.nextSibling : targetCol);
+            }
+        });
+        previewContainer.addEventListener('dragend', () => {
+            dragEl = null;
+            updatePreviewOrderIndices();
+            saveFileStore(); // Save the new order
         });
 
-        // --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
-        // เพิ่ม Event Listener ให้กับปุ่ม "ยกเลิก"
+        mainForm.addEventListener('submit', (e) => {
+            const dataTransfer = new DataTransfer();
+            const orderedKeys = Array.from(previewContainer.querySelectorAll('[data-key]')).map(el => el.dataset.key);
+            
+            orderedKeys.forEach(key => {
+                const file = fileStore.get(key);
+                if (file) {
+                    dataTransfer.items.add(file);
+                }
+            });
+
+            fileCollector.files = dataTransfer.files;
+            sessionStorage.removeItem(storageKey); // Clear storage on successful submit
+        });
+
         const cancelButton = document.getElementById('cancel-form-btn');
         if (cancelButton) {
             cancelButton.addEventListener('click', function() {
-                // สั่งลบข้อมูลรูปภาพออกจาก sessionStorage
                 sessionStorage.removeItem(storageKey);
             });
         }
-        // --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
-
+        
         document.addEventListener('DOMContentLoaded', () => {
-            // --- vvv ส่วนที่เพิ่มเข้ามาใหม่ vvv ---
-            // ตรวจสอบ flash message เพื่อเคลียร์ storage
             const flashMessages = document.querySelectorAll('.flash-messages .alert');
             flashMessages.forEach(flash => {
                 if (flash.textContent.includes('clear_form_storage')) {
                     sessionStorage.removeItem(storageKey);
-                    flash.style.display = 'none'; // ซ่อน message นี้
+                    flash.style.display = 'none';
                 }
             });
-            // --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
-
             loadFileStore();
             renderPreviews();
         });

@@ -5,15 +5,12 @@ from app.forms.auth import OwnerRegisterForm, CombinedLoginForm, ForgotPasswordF
 from app.forms.upload import EmptyForm
 from app.models.user import Owner, Admin
 from werkzeug.security import generate_password_hash
-from app.extensions import db # <<< เพิ่ม import db
+from app.extensions import db
 
-# --- vvv เพิ่ม import สำหรับส่งอีเมล vvv ---
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-# --- ^^^ สิ้นสุดการ import ^^^ ---
 
-# --- vvv แก้ไขฟังก์ชันสำหรับส่งอีเมล vvv ---
 def send_reset_email(owner):
     token = owner.get_reset_token()
     
@@ -27,7 +24,6 @@ def send_reset_email(owner):
     
     try:
         with smtplib.SMTP(current_app.config['MAIL_SERVER'], current_app.config['MAIL_PORT']) as server:
-            # ตรวจสอบการตั้งค่าก่อนเรียกใช้ starttls และ login
             if current_app.config['MAIL_USE_TLS']:
                 server.starttls()
             if current_app.config['MAIL_USERNAME']:
@@ -36,10 +32,7 @@ def send_reset_email(owner):
     except Exception as e:
         current_app.logger.error(f"Failed to send email: {e}")
         
-    # <<< ส่วนที่ 1: เพิ่มการคืนค่า token
     return token
-# --- ^^^ สิ้นสุดฟังก์ชันส่งอีเมล ^^^ ---
-
 
 @bp.route("/owner/register", methods=["GET","POST"])
 def owner_register():
@@ -116,11 +109,9 @@ def reset_password_request():
     if form.validate_on_submit():
         owner = Owner.query.filter_by(email=form.email.data).first()
         if owner:
-            # --- vvv ส่วนที่ 2: แก้ไขการเรียกใช้และ Redirect vvv ---
-            token = send_reset_email(owner) # รับค่า token ที่ถูกส่งคืนมา
+            token = send_reset_email(owner)
             flash('(Token ถูกสร้างแล้ว) เปลี่ยนรหัสผ่านและยืนยันได้เลย', 'info')
-            return redirect(url_for('auth.reset_password', token=token)) # Redirect พร้อมส่ง token ไปด้วย
-            # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
+            return redirect(url_for('auth.reset_password', token=token))
         else:
             flash('ไม่พบอีเมลนี้ในระบบ กรุณาตรวจสอบอีกครั้ง', 'warning')
     return render_template('auth/forgot_password_request.html', form=form)

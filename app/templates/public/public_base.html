@@ -15,7 +15,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/miranda_styles.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom_styles.css') }}"> <style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom_styles.css') }}"> 
+  <style>
     /* ------------------- GLOBAL ------------------- */
     :root {
       --nav-h: 120px; /* ความสูง navbar ใช้สำหรับ offset sticky */
@@ -27,26 +28,38 @@
       font-family: 'Kanit', sans-serif;
     }
 
-    /* ------------------- NAVBAR ------------------- */
+    /* ------------------- NAVBAR (แก้ไขแล้ว) ------------------- */
     .navbar-custom {
       background-color: #004a99;
       box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-      padding: 0.75rem 0;
       position: sticky;
       top: 0;
-      z-index: 1050; /* Z-index สูงกว่า element ทั่วไป แต่ไม่จำเป็นต้องใช้ !important */
+      z-index: 1050;
+      padding: 0.25rem 0; /* ปรับ Padding แนวตั้งเล็กน้อย */
     }
 
-    /* NEW: ย้ายสไตล์โลโก้มาที่นี่ */
     .navbar-brand-logo {
-        height: 100px;
+        max-height: 60px; /* ลดความสูงสูงสุดบนมือถือ */
+        width: auto;      /* ให้ความกว้างปรับตามอัตโนมัติ */
+        object-fit: contain; /* ป้องกันภาพยืด */
     }
 
     .navbar-custom .navbar-nav .nav-link {
       color: white;
-      font-size: 1.6rem;
+      font-size: 1.1rem; /* ปรับขนาดฟอนต์ให้พอดีขึ้น */
       font-weight: 500;
-      margin-right: 3rem;
+      margin-right: 1.5rem;
+    }
+    
+    /* Media Query สำหรับหน้าจอใหญ่ (Desktop) */
+    @media (min-width: 992px) {
+        .navbar-brand-logo {
+            max-height: 80px; /* ทำให้โลโก้ใหญ่ขึ้นบนจอ Desktop */
+        }
+        .navbar-custom .navbar-nav .nav-link {
+            font-size: 1.2rem;
+            margin-right: 2rem;
+        }
     }
 
     .navbar-custom .navbar-nav .nav-link.active,
@@ -54,7 +67,6 @@
       color: #ffd700;
     }
 
-    /* ปุ่ม hamburger icon สีขาว */
     .navbar-toggler {
       border-color: rgba(255, 255, 255, 0.5);
     }
@@ -92,7 +104,7 @@
 
     /* ------------------- MAP / STICKY ------------------- */
     .sticky-avoid-navbar {
-      top: calc(var(--nav-h) + 12px); /* เอา !important ออก */
+      top: calc(var(--nav-h) + 12px);
     }
 
     /* ------------------- FONT ------------------- */
@@ -125,9 +137,7 @@
             <a class="nav-link {% if request.endpoint == 'public.search' %}active{% endif %}" href="{{ url_for('public.search') }}">ค้นหาหอพัก</a>
           </li>
           <li class="nav-item">
-            <!-- --- vvv [แก้ไข] เปลี่ยน href ให้ลิงก์ไปที่หน้า history vvv --- -->
             <a class="nav-link {% if request.endpoint == 'public.history' %}active{% endif %}" href="{{ url_for('public.history') }}">ประวัติการเข้าชม</a>
-            <!-- --- ^^^ สิ้นสุดการแก้ไข ^^^ --- -->
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'public.contact' %}active{% endif %}" href="{{ url_for('public.contact') }}">ติดต่อเรา</a>
@@ -155,9 +165,6 @@
 
   <main class="flex-grow-1">
     {% block content %}{% endblock %}
-    <!-- --- vvv [ลบ] ส่วนแสดงผล "หอพักที่เพิ่งเข้าชม" ออกจากไฟล์นี้ vvv --- -->
-    <!-- ส่วนนี้ถูกย้ายไปที่ history.html แล้ว -->
-    <!-- --- ^^^ สิ้นสุดการลบ ^^^ --- -->
   </main>
 
   <footer class="py-4 mt-auto footer-custom">
