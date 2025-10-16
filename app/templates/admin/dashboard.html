@@ -7,15 +7,28 @@
     </div>
 </div>
 
-<!-- ส่วนของ Stats Cards 4 อันบนสุด -->
 <div class="row">
     <div class="col-md-3 mb-4"><a href="{{ url_for('admin.owners') }}" class="text-decoration-none"><div class="card h-100 dynamic-card"><div class="card-body d-flex align-items-center"><div class="p-3 bg-primary-subtle text-primary rounded-3 me-3"><i data-feather="users" style="width: 28px; height: 28px;"></i></div><div><h6 class="card-title text-muted mb-1">จำนวน Owner ทั้งหมด</h6><p class="card-text fs-4 fw-bold mb-0 text-dark">{{ stats.total_owners }}</p></div></div></div></a></div>
     <div class="col-md-3 mb-4"><a href="{{ url_for('admin.properties') }}" class="text-decoration-none"><div class="card h-100 dynamic-card"><div class="card-body d-flex align-items-center"><div class="p-3 bg-success-subtle text-success rounded-3 me-3"><i data-feather="briefcase" style="width: 28px; height: 28px;"></i></div><div><h6 class="card-title text-muted mb-1">ประกาศใช้งานอยู่</h6><p class="card-text fs-4 fw-bold mb-0 text-dark">{{ stats.total_properties }}</p></div></div></div></a></div>
     <div class="col-md-3 mb-4"><a href="{{ url_for('admin.queue') }}" class="text-decoration-none"><div class="card h-100 dynamic-card"><div class="card-body d-flex align-items-center"><div class="p-3 bg-warning-subtle text-warning rounded-3 me-3"><i data-feather="inbox" style="width: 28px; height: 28px;"></i></div><div><h6 class="card-title text-muted mb-1">คิวอนุมัติ (หอพัก)</h6><p class="card-text fs-4 fw-bold mb-0 text-dark">{{ stats.pending_properties }}</p></div></div></div></a></div>
     <div class="col-md-3 mb-4"><a href="{{ url_for('admin.owner_queue') }}" class="text-decoration-none"><div class="card h-100 dynamic-card"><div class="card-body d-flex align-items-center"><div class="p-3 bg-info-subtle text-info rounded-3 me-3"><i data-feather="user-check" style="width: 28px; height: 28px;"></i></div><div><h6 class="card-title text-muted mb-1">คิวอนุมัติ (Owner)</h6><p class="card-text fs-4 fw-bold mb-0 text-dark">{{ stats.pending_owners }}</p></div></div></div></a></div>
-</div>
+    <div class="col-md-3 mb-4">
+        <a href="{{ url_for('admin.review_deletion_queue') }}" class="text-decoration-none">
+            <div class="card h-100 dynamic-card">
+                <div class="card-body d-flex align-items-center">
+                    <div class="p-3 bg-danger-subtle text-danger rounded-3 me-3">
+                        <i data-feather="message-square" style="width: 28px; height: 28px;"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-title text-muted mb-1">คิวลบคอมเมนต์</h6>
+                        <p class="card-text fs-4 fw-bold mb-0 text-dark">{{ stats.pending_review_reports }}</p>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    </div>
 
-<!-- ส่วนของกราฟ -->
 <div class="row">
     <div class="col-lg-7 mb-4">
         <div class="card h-100">

@@ -1,8 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, FloatField, IntegerField, HiddenField, TextAreaField, SelectField, MultipleFileField, SubmitField
-# vvv [แก้ไข] เก็บบรรทัดนี้ไว้ เพราะมี Regexp ที่เราต้องการ vvv
 from wtforms.validators import DataRequired, Length, NumberRange, Optional, URL, ValidationError, Regexp
-# ^^^ สิ้นสุดการแก้ไข ^^^
 from app.utils.validation import validate_image_file
 from flask import request
 

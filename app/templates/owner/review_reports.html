@@ -23,7 +23,9 @@
                             <small class="text-muted">
                                 จากหอพัก: 
                                 {% if report.review and report.review.property %}
-                                    <a href="{{ url_for('public.property_detail', prop_id=report.review.property.id) }}" target="_blank">{{ report.review.property.dorm_name }} <i data-feather="external-link" style="width:12px;"></i></a>
+                                    {# --- vvv ส่วนที่แก้ไข vvv --- #}
+                                    <a href="{{ url_for('public.property_detail', prop_id=report.review.property.id) }}">{{ report.review.property.dorm_name }}</a>
+                                    {# --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ --- #}
                                 {% else %}
                                     <span class="text-danger">(หอพักถูกลบไปแล้ว)</span>
                                 {% endif %}

@@ -33,6 +33,8 @@
         flex-direction: column;
         transition: transform 0.3s ease-in-out;
         z-index: 1040;
+        height: 100vh; /* ความสูงเต็มหน้าจอ */
+        overflow-y: auto;
     }
     .sidebar-header {
         display: flex;
@@ -166,8 +168,14 @@
     @media (max-width: 991.98px) {
         .mobile-header {
             display: flex;
+            position: fixed;
+            top: 0;
+            width: 100%;
         }
         .sidebar {
+            position: fixed;
+            top: var(--mobile-header-height);
+            height: calc(100vh - var(--mobile-header-height));
             transform: translateX(-100%);
         }
         .sidebar.is-open {

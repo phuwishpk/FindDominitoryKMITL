@@ -58,14 +58,12 @@ class ApprovalService:
             approval_request.note = note
             self.approval_repo.update_request(approval_request)
         
-        # --- vvv ส่วนที่แก้ไข vvv ---
         log_entry = AuditLog.log(
             actor_type="admin", actor_id=admin_id,
             action="reject_property", property_id=prop_id,
             meta={"note": note},
         )
         db.session.add(log_entry)
-        # --- ^^^ สิ้นสุดส่วนที่แก้ไข ^^^ ---
         
         self.property_repo.save(prop)
 
