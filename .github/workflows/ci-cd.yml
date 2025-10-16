@@ -9,7 +9,7 @@ on:
     branches: [ "project-improvement" , "main" , "develop-project" , "develop-admin" ]
 
 jobs:
-  # Job 1: ตรวจสอบคุณภาพโค้ดด้วย Linter
+  # Job 1: ตรวจสอบคุณภาพโค้ดด้วย Linterr
   lint:
     name: '🎨 Linting'
     runs-on: ubuntu-latest
