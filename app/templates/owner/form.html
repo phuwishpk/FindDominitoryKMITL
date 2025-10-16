@@ -189,8 +189,8 @@
               </div>
           </form>
           <h6 class="mt-4">รูปภาพปัจจุบัน</h6>
-          <p class="text-muted small">คลิกค้างแล้วลากเพื่อจัดเรียงลำดับ</p>
-          <div id="gallery" class="row row-cols-2 row-cols-md-3 g-3">
+          <p class="text-muted small">คลิกค้างแล้วลากเพื่อจัดเรียงลำดับ (ระบบจะบันทึกอัตโนมัติ)</p>
+          <div id="gallery" class="row row-cols-2 row-cols-md-3 g-3" data-prop-id="{{ prop.id }}">
             {% for img in prop.images|sort(attribute='position') %}
             <div class="col image-card-col" draggable="true" data-image-id="{{ img.id }}">
               <div class="card">
@@ -206,11 +206,6 @@
             <div class="col"><div class="alert alert-secondary w-100">ยังไม่มีรูป</div></div>
             {% endfor %}
           </div>
-          <form id="reorder-form" method="post" action="{{ url_for('owner.reorder_images', prop_id=prop.id) }}">
-            {{ reorder_form.csrf_token }}
-            <div id="positions-container" class="d-none"></div>
-            <button type="submit" class="btn btn-outline-secondary mt-3">บันทึกการจัดเรียง</button>
-          </form>
         </div>
       {% endif %}
 

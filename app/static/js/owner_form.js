@@ -98,13 +98,53 @@
     const gallery = document.getElementById('gallery');
     if (gallery) {
         let dragEl = null;
+
+        const updatePositions = () => {
+            const orderedIds = Array.from(gallery.querySelectorAll('[draggable="true"]')).map(el => parseInt(el.dataset.imageId, 10));
+            
+            // Update badge text immediately
+            gallery.querySelectorAll('.badge').forEach((badge, index) => {
+                badge.textContent = `ลำดับ ${index + 1}`;
+            });
+            
+            // Send to server
+            const propId = gallery.dataset.propId;
+            const url = `/owner/property/${propId}/images/reorder`;
+            const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ order: orderedIds })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && typeof createToast === 'function') {
+                    createToast(data.message, 'success');
+                } else if (!data.success && typeof createToast === 'function') {
+                    createToast(data.message || 'เกิดข้อผิดพลาดในการจัดเรียง', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error reordering images:', error);
+                if (typeof createToast === 'function') {
+                    createToast('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'danger');
+                }
+            });
+        };
+
         gallery.addEventListener('dragstart', (e) => {
             const cardCol = e.target.closest('[draggable="true"]');
             if (cardCol) {
                 dragEl = cardCol;
                 e.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => cardCol.classList.add('dragging'), 0);
             }
         });
+
         gallery.addEventListener('dragover', (e) => {
             e.preventDefault();
             const targetCol = e.target.closest('[draggable="true"]');
@@ -114,23 +154,14 @@
                 gallery.insertBefore(dragEl, next ? targetCol.nextSibling : targetCol);
             }
         });
-        gallery.addEventListener('dragend', () => { dragEl = null; });
 
-        const reorderForm = document.getElementById('reorder-form');
-        if (reorderForm) {
-            reorderForm.addEventListener('submit', () => {
-                const container = document.getElementById('positions-container');
-                container.innerHTML = '';
-                gallery.querySelectorAll('[draggable="true"]').forEach((cardCol, index) => {
-                    const id = cardCol.getAttribute('data-image-id');
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = `positions-${index}`;
-                    input.value = `${id}:${index + 1}`;
-                    container.appendChild(input);
-                });
-            });
-        }
+        gallery.addEventListener('dragend', (e) => {
+            if (dragEl) {
+                dragEl.classList.remove('dragging');
+                dragEl = null;
+                updatePositions();
+            }
+        });
     }
 
     // --- Delete/Undo for EDIT page ---
