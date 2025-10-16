@@ -25,6 +25,7 @@
 
 <div class="card">
   <div class="card-body p-4">
+    {# ฟอร์มหลัก: ไม่มีปุ่ม submit อยู่ข้างในแล้ว #}
     <form method="post" novalidate enctype="multipart/form-data" id="main-property-form" data-max-images="{{ PropertyPolicy.MAX_IMAGES }}">
       {{ form.csrf_token }}
 
@@ -32,6 +33,7 @@
 
       <p class="text-muted small">{% if not prop %}กรุณากรอกข้อมูลหลักและอัปโหลดรูปภาพให้ครบถ้วน จากนั้นกด "สร้างประกาศ"{% else %}คุณสามารถแก้ไขข้อมูลประกาศได้ที่นี่{% endif %}</p>
 
+      {# ... (เนื้อหาฟอร์มทั้งหมดเหมือนเดิม ตั้งแต่ชื่อหอพักจนถึงสิ่งอำนวยความสะดวก) ... #}
       <div class="mb-3"><label class="form-label">ชื่อหอ</label>{{ form.dorm_name(class_='form-control' + (' is-invalid' if form.dorm_name.errors else ''), placeholder='ชื่อหอ') }}</div>
 
       <div class="row g-3 mb-3">
@@ -174,53 +176,62 @@
           {{ form.images(id="image-file-list", style="display:none;") }}
         </div>
       {% endif %}
-
-      {% if prop %}
-        <div id="image-management-section" class="mt-5">
-          <hr>
-          <h2 class="h5">จัดการรูปภาพ</h2>
-          <p class="text-muted small">คุณสามารถอัปโหลด, ลบ, และจัดเรียงลำดับรูปภาพได้ที่นี่ (สูงสุด {{ PropertyPolicy.MAX_IMAGES }} รูป)</p>
-          <h6 class="mt-4">อัปโหลดรูปภาพใหม่</h6>
-          <form class="mb-3" method="post" action="{{ url_for('owner.upload_image', prop_id=prop.id) }}" enctype="multipart/form-data">
-              {{ upload_form.csrf_token }}
-              <div class="input-group">
-                {{ upload_form.image(class_='form-control' + (' is-invalid' if upload_form.image.errors else '')) }}
-                <button type="submit" class="btn btn-outline-primary">อัปโหลด</button>
-              </div>
-          </form>
-          <h6 class="mt-4">รูปภาพปัจจุบัน</h6>
-          <p class="text-muted small">คลิกค้างแล้วลากเพื่อจัดเรียงลำดับ (ระบบจะบันทึกอัตโนมัติ)</p>
-          <div id="gallery" class="row row-cols-2 row-cols-md-3 g-3" data-prop-id="{{ prop.id }}">
-            {% for img in prop.images|sort(attribute='position') %}
-            <div class="col image-card-col" draggable="true" data-image-id="{{ img.id }}">
-              <div class="card">
-                <img src="/{{ img.file_path }}" class="card-img-top" alt="#{{ img.id }}">
-                <div class="card-body p-2 d-flex justify-content-between align-items-center">
-                  <span class="badge text-bg-light">ลำดับ {{ loop.index }}</span>
-                  <button type="button" class="btn btn-sm btn-outline-danger delete-image-btn" data-image-id="{{ img.id }}">ลบ</button>
-                  <button type="button" class="btn btn-sm btn-outline-secondary undo-delete-btn" data-image-id="{{ img.id }}" style="display: none;">ยกเลิก</button>
-                </div>
-              </div>
-            </div>
-            {% else %}
-            <div class="col"><div class="alert alert-secondary w-100">ยังไม่มีรูป</div></div>
-            {% endfor %}
-          </div>
-        </div>
-      {% endif %}
-
-      <hr class="my-4">
-      <div class="mt-4">
-        {% if prop %}
-          <button type="submit" class="btn btn-primary" name="save_and_exit" value="true">บันทึกข้อมูล</button>
-        {% else %}
-          <button type="submit" class="btn btn-primary" name="save_property" value="true">สร้างประกาศ</button>
-        {% endif %}
-        <a href="{{ url_for('owner.dashboard') }}" class="btn btn-secondary" id="cancel-form-btn">ยกเลิก</a>
-      </div>
     </form>
   </div>
 </div>
+
+{% if prop %}
+<div class="card mt-4">
+    <div class="card-body p-4">
+        <div id="image-management-section">
+            <h2 class="h5">จัดการรูปภาพ</h2>
+            <p class="text-muted small">คุณสามารถอัปโหลด, ลบ, และจัดเรียงลำดับรูปภาพได้ที่นี่ (สูงสุด {{ PropertyPolicy.MAX_IMAGES }} รูป)</p>
+            
+            <h6 class="mt-4">อัปโหลดรูปภาพใหม่</h6>
+            <form class="mb-3" method="post" action="{{ url_for('owner.upload_image', prop_id=prop.id) }}" enctype="multipart/form-data">
+                {{ upload_form.csrf_token }}
+                <div class="input-group">
+                    {{ upload_form.image(class_='form-control' + (' is-invalid' if upload_form.image.errors else '')) }}
+                    <button type="submit" class="btn btn-outline-primary">อัปโหลด</button>
+                </div>
+            </form>
+
+            <h6 class="mt-4">รูปภาพปัจจุบัน</h6>
+            <p class="text-muted small">คลิกค้างแล้วลากเพื่อจัดเรียงลำดับ (ระบบจะบันทึกอัตโนมัติ)</p>
+            <div id="gallery" class="row row-cols-2 row-cols-md-3 g-3" data-prop-id="{{ prop.id }}">
+                {% for img in prop.images|sort(attribute='position') %}
+                <div class="col image-card-col" draggable="true" data-image-id="{{ img.id }}">
+                  <div class="card">
+                    <img src="/{{ img.file_path }}" class="card-img-top" alt="#{{ img.id }}">
+                    <div class="card-body p-2 d-flex justify-content-between align-items-center">
+                      <span class="badge text-bg-light">ลำดับ {{ loop.index }}</span>
+                      <button type="button" class="btn btn-sm btn-outline-danger delete-image-btn" data-image-id="{{ img.id }}">ลบ</button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary undo-delete-btn" data-image-id="{{ img.id }}" style="display: none;">ยกเลิก</button>
+                    </div>
+                  </div>
+                </div>
+                {% else %}
+                <div class="col"><div class="alert alert-secondary w-100">ยังไม่มีรูป</div></div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# --- vvv [START] ส่วนปุ่มที่ย้ายมาใหม่ --- vvv #}
+<div class="mt-4">
+  {% if prop %}
+    {# ปุ่มนี้จะ submit ฟอร์ม 'main-property-form' #}
+    <button type="submit" form="main-property-form" class="btn btn-primary" name="save_and_exit" value="true">บันทึกข้อมูล</button>
+  {% else %}
+    {# สำหรับหน้าสร้างใหม่ ปุ่มจะยังอยู่ในฟอร์มเดิม (ไม่มีการเปลี่ยนแปลง) #}
+    <button type="submit" form="main-property-form" class="btn btn-primary" name="save_property" value="true">สร้างประกาศ</button>
+  {% endif %}
+  <a href="{{ url_for('owner.dashboard') }}" class="btn btn-secondary" id="cancel-form-btn">ยกเลิก</a>
+</div>
+{# --- ^^^ [END] สิ้นสุดส่วนที่ย้ายมาใหม่ --- ^^^ #}
+
 {% endblock %}
 
 {% block page_scripts %}
