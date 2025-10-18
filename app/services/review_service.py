@@ -6,7 +6,9 @@ class ReviewService:
     def __init__(self, review_repo):
         self.review_repo = review_repo
 
-    def add_review(self, property_id: int, user_id: int, comment: str, rating: int) -> Review:
+    # --- vvv นี่คือส่วนที่ต้องแก้ไข signature และเพิ่ม author_name vvv ---
+    def add_review(self, property_id: int, user_id: int | None, comment: str, rating: int, author_name: str | None = None) -> Review:
+    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
         """
         Function 1: สร้างและบันทึกรีวิวใหม่ลงในฐานข้อมูล
         รับข้อมูลที่จำเป็นสำหรับการสร้างรีวิวใหม่, สร้าง object ของ Review
@@ -16,7 +18,8 @@ class ReviewService:
             property_id=property_id,
             user_id=user_id,
             comment=comment,
-            rating=rating
+            rating=rating,
+            author_name=author_name  # <-- เพิ่มบรรทัดนี้
         )
         return self.review_repo.add(new_review)
 

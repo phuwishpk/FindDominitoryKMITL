@@ -12,6 +12,7 @@ class Review(db.Model):
     rating = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # --- vvv ส่วนที่เพิ่มเข้ามา vvv ---
+    # --- vvv ส่วนที่แก้ไขและเพิ่มเข้ามา vvv ---
+    author_name = db.Column(db.String(100), nullable=True) # ชื่อสำหรับผู้ใช้ที่ไม่ได้ล็อกอิน
     is_hidden = db.Column(db.Boolean, default=False, nullable=False) # สถานะการซ่อน
     # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---

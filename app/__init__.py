@@ -2,7 +2,9 @@ from flask import Flask, send_from_directory
 from .extensions import db, migrate, login_manager, babel_ext, limiter, csrf
 from .config import Config
 
-from .utils.helpers import format_as_bangkok_time, from_json_string
+# --- vvv ส่วนที่แก้ไข vvv ---
+from .utils.helpers import format_as_bangkok_time, from_json_string, get_anonymous_name
+# --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
 from .forms.upload import EmptyForm
 from .forms.owner import ROOM_TYPE_CHOICES
 
@@ -49,14 +51,12 @@ def register_dependencies(app: Flask):
         report_repo=container["review_report_repo"],
         prop_repo=container["property_repo"]
     )
-    # --- vvv แก้ไขที่นี่ vvv ---
     container["dashboard_service"] = DashboardService(
         user_repo=container["user_repo"],
         property_repo=container["property_repo"],
         approval_repo=container["approval_repo"],
-        review_report_repo=container["review_report_repo"] # เพิ่ม argument ที่ขาดไป
+        review_report_repo=container["review_report_repo"] 
     )
-    # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
     container["history_service"] = HistoryService(container["property_repo"])
     
     if not hasattr(app, "extensions"):
@@ -89,7 +89,10 @@ def create_app() -> Flask:
         return dict(
             empty_form=EmptyForm(),
             ROOM_TYPES=room_type_map,
-            recently_viewed_properties=recently_viewed
+            recently_viewed_properties=recently_viewed,
+            # --- vvv ส่วนที่เพิ่มเข้ามา vvv ---
+            anonymous_name=get_anonymous_name() 
+            # --- ^^^ สิ้นสุดการเพิ่ม ^^^ ---
         )
 
     with app.app_context():

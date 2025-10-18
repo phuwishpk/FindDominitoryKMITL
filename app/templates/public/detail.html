@@ -120,7 +120,21 @@
                                 {% endfor %}
                             </div>
                             <p class="mb-1">{{ review.comment }}</p>
-                            <small class="text-muted">เมื่อ {{ review.created_at|to_bkk_time }}</small>
+                            <small class="text-muted">
+                                โดย: 
+                                {% if review.user_id %}
+                                    <span class="fw-semibold">
+                                        {% if review.user_id == prop.owner_id %}
+                                            เจ้าของหอพัก
+                                        {% else %}
+                                            ผู้ใช้ที่ลงทะเบียน #{{ review.user_id }}
+                                        {% endif %}
+                                    </span>
+                                {% else %}
+                                    <span class="fw-semibold">{{ review.author_name or 'ผู้เข้าชม (Anonymous)' }}</span>
+                                {% endif %}
+                                · เมื่อ {{ review.created_at|to_bkk_time }}
+                                </small>
                         </div>
                         {% endfor %}
                     {% else %}
@@ -132,6 +146,12 @@
                     <form method="POST" action="{{ url_for('public.property_add_review', prop_id=prop.id) }}" id="review-form">
                         {{ form.hidden_tag() }}
 
+                        {% if not current_user.is_authenticated %}
+                        <div class="mb-3">
+                            <p class="form-label mb-0">คุณจะแสดงความคิดเห็นในชื่อ:</p>
+                            <p class="fw-semibold text-primary">{{ anonymous_name }}</p>
+                        </div>
+                        {% endif %}
                         <div class="mb-3">
                             <label class="form-label">ให้คะแนนหอพัก</label>
                             <div class="star-rating mb-2">
@@ -309,6 +329,16 @@ if (cancelReviewBtn) {
         if (commentTextarea) {
             commentTextarea.value = '';
         }
+
+        // Remove validation errors if any
+        const form = document.getElementById('review-form');
+        if (form) {
+            form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            // Remove text from custom error display 
+            form.querySelectorAll('.invalid-feedback.d-block').forEach(el => el.innerHTML = '');
+            form.querySelectorAll('.text-danger.small').forEach(el => el.innerHTML = '');
+        }
+
     });
 }
 </script>

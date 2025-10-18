@@ -1,8 +1,9 @@
-from flask import render_template, request, current_app, redirect, url_for, flash
+from flask import render_template, request, current_app, redirect, url_for, flash, session
 from flask_login import current_user
 from . import bp
 from app.forms.review import ReviewForm
 from app.models.property import Amenity
+from app.utils.helpers import get_anonymous_name
 
 # ✅ แสดงหน้าหลัก (GET)
 @bp.get("/")
@@ -27,13 +28,21 @@ def property_add_review(prop_id):
     form = ReviewForm()
     if form.validate_on_submit():
         review_svc = current_app.extensions["container"]["review_service"]
+        
+        # --- vvv ส่วนที่แก้ไข vvv ---
         user_ref_id = current_user.ref_id if current_user.is_authenticated else None
+        
+        # ถ้าไม่ได้ล็อกอิน ให้ใช้ชื่อสุ่มจาก session, ถ้าล็อกอินแล้วให้เป็น None 
+        author_name = get_anonymous_name() if not current_user.is_authenticated else None
+
         review_svc.add_review(
             property_id=prop_id,
             user_id=user_ref_id,
             comment=form.comment.data,
-            rating=int(form.rating.data)
+            rating=int(form.rating.data),
+            author_name=author_name # ส่งชื่อสุ่มไปด้วย
         )
+        # --- ^^^ สิ้นสุดการแก้ไข ^^^ ---
         flash("รีวิวของคุณถูกบันทึกแล้ว", "success")
     return redirect(url_for("public.property_detail", prop_id=prop_id))
 
@@ -123,4 +132,3 @@ def terms():
     return render_template("public/terms.html")
 
 # --- ^^^ สิ้นสุดส่วนที่เพิ่ม ^^^ ---
-
